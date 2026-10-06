@@ -1,0 +1,32 @@
+{
+ "name": "Nauka japońskiego",
+ "short_name": "Japoński",
+ "description": "Kurs japońskiego od zera do N1: wymowa, kana, lekcje, czytanki i ćwiczenia z głosem.",
+ "lang": "pl",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "portrait",
+ "background_color": "#faf7f2",
+ "theme_color": "#d62828",
+ "icons": [
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}
