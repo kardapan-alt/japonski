@@ -10,4 +10,3 @@ Na telefonie dodaj stronę do ekranu głównego, wtedy działa jak aplikacja, ta
 
 Postępy zapisują się w telefonie. Między urządzeniami przeniesiesz je „Kodem postępów” w Ustawieniach.
 
-Lekcje N5–N4+ idą tematami podręczników Doki 1–3 (Warszawska Szkoła Języka Japońskiego); objaśnienia, przykłady i ćwiczenia są własne.
