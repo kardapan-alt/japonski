@@ -1,6 +1,6 @@
 // Service worker wersji na telefon: zapisuje kurs w pamięci telefonu, żeby działał bez internetu.
 // Przy każdej nowej wersji zmienia się VERSION, więc telefon pobiera nowe pliki przy następnym otwarciu z internetem.
-const VERSION = "39aa09dc09";
+const VERSION = "9a4fd37292";
 const CACHE = "nauka-japonskiego-" + VERSION;
 const FILES = ["./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 

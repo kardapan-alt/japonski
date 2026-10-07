@@ -16287,6 +16287,7 @@ function route() {
   if (p === "sciaga") return viewCheat(a);
   if (p === "bledy") return viewMistakes();
   if (p === "kanji") return viewKanjiAll(a || "");
+  if (p === "sluchaj") return viewListen();
   if (p === "czytanki") return viewStories();
   if (p === "czytanka") return viewStory(a);
   viewHome();
@@ -16355,6 +16356,7 @@ function viewHome() {
   <div class="grid g3">
     <a class="card" href="#/kana/hira" style="text-decoration:none"><b class="jp" style="font-size:22px">あ ア</b><div><b>Tabela kana</b></div><div class="small muted">Wszystkie znaki z wymową, pisaniem i quizem.</div></a>
     <a class="card" href="#/review" style="text-decoration:none"><b style="font-size:22px">🔁</b><div><b>Powtórki</b></div><div class="small muted">Fiszki z systemem powtórek – słówka i kanji wracają, zanim je zapomnisz.</div></a>
+    <a class="card" href="#/sluchaj" style="text-decoration:none"><b style="font-size:22px">🎧</b><div><b>W drodze – nauka słuchem</b></div><div class="small muted">Słówka i zdania czytane na głos z pauzą na odpowiedź. Do autobusu i spaceru, bez patrzenia w ekran.</div></a>
     <a class="card" href="#/kanji" style="text-decoration:none"><b class="jp" style="font-size:22px">漢</b><div><b>Wszystkie kanji</b></div><div class="small muted">Każdy znak z kursu w jednym miejscu, z wyszukiwarką, czytaniami, pisaniem i quizem.</div></a>
     <a class="card" href="#/czytanki" style="text-decoration:none"><b style="font-size:22px">📚</b><div><b>Czytanki</b></div><div class="small muted">Krótkie historyjki do każdego poziomu, z głosem, tłumaczeniem i pytaniami.</div></a>
     <a class="card" href="#/bledy" style="text-decoration:none"><b style="font-size:22px">📝</b><div><b>Zeszyt błędów</b></div><div class="small muted">Ćwiczenia, w których się pomyliłeś/aś. Każde wraca, aż zrobisz je dobrze dwa razy.</div></a>
@@ -16744,6 +16746,101 @@ function viewKanaChart(script) {
   const startQ = set => { const r = $("#app"); runQuiz(r, genKana(pick(set, 24), set), { src: "kana", back: `#/kana/${script}`, color: "#d62828" }); };
   $(".q1").onclick = () => startQ(basic);
   $(".q2").onclick = () => startQ(all);
+}
+
+/* ===================== tryb „W drodze”: nauka słuchem ===================== */
+let PLV = null;
+function plVoice() {
+  if (PLV !== null) return PLV;
+  const all = TTS.ok ? speechSynthesis.getVoices() : [];
+  return (PLV = all.find(v => /^pl/i.test(v.lang)) || false) || null;
+}
+function speakPL(text, rate) {
+  return new Promise(res => {
+    if (!TTS.ok) return res();
+    const u = new SpeechSynthesisUtterance(text); u.lang = "pl-PL"; const v = plVoice(); if (v) u.voice = v; u.rate = rate || 1;
+    let done = false; const fin = () => { if (!done) { done = true; clearTimeout(tm); res(); } };
+    u.onend = fin; u.onerror = fin; const tm = setTimeout(fin, 2000 + text.length * 120);
+    speechSynthesis.speak(u);
+  });
+}
+function listenItems(cfg) {
+  const lv = LV.filter(L => L.id !== "kana");
+  const upto = cfg.level === "all" ? lv : lv.slice(0, lv.findIndex(L => L.id === cfg.level) + 1);
+  const only = cfg.level === "all" ? lv : lv.filter(L => L.id === cfg.level);
+  const srcL = cfg.scope === "upto" ? upto : only;
+  let out = [];
+  if (cfg.kind === "srs") {
+    out = Object.keys(S.srs).filter(k => k[0] === "v").map(k => { const [, w, r] = k.split("|"); return { jp: r, show: wordMarkup(w, r), pl: S.srs[k].m, raw: true }; });
+  } else if (cfg.kind === "words") {
+    srcL.forEach(L => L.lessons.forEach(l => (l.vocab || []).forEach(v => out.push({ jp: v[1], show: wordMarkup(v[0], v[1]), pl: v[2], raw: true }))));
+  } else {
+    srcL.forEach(L => L.lessons.forEach(l => {
+      (l.grammar || []).forEach(g => (g.examples || []).forEach(e => out.push({ jp: e[0], show: e[0], pl: e[1] })));
+      if (l.dialog && l.dialog.lines) l.dialog.lines.forEach(d => out.push({ jp: d[1], show: d[1], pl: d[2] }));
+    }));
+  }
+  const seen = new Set(); out = out.filter(x => { const k = plain(x.show); if (seen.has(k)) return false; seen.add(k); return true; });
+  return shuffle(out);
+}
+function viewListen() {
+  const c = Object.assign({ level: (LESSON_LEVEL[(nextLesson() || {}).id] || LV[1] || {}).id || "n5a", scope: "only", kind: "words", dir: "jp", pause: 3, repeat: 1 }, S.settings.listen || {});
+  const lv = LV.filter(L => L.id !== "kana");
+  const opt = (v, t, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${t}</option>`;
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › W drodze</div><h1>🎧 W drodze</h1>
+    <p class="muted">Słuchaj i odpowiadaj w myślach albo na głos. Najpierw usłyszysz zdanie, potem masz chwilę na odpowiedź, a na koniec pada tłumaczenie. Telefon możesz schować do kieszeni, tylko nie blokuj ekranu (kurs sam nie pozwoli mu zgasnąć).</p>
+    <div class="card grid" style="gap:10px">
+      <label>Co: <select id="lk">${opt("words", "Słówka", c.kind)}${opt("sent", "Zdania z lekcji i scenek", c.kind)}${opt("srs", "Moje słówka z powtórek", c.kind)}</select></label>
+      <label>Poziom: <select id="ll">${lv.map(L => opt(L.id, esc(L.title), c.level)).join("")}${opt("all", "Wszystkie poziomy", c.level)}</select>
+        <select id="ls">${opt("only", "tylko ten poziom", c.scope)}${opt("upto", "ten i wcześniejsze", c.scope)}</select></label>
+      <label>Kierunek: <select id="ld">${opt("jp", "japoński → polski (rozumienie)", c.dir)}${opt("pl", "polski → japoński (mówienie)", c.dir)}</select></label>
+      <label>Pauza na odpowiedź: <select id="lp">${[2, 3, 5, 8].map(n => opt(n, n + " s", c.pause)).join("")}</select>
+        &nbsp; Japoński: <select id="lr">${opt(1, "raz", c.repeat)}${opt(2, "dwa razy", c.repeat)}</select></label>
+    </div>
+    <div class="card listenbox" style="margin-top:14px;text-align:center">
+      <div class="small muted lcount">&nbsp;</div>
+      <div class="ljp jp" style="font-size:30px;min-height:48px;margin:10px 0"></div>
+      <div class="lpl" style="font-size:18px;min-height:28px"></div>
+      <div class="row" style="justify-content:center;margin-top:14px"><button class="btn sm lprev">⏮</button><button class="btn pri lplay">▶ Start</button><button class="btn sm lnext">⏭</button></div>
+    </div>`;
+  const save = () => { c.kind = $("#lk").value; c.level = $("#ll").value; c.scope = $("#ls").value; c.dir = $("#ld").value; c.pause = +$("#lp").value; c.repeat = +$("#lr").value; S.settings.listen = Object.assign({}, c); saveState(); };
+  let items = [], i = 0, playing = false, token = 0, lock = null;
+  const show = (x, stage) => {
+    $(".lcount").textContent = items.length ? `${i + 1} / ${items.length}` : "";
+    const jp = `${ruby(x.show)}`, pl = esc(x.pl);
+    if (c.dir === "jp") { $(".ljp").innerHTML = jp; $(".lpl").innerHTML = stage >= 2 ? pl : "<span class='muted'>…</span>"; }
+    else { $(".lpl").innerHTML = pl; $(".ljp").innerHTML = stage >= 2 ? jp : "<span class='muted'>…</span>"; }
+  };
+  const sayJP = async (x, my) => { for (let r = 0; r < c.repeat && my === token; r++) { await TTS.speak(x.raw ? x.jp : sayText(x.jp), { queue: true }); if (r + 1 < c.repeat) await sleep(500); } };
+  async function loop() {
+    const my = ++token;
+    while (playing && my === token && items.length) {
+      const x = items[i]; show(x, 1);
+      if (c.dir === "jp") await sayJP(x, my); else await speakPL(x.pl);
+      if (my !== token) return;
+      await sleep(c.pause * 1000); if (my !== token) return;
+      show(x, 2);
+      if (c.dir === "jp") await speakPL(x.pl); else await sayJP(x, my);
+      if (my !== token) return;
+      await sleep(1200); if (my !== token) return;
+      i = (i + 1) % items.length; if (i === 0) items = shuffle(items);
+      if (i % 10 === 0) addXP(2);
+    }
+  }
+  const stop = () => { playing = false; token++; TTS.stop(); $(".lplay").textContent = "▶ Dalej"; if (lock) { lock.release().catch(() => { }); lock = null; } };
+  players.push({ stop });
+  const start = async () => {
+    if (!items.length) { items = listenItems(c); i = 0; }
+    if (!items.length) { $(".ljp").innerHTML = ""; $(".lpl").textContent = c.kind === "srs" ? "Nie masz jeszcze słówek w powtórkach. Otwórz Słówka w jakiejś lekcji." : "Brak materiału."; return; }
+    playing = true; $(".lplay").textContent = "⏸ Pauza";
+    try { if (navigator.wakeLock) lock = await navigator.wakeLock.request("screen"); } catch (e) { }
+    loop();
+  };
+  $(".lplay").onclick = () => playing ? stop() : start();
+  $(".lnext").onclick = () => { if (!items.length) return; const was = playing; stop(); i = (i + 1) % items.length; show(items[i], 1); if (was) start(); };
+  $(".lprev").onclick = () => { if (!items.length) return; const was = playing; stop(); i = (i - 1 + items.length) % items.length; show(items[i], 1); if (was) start(); };
+  $$("select", app()).forEach(s => s.onchange = () => { stop(); save(); items = []; i = 0; $(".lplay").textContent = "▶ Start"; $(".ljp").innerHTML = ""; $(".lpl").innerHTML = ""; $(".lcount").innerHTML = "&nbsp;"; });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && playing && lock === null && navigator.wakeLock) navigator.wakeLock.request("screen").then(l => lock = l).catch(() => { }); });
 }
 
 /* ===================== wszystkie kanji w jednym miejscu ===================== */
