@@ -381,24 +381,29 @@ function toast(msg, ms = 2200) {
 }
 
 /* ===================== mowa: synteza ===================== */
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const ANDROID = /Android/.test(navigator.userAgent);
 const TTS = {
   ok: "speechSynthesis" in window, voices: [], ready: false,
   init() {
     if (!this.ok) return;
-    const load = () => {
-      this.voices = speechSynthesis.getVoices().filter(v => /^ja/i.test(v.lang) || /japan|日本/i.test(v.name));
-      this.ready = true;
+    const rank = v => /^(eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley)\b/i.test(v.name) ? 2 : /kyoko|o-ren|otoya|hattori|haruka|nanami|google/i.test(v.name) ? 0 : 1;
+    const load = fin => {
+      const all = speechSynthesis.getVoices();
+      this.voices = all.filter(v => /^ja/i.test(v.lang) || /japan|日本/i.test(v.name)).sort((a, b) => rank(a) - rank(b) || (b.localService - a.localService));
+      if (all.length || fin === true) this.ready = true; // Android ładuje głosy z opóźnieniem – nie ostrzegaj za wcześnie
       document.dispatchEvent(new Event("voices"));
     };
     load();
-    speechSynthesis.onvoiceschanged = load;
-    setTimeout(load, 800);
+    speechSynthesis.onvoiceschanged = () => load(true);
+    setTimeout(() => load(true), 2500);
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) { } // iPhone: głos także przy wyciszonym telefonie
   },
   pickVoice(gender) {
     if (!this.voices.length) return null;
     const pref = this.voices.find(v => v.name === S.settings.voice);
     if (!gender || this.voices.length < 2) return pref || this.voices[0];
-    const male = /otoya|ichiro|keita|daichi|naoki|takumi|male|男/i, female = /kyoko|haruka|nanami|ayumi|sayaka|mizuki|o-ren|female|女|google/i;
+    const male = /otoya|hattori|ichiro|keita|daichi|naoki|takumi|male|男/i, female = /kyoko|haruka|nanami|ayumi|sayaka|mizuki|o-ren|female|女|google/i;
     const want = this.voices.filter(v => gender === "m" ? male.test(v.name) : (female.test(v.name) && !male.test(v.name)));
     return want[0] || pref || this.voices[0];
   },
@@ -415,10 +420,12 @@ const TTS = {
       u.pitch = o.gender === "m" ? 0.85 : o.gender === "f" ? 1.15 : 1;
       let done = false;
       const fin = () => { if (!done) { done = true; clearTimeout(tm); o.onend && o.onend(); res(); } };
-      u.onend = fin; u.onerror = fin;
+      u.onend = fin;
+      u.onerror = e => { if (!/interrupted|canceled/.test(e && e.error || "") && !TTS.errWarned) { TTS.errWarned = true; toast("Głos nie zadziałał. Bez internetu potrzebny jest pobrany japoński głos – instrukcja w Ustawieniach." + (IOS ? " Na iPhonie sprawdź też, czy nie jest włączony tryb cichy." : ""), 6000); } fin(); };
       const tm = setTimeout(fin, 1500 + text.length * 420 / rate);
       o.onstart && (u.onstart = o.onstart);
       speechSynthesis.speak(u);
+      if (IOS && !S.settings.iosHint) { S.settings.iosHint = 1; saveState(); toast("Nie słychać głosu? Wyłącz tryb cichy w iPhonie.", 4500); }
       if (!this.voices.length) noVoiceWarn();
     });
   },
@@ -457,6 +464,7 @@ function similarity(a, b) {
 }
 async function checkSpeech(target, btn) {
   if (!SRec) { toast("Rozpoznawanie mowy działa w Chrome/Edge (komputer i Android) oraz Safari. Tu go nie ma – powtarzaj na głos i porównuj ze wzorem 🔊."); return; }
+  if (navigator.onLine === false) { toast("Sprawdzanie wymowy 🎤 potrzebuje internetu. Bez sieci słuchaj 🔊 i powtarzaj na głos.", 4500); return; }
   TTS.stop();
   btn && btn.classList.add("live");
   try {
@@ -470,7 +478,8 @@ async function checkSpeech(target, btn) {
     if (pct >= 85) addXP(2);
     return pct;
   } catch (e) {
-    toast(e && e.error === "not-allowed" ? "Zezwól stronie na użycie mikrofonu." : "Nic nie usłyszałem – spróbuj jeszcze raz, mów wyraźnie.");
+    const er = e && e.error;
+    toast(er === "not-allowed" ? "Zezwól stronie na użycie mikrofonu." : er === "network" ? "Sprawdzanie wymowy potrzebuje internetu – powtarzaj na głos ze wzorem 🔊." : er === "service-not-allowed" || er === "language-not-supported" ? (IOS ? "Włącz Dyktowanie: Ustawienia → Ogólne → Klawiatura." : "Ta przeglądarka nie obsługuje rozpoznawania mowy po japońsku.") : er === "audio-capture" ? "Mikrofon jest zajęty albo niedostępny." : "Nic nie usłyszałem – spróbuj jeszcze raz, mów wyraźnie.", 4500);
   } finally { btn && btn.classList.remove("live"); }
 }
 // przyciski 🔊 / 🎤 w HTML – dane trzymamy w rejestrze
@@ -16118,7 +16127,7 @@ function renderItem(card, it, report, onNext) {
     const latin = !!it.latin;
     card.innerHTML = head + `<div class="qq">${ruby(it.q)} ${it.speakQ ? sayBtn(it.speakQ, { raw: true }) : ""}</div>
       ${it.tr ? `<div class="qtr">„${esc(it.tr)}”</div>` : ""}
-      <div style="margin-top:14px"><input class="tinput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${latin ? "wpisz łacinką…" : "pisz w romaji, np. taberu → たべる"}"></div>
+      <div style="margin-top:14px"><input class="tinput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${latin ? "wpisz łacinką…" : "pisz w romaji, np. taberu → たべる"}"></div>
       <div class="small muted" style="margin-top:6px">${latin ? "" : "Romaji zamienia się w hiraganę w trakcie pisania (n na końcu: nn). Możesz też pisać japońską klawiaturą."}${it.hint ? ` <button class="btn sm hintb">💡 Podpowiedź</button><span class="hintt"></span>` : ""}</div>
       <div class="qnav"><button class="btn idk">Nie wiem</button><button class="btn chk pri">Sprawdź</button></div>`;
     const inp = $(".tinput", card);
@@ -16789,14 +16798,16 @@ window.addEventListener("appinstalled", () => { installEvt = null; toast("Kurs j
 function isStandalone() { return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; }
 function installHTML() {
   if (!window.PWA_MODE || isStandalone()) return "";
-  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const ios = IOS, iab = ANDROID && /; wv\)|FB_IAB|FBAN|FBAV|Instagram/.test(navigator.userAgent);
   const how = installEvt ? `<button class="btn pri inst">📲 Zainstaluj aplikację</button>`
-    : ios ? `W Safari stuknij <b>Udostępnij</b> (kwadrat ze strzałką w górę), a potem <b>Do ekranu początkowego</b>.`
+    : ios ? `Otwórz tę stronę w <b>Safari</b> (nie w Messengerze ani Gmailu). Stuknij <b>Udostępnij</b> (w nowym iOS najpierw <b>⋯</b> obok paska adresu), potem <b>Do ekranu początkowego</b> (czasem pod „Wyświetl więcej”) i <b>Dodaj</b>. Potem otwórz kurs z ikony raz przy internecie i poczekaj na ✓ – od tej chwili działa offline.`
+    : iab ? `<a class="btn pri" href="intent://${location.host}${location.pathname}#Intent;scheme=https;package=com.android.chrome;end">Otwórz w Chrome</a><div class="small" style="margin-top:6px">Albo ⋮ → „Otwórz w przeglądarce”. W tym okienku kurs się nie zainstaluje.</div>`
     : `W menu przeglądarki (⋮) wybierz <b>Zainstaluj aplikację</b> albo <b>Dodaj do ekranu głównego</b>.`;
   return `<div class="card installc" style="margin-bottom:14px">📱 <b>Dodaj kurs do ekranu telefonu.</b> Będzie działał jak aplikacja, także bez internetu, np. w autobusie czy metrze.
     <div style="margin-top:8px">${how}</div>${ios ? `<p class="small muted" style="margin:8px 0 0">Na iPhonie aplikacja z ekranu ma osobne postępy niż Safari, więc najlepiej od razu ucz się z ikony. Postępy przeniesiesz „Kodem postępów” w Ustawieniach.</p>` : ""}</div>`;
 }
 if (window.PWA_MODE && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => { });
+if (window.PWA_MODE && navigator.serviceWorker && location.protocol.startsWith("http")) navigator.serviceWorker.ready.then(() => { try { if (!localStorage.getItem("offline-ok")) { localStorage.setItem("offline-ok", "1"); toast("✓ Kurs zapisany w telefonie – działa już bez internetu", 5000); } } catch (e) { } });
 /* ===================== plan na dziś ===================== */
 function planHTML(nx, due, todayXP) {
   const mc = mistCount(), fixed = (S.mistDone || "") === today();
@@ -16977,9 +16988,10 @@ function viewSettings() {
   <div class="card grid" style="gap:14px">
     <div><b>Głos japoński</b><br>${vs.length ? `<select id="voice">${vs.map(v => `<option ${v.name === S.settings.voice ? "selected" : ""}>${esc(v.name)}</option>`).join("")}</select> <button class="btn sm" id="tv">🔊 Test</button>` : `<div class="warnbox">Nie znaleziono japońskiego głosu.<br>
       • <b>Windows:</b> Ustawienia → Czas i język → Mowa → Dodaj głosy → Japoński, potem uruchom przeglądarkę ponownie.<br>
-      • <b>Android:</b> Ustawienia → Zamiana tekstu na mowę → Usługi Google → zainstaluj dane głosu „japoński”.<br>
+      • <b>Android:</b> w Ustawieniach telefonu wyszukaj „tekst na mowę” → Usługi mowy Google → ⚙ → Zainstaluj dane głosowe → japoński.<br>
       • <b>iPhone/iPad/Mac:</b> Ustawienia → Dostępność → Treść mówiona → Głosy → Japoński (np. Kyoko).<br>
       • Najprościej: przeglądarka <b>Chrome</b> lub <b>Edge</b> na komputerze ma japońskie głosy online.</div>`}</div>
+    ${ANDROID && vs.length ? `<p class="small muted" style="margin:0">Żeby głos działał bez internetu: w Ustawieniach telefonu wyszukaj „tekst na mowę” → Usługi mowy Google → ⚙ → Zainstaluj dane głosowe → japoński (najlepiej na Wi‑Fi).</p>` : ""}${IOS ? `<p class="small muted" style="margin:0">Nie słychać głosu? Wyłącz tryb cichy w iPhonie.</p>` : ""}${window.PWA_MODE ? `<p class="small" style="margin:0">${navigator.serviceWorker && navigator.serviceWorker.controller ? "✓ Kurs jest zapisany w telefonie i działa bez internetu." : "⏳ Zapisuję kurs w telefonie… zostaw go chwilę otwartego z internetem."}</p>` : ""}
     <div><b>Tempo mowy:</b> <span id="rv">${S.settings.rate}</span><br><input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="${S.settings.rate}" style="width:100%;max-width:320px"></div>
     <label><input type="checkbox" id="auto" ${S.settings.autoplay ? "checked" : ""}> Automatycznie czytaj zdania w ćwiczeniach</label>
     <label><input type="checkbox" id="rom" ${S.settings.romaji ? "checked" : ""}> Pokazuj romaji przy słówkach</label>
@@ -16990,8 +17002,8 @@ function viewSettings() {
     <div><b>Postępy</b> są zapisywane w tej przeglądarce. Możesz je przenieść na inne urządzenie:<div class="row" style="margin-top:6px"><button class="btn sm" id="exp">⬇ Zapisz plik z postępami</button><label class="btn sm">⬆ Wczytaj plik<input type="file" id="imp" accept=".json" hidden></label><button class="btn sm" id="rst" style="color:var(--bad)">Wyzeruj postępy</button></div>
     ${(window.CloudSync || {}).state === "on" ? `<p class="small" style="margin-top:8px">☁️ <b>Synchronizacja włączona:</b> postępy zapisują się na Twoim koncie Claude, więc na telefonie i komputerze masz to samo, gdy otwierasz kurs z tego samego linku.</p>` : (window.CloudSync || {}).state === "err" ? `<p class="small" style="margin-top:8px">☁️ Nie udało się połączyć z kontem. Postępy są zapisane w tej przeglądarce.</p>` : ""}
     <div style="margin-top:10px"><b>Kod postępów</b> – najprostszy sposób na przeniesienie postępów między komputerem a telefonem: skopiuj kod tutaj, wyślij go sobie (np. w wiadomości) i wklej na drugim urządzeniu.
-    <div class="row" style="margin-top:6px"><button class="btn sm" id="codecp">📋 Kopiuj kod postępów</button></div>
-    <textarea id="codein" rows="3" style="width:100%;margin-top:6px;font-size:12px" placeholder="Wklej tutaj kod z drugiego urządzenia…"></textarea>
+    <div class="row" style="margin-top:6px"><button class="btn sm" id="codecp">📋 Kopiuj kod postępów</button>${navigator.share ? `<button class="btn sm" id="codesh">📤 Wyślij kod</button>` : ""}</div>
+    <textarea id="codein" rows="2" style="width:100%;margin-top:6px;font-size:16px;font-family:monospace;background:var(--bg2);color:var(--fg)" placeholder="Wklej tutaj kod z drugiego urządzenia…"></textarea>
     <div class="row"><button class="btn sm" id="codeld">⬆ Wczytaj z kodu</button></div></div></div>
     <div class="small muted">Rozpoznawanie mowy (🎤): ${SRec ? "dostępne ✓" : "niedostępne w tej przeglądarce (działa w Chrome/Edge i Safari)"}.</div>
   </div>`;
@@ -17009,12 +17021,15 @@ function viewSettings() {
   if (window.claude) $("#exp").style.display = "none"; // w wersji online pobieranie plików nie działa; postępy synchronizują się przez konto
   $("#exp").onclick = () => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: "application/json" })); a.download = "postepy-japonski-" + today() + ".json"; a.click(); };
   $("#imp").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { const o = JSON.parse(t); if (!o.lessons) throw 0; S = o; loadStateFix(); saveState(); toast("Wczytano postępy ✓"); route(); } catch (x) { toast("To nie jest plik z postępami."); } }); };
-  $("#codecp").onclick = async () => {
-    const code = await progressCode();
-    $("#codein").value = code;
-    try { await navigator.clipboard.writeText(code); toast("Skopiowano kod ✓ Wklej go na drugim urządzeniu."); }
-    catch (e) { $("#codein").select(); toast("Kod jest w polu poniżej – zaznacz go i skopiuj."); }
+  // kod liczymy od razu, bo Safari pozwala kopiować tylko bezpośrednio po stuknięciu
+  let readyCode = ""; progressCode().then(c => readyCode = c).catch(() => { });
+  $("#codecp").onclick = () => {
+    if (!readyCode) { toast("Chwilka, przygotowuję kod… stuknij jeszcze raz."); return; }
+    $("#codein").value = readyCode;
+    const fallback = () => { $("#codein").focus(); $("#codein").select(); toast("Kod jest w polu poniżej – przytrzymaj, zaznacz wszystko i skopiuj."); };
+    try { navigator.clipboard.writeText(readyCode).then(() => toast("Skopiowano kod ✓ Wklej go na drugim urządzeniu."), fallback); } catch (e) { fallback(); }
   };
+  const sh = $("#codesh"); if (sh) sh.onclick = () => { if (!readyCode) { toast("Chwilka, przygotowuję kod… stuknij jeszcze raz."); return; } navigator.share({ title: "Kod postępów – japoński", text: readyCode }).catch(() => { }); };
   $("#codeld").onclick = async () => {
     try { const o = await readProgressCode($("#codein").value); if (!o.lessons) throw 0; if (!confirm("Zastąpić postępy na tym urządzeniu postępami z kodu?")) return; S = o; loadStateFix(); saveState(); toast("Wczytano postępy ✓"); route(); }
     catch (x) { toast("Ten kod nie wygląda na kod postępów."); }
@@ -17042,7 +17057,13 @@ function applyTheme() { const t = S.settings.theme; if (t === "auto") document.d
 
 /* ===================== start ===================== */
 loadState(); applyTheme(); TTS.init();
-document.addEventListener("voices", () => { if (!location.hash || location.hash === "#/") { const w = $(".warnbox"); if (!w && TTS.ready && !TTS.voices.length && $("#app .hero")) route(); } });
+document.addEventListener("voices", () => { const h = location.hash; if ((!h || h === "#/") && $("#app .hero")) { if (!!$("#app .hero .warnbox") !== (TTS.ready && !TTS.voices.length)) route(); } else if (h.startsWith("#/settings") && !$("#voice") && TTS.voices.length) route(); });
+// drugie okno / powrót do aplikacji: wczytaj świeże postępy, żeby nie nadpisać ich starą kopią
+window.addEventListener("storage", e => { if (e.key === STORE) { loadState(); applyTheme(); if (!document.querySelector(".quiz")) route(); } });
+// japońskie znaki oznaczone jako japońskie (na Androidzie bez tego kanji mogą wyglądać po chińsku)
+const JPSEL = ".jp,ruby,.jpl,.fjp,.jpline,.qq,.opt,.tile,.mbtn,table.voc .w,.sr .w,.kc .k,.kc .rd,.kcell .ch,.subs .sj,.sline .who,.actor .nm,.trace .gh,.hanko,.lvl .big,.bigjp".split(",").map(s => s + ":not([lang])").join(",");
+const tagJa = () => document.querySelectorAll(JPSEL).forEach(e => e.lang = "ja");
+new MutationObserver(tagJa).observe(document.body, { childList: true, subtree: true }); tagJa();
 route();
 
 async function playChars(btn) {
