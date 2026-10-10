@@ -307,6 +307,43 @@ table.voc td.a{width:124px}
 .pw{border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;background:var(--bg2)}
 .pwj{font-family:var(--jp);font-size:28px;line-height:2}
 .pwm{font-weight:600;margin:4px 0}
+/* trenery, powtarzanie, scenki we dwoje, słabe strony */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{border:1px solid var(--line);background:var(--bg2);border-radius:999px;padding:6px 12px;font-size:14px;line-height:1.3;text-align:left}
+.chip.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip.on .muted{color:inherit;opacity:.75}
+.tblw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px}
+table.ctab{min-width:520px;font-size:14px}
+table.ctab th{text-align:left;font-size:12px;color:var(--fg2);padding:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.ctab td{padding:6px;white-space:nowrap}
+.shcard{text-align:center}
+.shjp{font-size:28px;line-height:1.9;margin:6px 0}
+.shpl{margin-top:6px}
+.shrec{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.shgrade{margin-top:8px;border-top:1px solid var(--line);padding-top:10px;width:100%}
+.yt{font-weight:700;color:var(--accent)}
+.recbar{width:100%;max-width:320px;height:8px;border-radius:99px;background:var(--bg3);overflow:hidden}
+.recbar i{display:block;height:100%;width:0;background:var(--accent);animation:recfill linear forwards}
+@keyframes recfill{to{width:100%}}
+.recdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:4px;animation:recblink 1s infinite}
+@keyframes recblink{50%{opacity:.25}}
+.duoroles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.duorole{background:var(--bg3);border-radius:12px;padding:10px}
+.duorole .tinput{width:100%;margin-bottom:6px}
+.duoturn{border-top:5px solid var(--c);text-align:center}
+.duowho{display:flex;align-items:center;gap:12px;justify-content:center;text-align:left;margin-bottom:10px}
+.duowho svg{width:64px;height:74px;flex:none}
+.duoname{font-size:22px;color:var(--c)}
+.duoline{margin-top:14px;min-height:90px}
+.duojp{font-size:26px;line-height:1.9}
+.duopl{font-size:18px;margin-top:6px}
+.duoline .duopl.small{font-size:15px;color:var(--fg2)}
+.wrow .prog i{transition:width .3s}
+@media (max-width:520px){.duoroles{grid-template-columns:1fr}}
+.fitgrid{grid-template-columns:minmax(0,1fr)}
+.fitgrid select{max-width:100%}
+.duorole .tinput{font-size:18px;padding:8px 12px}
+.shcard,.duoturn{overflow-wrap:anywhere;word-break:break-word}
 </style></head><body>
 <header class="top"><div class="topin"><a class="logo" href="#/"><span class="hanko">日</span><span class="tlabel">Nauka japońskiego</span></a><span class="sp"></span>
 <a class="tbtn" data-nav="review" href="#/review">🔁<span class="tlabel"> Powtórki</span><span class="badge" id="revbadge" style="display:none"></span></a>
@@ -325,6 +362,8 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pick = (a, n) => shuffle(a).slice(0, n);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// polska odmiana po liczebniku: plN(3, "kwestia", "kwestie", "kwestii") → "kwestie"
+const plN = (n, one, few, many) => n === 1 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many;
 const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
 const RUBY_RE = /\{([^{}|]+)\|([^{}|]+)\}/g;
 const HAS_KANJI = /[一-鿿々〆]/;
@@ -18438,6 +18477,298 @@ FREEWRITE.push({
   model: "【ネタバレなし】{話題|わだい}のアニメ{映画|えいが}、{見|み}てきた！{最初|さいしょ}から{最後|さいご}までずっとはらはらして、{手|て}に{汗|あせ}{握|にぎ}った。{映像|えいぞう}がガチできれいで、{夕焼|ゆうや}けのシーンとかマジでエモい。{推|お}しの{声優|せいゆう}さんの{演技|えんぎ}もヤバくて、ラストは{普通|ふつう}に{泣|な}けた。ただ、{三時間|さんじかん}は{長|なが}すぎ。タイパ{重視|じゅうし}の{人|ひと}にはきついかも。でも、{映画館|えいがかん}の{大|おお}きいスクリーンで{見|み}る{価値|かち}は{絶対|ぜったい}ある。{泣|な}ける{映画|えいが}が{好|す}きな{人|ひと}には、マジでおすすめ！やっぱ{映画館|えいがかん}しか{勝|か}たん。"
 });
 
+// Czasowniki do trenera odmiany: [zapis, czytanie, znaczenie, grupa u/ru/irr, lekcja, formy pominięte (csv; plain = tylko formy z ます i て), uwaga]
+window.VERBS = [
+["起きる", "おきる", "wstawać, budzić się", "ru", "n5a-4", "", ""],
+["寝る", "ねる", "spać, kłaść się spać", "ru", "n5a-4", "", ""],
+["食べる", "たべる", "jeść", "ru", "n5a-4", "", ""],
+["見る", "みる", "patrzeć, oglądać", "ru", "n5a-4", "", ""],
+["行く", "いく", "iść, jechać", "u", "n5a-4", "", "Wyjątek w formie て: いって, いった (nie いいて)."],
+["来る", "くる", "przychodzić, przyjeżdżać", "irr", "n5a-4", "", ""],
+["帰る", "かえる", "wracać (do domu)", "u", "n5a-4", "", "Wygląda na RU, ale to grupa U: かえります, かえって."],
+["聞く", "きく", "słuchać; pytać", "u", "n5a-4", "", ""],
+["飲む", "のむ", "pić", "u", "n5a-4", "", ""],
+["話す", "はなす", "mówić, rozmawiać", "u", "n5a-4", "", ""],
+["読む", "よむ", "czytać", "u", "n5a-4", "", ""],
+["買う", "かう", "kupować", "u", "n5a-4", "", ""],
+["する", "する", "robić", "irr", "n5a-4", "", ""],
+["勉強する", "べんきょうする", "uczyć się", "irr", "n5a-4", "", ""],
+["ある", "ある", "być, znajdować się (rzeczy); mieć", "u", "n5a-5", "pot,vol,pass,caus,tai", "Przeczenie: ない (nie あらない)."],
+["いる", "いる", "być, znajdować się (istoty żywe)", "ru", "n5a-5", "", ""],
+["会う", "あう", "spotkać się (z kimś)", "u", "n5a-5", "", ""],
+["書く", "かく", "pisać", "u", "n5a-5", "", ""],
+["休む", "やすむ", "odpoczywać; wziąć wolne", "u", "n5a-5", "", ""],
+["働く", "はたらく", "pracować", "u", "n5a-5", "", ""],
+["始める", "はじめる", "zaczynać", "ru", "n5a-6", "", ""],
+["遊ぶ", "あそぶ", "bawić się, spędzać czas", "u", "n5a-6", "", ""],
+["手伝う", "てつだう", "pomagać", "u", "n5a-6", "", ""],
+["撮る", "とる", "robić (zdjęcie)", "u", "n5a-6", "", ""],
+["待つ", "まつ", "czekać", "u", "n5a-6", "", ""],
+["急ぐ", "いそぐ", "spieszyć się", "u", "n5a-6", "", ""],
+["入る", "はいる", "wchodzić", "u", "n5a-6", "", "Wygląda na RU, ale to grupa U: はいります, はいって."],
+["持つ", "もつ", "trzymać, nosić", "u", "n5a-6", "", ""],
+["泳ぐ", "およぐ", "pływać", "u", "n5a-6", "", ""],
+["使う", "つかう", "używać", "u", "n5a-6", "", ""],
+["死ぬ", "しぬ", "umierać", "u", "n5a-6", "", ""],
+["出かける", "でかける", "wychodzić (gdzieś)", "ru", "n5a-6", "", ""],
+["開ける", "あける", "otwierać", "ru", "n5a-6", "", ""],
+["吸う", "すう", "palić (papierosa)", "u", "n5a-6", "", ""],
+["乗る", "のる", "wsiadać, jechać (czymś)", "u", "n5a-6", "", ""],
+["降りる", "おりる", "wysiadać", "ru", "n5a-6", "", ""],
+["なる", "なる", "stawać się", "u", "n5a-7", "pass,caus", ""],
+["住む", "すむ", "mieszkać", "u", "n5a-8", "", ""],
+["結婚する", "けっこんする", "brać ślub", "irr", "n5a-8", "", ""],
+["知る", "しる", "dowiedzieć się; (しっています) wiedzieć", "u", "n5a-8", "pot,vol", "Wygląda na RU, ale to grupa U: しって. Przeczenie: しりません."],
+["勤める", "つとめる", "być zatrudnionym", "ru", "n5a-8", "", ""],
+["着る", "きる", "wkładać, nosić (ubranie od pasa w górę)", "ru", "n5a-8", "", ""],
+["はく", "はく", "wkładać, nosić (spodnie, spódnicę, buty)", "u", "n5a-8", "", ""],
+["言う", "いう", "mówić, powiedzieć", "u", "n5a-8", "", ""],
+["思う", "おもう", "myśleć, sądzić", "u", "n4-1", "", ""],
+["作る", "つくる", "robić, przygotowywać", "u", "n4-1", "", ""],
+["捨てる", "すてる", "wyrzucać", "ru", "n4-1", "", ""],
+["弾く", "ひく", "grać (na instrumencie)", "u", "n4-1", "", ""],
+["遅れる", "おくれる", "spóźniać się", "ru", "n4-1", "vol", ""],
+["連絡する", "れんらくする", "kontaktować się", "irr", "n4-1", "", ""],
+["洗濯する", "せんたくする", "robić pranie", "irr", "n4-1", "", ""],
+["散歩する", "さんぽする", "spacerować", "irr", "n4-1", "", ""],
+["切る", "きる", "ciąć, kroić", "u", "n4-1", "", "Wygląda na RU, ale to grupa U: きります, きって (nie mylić z 着る)."],
+["持っていく", "もっていく", "zabrać ze sobą", "u", "n4-1", "", "Odmienia się jak 行く: もっていって, もっていった."],
+["置く", "おく", "położyć, zostawić", "u", "n4-1", "", ""],
+["飼う", "かう", "hodować, mieć (zwierzę)", "u", "n4-1", "", ""],
+["やる", "やる", "robić (potocznie)", "u", "n4-1", "", ""],
+["運動する", "うんどうする", "ćwiczyć, uprawiać sport", "irr", "n4-1", "", ""],
+["予約する", "よやくする", "rezerwować", "irr", "n4-1", "", ""],
+["笑う", "わらう", "śmiać się", "u", "n4-1", "", ""],
+["練習する", "れんしゅうする", "ćwiczyć, trenować", "irr", "n4-1", "", ""],
+["直す", "なおす", "naprawiać, poprawiać", "u", "n4-2", "", ""],
+["壊れる", "こわれる", "psuć się", "ru", "n4-2", "pot,vol,pass,caus,tai", ""],
+["決める", "きめる", "decydować", "ru", "n4-2", "", ""],
+["払う", "はらう", "płacić", "u", "n4-2", "", ""],
+["なくす", "なくす", "zgubić", "u", "n4-2", "vol", ""],
+["充電する", "じゅうでんする", "ładować (baterię)", "irr", "n4-2", "", ""],
+["頑張る", "がんばる", "starać się", "u", "n4-2", "", ""],
+["受ける", "うける", "podchodzić (do egzaminu)", "ru", "n4-2", "", ""],
+["受かる", "うかる", "zdać (egzamin)", "u", "n4-2", "pot,vol,pass", ""],
+["カンニングする", "かんにんぐする", "ściągać (na sprawdzianie)", "irr", "n4-2", "", ""],
+["始まる", "はじまる", "zaczynać się", "u", "n4-2", "pot,vol,pass,caus,tai", ""],
+["感動する", "かんどうする", "wzruszyć się", "irr", "n4-2", "vol,pass", ""],
+["要る", "いる", "być potrzebnym, potrzebować", "u", "n4-2", "pot,vol,pass,caus,tai", "Wygląda na RU, ale to grupa U: いります, いって (nie mylić z いる – być)."],
+["誘う", "さそう", "zapraszać, namawiać", "u", "n4-2", "", ""],
+["泣く", "なく", "płakać", "u", "n4-2", "", ""],
+["探す", "さがす", "szukać", "u", "n4-2", "", ""],
+["見つける", "みつける", "znaleźć", "ru", "n4-2", "", ""],
+["喧嘩する", "けんかする", "kłócić się", "irr", "n4-3", "", ""],
+["登る", "のぼる", "wspinać się", "u", "n4-3", "", ""],
+["辞める", "やめる", "zrezygnować, rzucić (pracę, szkołę)", "ru", "n4-3", "", ""],
+["サボる", "さぼる", "wagarować, obijać się", "u", "n4-3", "", ""],
+["付き合う", "つきあう", "chodzić z kimś; towarzyszyć", "u", "n4-3", "", ""],
+["ダイエットする", "だいえっとする", "odchudzać się", "irr", "n4-3", "", ""],
+["紹介する", "しょうかいする", "przedstawiać (kogoś, coś)", "irr", "n4-3", "", ""],
+["楽しむ", "たのしむ", "dobrze się bawić, cieszyć się", "u", "n4-3", "", ""],
+["習う", "ならう", "uczyć się (u kogoś)", "u", "n4-3", "", ""],
+["取る", "とる", "brać", "u", "n4-3", "", ""],
+["覚える", "おぼえる", "zapamiętać", "ru", "n4-3", "", ""],
+["留学する", "りゅうがくする", "studiować za granicą", "irr", "n4-3", "", ""],
+["降る", "ふる", "padać (o deszczu, śniegu)", "u", "n4-4", "pot,vol,tai", ""],
+["晴れる", "はれる", "przejaśniać się", "ru", "n4-4", "pot,vol,pass,caus,tai", ""],
+["調べる", "しらべる", "sprawdzać, szukać informacji", "ru", "n4-4", "", ""],
+["答える", "こたえる", "odpowiadać", "ru", "n4-4", "", ""],
+["困る", "こまる", "mieć kłopot, martwić się", "u", "n4-4", "pot,vol,pass,tai", ""],
+["頼む", "たのむ", "prosić; zamawiać", "u", "n4-4", "", ""],
+["祈る", "いのる", "modlić się", "u", "n4-4", "", ""],
+["脱ぐ", "ぬぐ", "zdejmować (ubranie, buty)", "u", "n4-4", "", ""],
+["見せる", "みせる", "pokazywać", "ru", "n4-4", "", ""],
+["落ちる", "おちる", "spaść; nie zdać (egzaminu)", "ru", "n4-4", "pot,vol,pass,caus", ""],
+["見える", "みえる", "być widocznym, widać", "ru", "n4-4", "pot,vol,pass,caus,tai", ""],
+["聞こえる", "きこえる", "być słyszalnym, słychać", "ru", "n4-4", "pot,vol,pass,caus,tai", ""],
+["緊張する", "きんちょうする", "denerwować się, stresować się", "irr", "n4-4", "pot,vol,pass,tai", ""],
+["質問する", "しつもんする", "zadawać pytanie", "irr", "n4-4", "", ""],
+["しゃべる", "しゃべる", "gadać, rozmawiać", "u", "n4-4", "", "Wygląda na RU, ale to grupa U: しゃべります, しゃべって."],
+["曇る", "くもる", "zachmurzyć się", "u", "n4-4", "pot,vol,pass,caus,tai", ""],
+["着く", "つく", "dotrzeć, przybyć", "u", "n4-5", "", ""],
+["似合う", "にあう", "pasować (do kogoś)", "u", "n4-5", "pot,vol,pass,caus,tai", ""],
+["謝る", "あやまる", "przepraszać", "u", "n4-5", "", ""],
+["断る", "ことわる", "odmawiać", "u", "n4-5", "", ""],
+["相談する", "そうだんする", "radzić się, konsultować", "irr", "n4-5", "", ""],
+["卒業する", "そつぎょうする", "ukończyć (szkołę)", "irr", "n4-5", "", ""],
+["訳す", "やくす", "tłumaczyć", "u", "n4-5", "", ""],
+["混ぜる", "まぜる", "mieszać", "ru", "n4-5", "", ""],
+["試着する", "しちゃくする", "przymierzać (ubranie)", "irr", "n4-5", "", ""],
+["諦める", "あきらめる", "poddać się, zrezygnować", "ru", "n4-5", "", ""],
+["売る", "うる", "sprzedawać", "u", "n4-5", "", ""],
+["触る", "さわる", "dotykać", "u", "n4-5", "", ""],
+["遅らせる", "おくらせる", "opóźnić (coś)", "ru", "n4-5", "caus", ""],
+["邪魔する", "じゃまする", "przeszkadzać", "irr", "n4-5", "", ""],
+["編む", "あむ", "robić na drutach", "u", "n4-5", "", ""],
+["婚約する", "こんやくする", "zaręczyć się", "irr", "n4-5", "", ""],
+["プロポーズする", "ぷろぽーずする", "oświadczyć się", "irr", "n4-5", "", ""],
+["通訳する", "つうやくする", "tłumaczyć ustnie", "irr", "n4-5", "", ""],
+["翻訳する", "ほんやくする", "tłumaczyć pisemnie", "irr", "n4-5", "", ""],
+["あげる", "あげる", "dawać (komuś)", "ru", "n4-6", "", ""],
+["くれる", "くれる", "dawać (mnie)", "ru", "n4-6", "pot,vol,pass,caus,tai", ""],
+["もらう", "もらう", "dostawać, otrzymywać", "u", "n4-6", "", ""],
+["貸す", "かす", "pożyczać (komuś)", "u", "n4-6", "", ""],
+["喜ぶ", "よろこぶ", "cieszyć się", "u", "n4-6", "", ""],
+["集める", "あつめる", "zbierać, kolekcjonować", "ru", "n4-7", "", ""],
+["動く", "うごく", "ruszać się, działać", "u", "n4-7", "", ""],
+["描く", "かく", "rysować, malować", "u", "n4-7", "", ""],
+["選ぶ", "えらぶ", "wybierać", "u", "n4-7", "", ""],
+["逃げる", "にげる", "uciekać", "ru", "n4-7", "", ""],
+["寝坊する", "ねぼうする", "zaspać", "irr", "n4-7", "vol", ""],
+["貯める", "ためる", "oszczędzać, gromadzić", "ru", "n4-7", "", ""],
+["注文する", "ちゅうもんする", "zamawiać", "irr", "n4-7", "", ""],
+["泊まる", "とまる", "nocować", "u", "n4-7", "", ""],
+["ゆでる", "ゆでる", "gotować w wodzie", "ru", "n4-7", "", ""],
+["起こす", "おこす", "budzić (kogoś)", "u", "n4-7", "", ""],
+["怒る", "おこる", "złościć się", "u", "n4-7", "", ""],
+["片付ける", "かたづける", "sprzątać, odkładać na miejsce", "ru", "n4-7", "", ""],
+["準備する", "じゅんびする", "przygotowywać", "irr", "n4-7", "", ""],
+["足りる", "たりる", "wystarczać", "ru", "n4-7", "pot,vol,pass,caus,tai", ""],
+["入れる", "いれる", "wkładać, dodawać", "ru", "d3-1", "", ""],
+["かける", "かける", "polewać, posypywać (sosem, solą)", "ru", "d3-1", "", ""],
+["塗る", "ぬる", "smarować, malować", "u", "d3-1", "", ""],
+["ひっくり返す", "ひっくりかえす", "obracać na drugą stronę", "u", "d3-1", "", ""],
+["説明する", "せつめいする", "wyjaśniać", "irr", "d3-1", "", ""],
+["間に合う", "まにあう", "zdążyć", "u", "d3-1", "pot,vol,pass", ""],
+["朝寝坊する", "あさねぼうする", "zaspać", "irr", "d3-1", "", ""],
+["乗り遅れる", "のりおくれる", "spóźnić się (na pociąg, autobus)", "ru", "d3-1", "pot,vol,pass,tai", ""],
+["賛成する", "さんせいする", "zgadzać się, być za", "irr", "d3-2", "", ""],
+["反対する", "はんたいする", "sprzeciwiać się, być przeciw", "irr", "d3-2", "", ""],
+["我慢する", "がまんする", "wytrzymywać, powstrzymywać się", "irr", "d3-2", "", ""],
+["応援する", "おうえんする", "kibicować, wspierać", "irr", "d3-2", "", ""],
+["混む", "こむ", "być zatłoczonym", "u", "d3-2", "pot,vol,pass,caus,tai", ""],
+["慣れる", "なれる", "przyzwyczaić się", "ru", "d3-2", "pass", ""],
+["就職する", "しゅうしょくする", "dostać pracę (po szkole)", "irr", "d3-2", "", ""],
+["開く", "あく", "otwierać się", "u", "d3-3", "pot,vol,pass,caus,tai", "Tu czytane あく (otwiera się samo); para z 開ける."],
+["閉める", "しめる", "zamykać (coś)", "ru", "d3-3", "", ""],
+["閉まる", "しまる", "zamykać się", "u", "d3-3", "pot,vol,pass,caus,tai", ""],
+["つける", "つける", "włączać, zapalać (coś)", "ru", "d3-3", "", ""],
+["つく", "つく", "włączać się, zapalać się", "u", "d3-3", "pot,vol,pass,caus,tai", ""],
+["消す", "けす", "wyłączać, gasić", "u", "d3-3", "", ""],
+["消える", "きえる", "gasnąć, znikać", "ru", "d3-3", "pot,vol,pass,caus", ""],
+["落とす", "おとす", "upuścić, zgubić", "u", "d3-3", "", ""],
+["壊す", "こわす", "psuć, niszczyć", "u", "d3-3", "", ""],
+["割る", "わる", "rozbić, stłuc (coś)", "u", "d3-3", "", ""],
+["割れる", "われる", "stłuc się, pęknąć", "ru", "d3-3", "pot,vol,pass,caus,tai", ""],
+["汚す", "よごす", "brudzić", "u", "d3-3", "", ""],
+["汚れる", "よごれる", "brudzić się", "ru", "d3-3", "pot,vol,pass,caus,tai", ""],
+["押す", "おす", "pchać, naciskać", "u", "d3-3", "", ""],
+["引く", "ひく", "ciągnąć", "u", "d3-3", "", ""],
+["盗む", "ぬすむ", "kraść", "u", "d3-4", "", ""],
+["捕まる", "つかまる", "zostać złapanym", "u", "d3-4", "pot,vol,pass,caus,tai", ""],
+["踏む", "ふむ", "nadepnąć", "u", "d3-4", "", ""],
+["蹴る", "ける", "kopać", "u", "d3-4", "", "Wygląda na RU, ale to grupa U: けります, けって."],
+["殴る", "なぐる", "uderzyć (pięścią)", "u", "d3-4", "", ""],
+["振る", "ふる", "machać; rzucić (kogoś)", "u", "d3-4", "", ""],
+["叱る", "しかる", "besztać, karcić", "u", "d3-4", "", ""],
+["褒める", "ほめる", "chwalić", "ru", "d3-4", "", ""],
+["いじめる", "いじめる", "dręczyć, znęcać się", "ru", "d3-4", "", ""],
+["間違える", "まちがえる", "pomylić się", "ru", "d3-4", "vol", ""],
+["無視する", "むしする", "ignorować", "irr", "d3-4", "", ""],
+["追いかける", "おいかける", "gonić", "ru", "d3-4", "", ""],
+["思い出す", "おもいだす", "przypomnieć sobie", "u", "d3-4", "", ""],
+["ぶつかる", "ぶつかる", "zderzyć się, wpaść na", "u", "d3-4", "pot,vol,pass,caus,tai", ""],
+["勝つ", "かつ", "wygrać", "u", "d3-5", "", ""],
+["負ける", "まける", "przegrać", "ru", "d3-5", "vol", ""],
+["失敗する", "しっぱいする", "ponieść porażkę, nie udać się", "irr", "d3-5", "vol,pass,tai", ""],
+["徹夜する", "てつやする", "nie spać całą noc", "irr", "d3-5", "", ""],
+["拾う", "ひろう", "podnieść (z ziemi)", "u", "d3-5", "", ""],
+["育てる", "そだてる", "wychowywać, hodować", "ru", "d3-5", "", ""],
+["運ぶ", "はこぶ", "przenosić, nieść", "u", "d3-5", "", ""],
+["数える", "かぞえる", "liczyć", "ru", "d3-5", "", ""],
+["話し合う", "はなしあう", "omawiać, dyskutować", "u", "d3-5", "", ""],
+["悩む", "なやむ", "martwić się, mieć dylemat", "u", "d3-5", "pot,vol,pass,tai", ""],
+["驚く", "おどろく", "zdziwić się", "u", "d3-5", "pot,vol,pass,tai", ""],
+["悲しむ", "かなしむ", "smucić się", "u", "d3-5", "pot,vol,pass,tai", ""],
+["安心する", "あんしんする", "uspokoić się, odczuć ulgę", "irr", "d3-5", "pass", ""],
+["焦る", "あせる", "denerwować się, gorączkować się", "u", "d3-5", "pot,vol,pass,tai", "Wygląda na RU, ale to grupa U: あせります, あせって."],
+["遠慮する", "えんりょする", "krępować się, powstrzymać się", "irr", "d3-6", "", ""],
+["決まる", "きまる", "zostać ustalonym", "u", "d3-6", "pot,vol,pass,caus,tai", ""],
+["残る", "のこる", "zostać, pozostać", "u", "d3-6", "", ""],
+["招待する", "しょうたいする", "zapraszać", "irr", "d3-6", "", ""],
+["渡す", "わたす", "wręczać, przekazywać", "u", "d3-6", "", ""],
+["寄る", "よる", "wstąpić, zajść po drodze", "u", "d3-6", "", ""],
+["干す", "ほす", "suszyć, wywieszać (pranie)", "u", "d3-6", "", ""],
+["呼ぶ", "よぶ", "wołać", "u", "d3-6", "", ""],
+["引っ越す", "ひっこす", "przeprowadzić się", "u", "d3-6", "", ""],
+["成功する", "せいこうする", "odnieść sukces, udać się", "irr", "d3-6", "vol,pass", ""],
+["交換する", "こうかんする", "wymieniać", "irr", "d3-7", "", ""],
+["返品する", "へんぴんする", "zwracać towar", "irr", "d3-7", "", ""],
+["思いつく", "おもいつく", "wpaść na pomysł", "u", "d3-7", "pot,vol,pass,caus,tai", ""],
+["伝える", "つたえる", "przekazywać", "ru", "d3-7", "", ""],
+["戻る", "もどる", "wracać (na miejsce)", "u", "d3-7", "", ""],
+["がっかりする", "がっかりする", "rozczarować się", "irr", "d3-7", "pot,vol,pass,tai", ""],
+["沸かす", "わかす", "zagotować (wodę), podgrzać", "u", "d3-2", "", "Przechodni; para z 沸く (お湯を沸かす / お湯が沸く)."],
+["沸く", "わく", "zagotować się (o wodzie)", "u", "d3-3", "pot,vol,pass,caus,tai", "Nieprzechodni (dzieje się samo); para z 沸かす: お湯が沸く (woda się gotuje) / お湯を沸かす (gotuję wodę)."],
+["迷う", "まよう", "zgubić się, zabłądzić; wahać się", "u", "d3-1", "pot,vol,pass,tai", "W kursie: 道に迷う = zgubić drogę."],
+["立てる", "たてる", "stawiać; układać (plan)", "ru", "d3-5", "", "W kursie: 計画を立てる = zaplanować."],
+["出す", "だす", "wyjmować, wysyłać; wydobyć (głos)", "u", "d3-5", "", "W kursie: 声に出す = powiedzieć na głos."],
+["噛む", "かむ", "gryźć, ugryźć", "u", "n3-1", "", ""],
+["発明する", "はつめいする", "wynaleźć", "irr", "n3-1", "", ""],
+["建てる", "たてる", "budować, stawiać", "ru", "n3-1", "", ""],
+["開催する", "かいさいする", "organizować (wydarzenie)", "irr", "n3-1", "", ""],
+["発表する", "はっぴょうする", "ogłaszać, prezentować", "irr", "n3-1", "", ""],
+["逮捕する", "たいほする", "aresztować", "irr", "n3-1", "", ""],
+["調査する", "ちょうさする", "badać, prowadzić dochodzenie", "irr", "n3-1", "", ""],
+["届ける", "とどける", "dostarczyć; zgłosić (na policję)", "ru", "n3-1", "", ""],
+["心配する", "しんぱいする", "martwić się", "irr", "n3-2", "vol,tai", ""],
+["早退する", "そうたいする", "wyjść wcześniej (z pracy, szkoły)", "irr", "n3-2", "", ""],
+["申し込む", "もうしこむ", "złożyć wniosek, zgłosić się", "u", "n3-3", "", ""],
+["回す", "まわす", "obracać, kręcić", "u", "n3-3", "", ""],
+["曲がる", "まがる", "skręcać", "u", "n3-3", "", ""],
+["見学する", "けんがくする", "zwiedzać, oglądać na miejscu", "irr", "n3-3", "", ""],
+["いらっしゃる", "いらっしゃる", "być / przyjść / pójść (尊敬語)", "u", "n3-4", "pot,vol,pass,caus,tai", "Grzecznościowy: いらっしゃいます."],
+["召し上がる", "めしあがる", "jeść, pić (尊敬語)", "u", "n3-4", "pot,vol,pass,caus", ""],
+["おっしゃる", "おっしゃる", "mówić (尊敬語)", "u", "n3-4", "pot,vol,pass,caus", "Grzecznościowy: おっしゃいます."],
+["ご覧になる", "ごらんになる", "oglądać, patrzeć (尊敬語)", "u", "n3-4", "vol,pass,caus", "Odmieniamy tylko なる: ごらんになります, ごらんになって."],
+["なさる", "なさる", "robić (尊敬語)", "u", "n3-4", "pot,vol,pass,caus", "Grzecznościowy: なさいます."],
+["参る", "まいる", "iść, przyjść (謙譲語)", "u", "n3-4", "pot,pass,caus,tai,vol", "Wygląda na RU, ale to grupa U: まいります, まいって."],
+["申す", "もうす", "mówić, nazywać się (謙譲語)", "u", "n3-4", "vol,pass,caus,tai", ""],
+["拝見する", "はいけんする", "oglądać, zobaczyć (謙譲語)", "irr", "n3-4", "pass,caus", ""],
+["伺う", "うかがう", "pytać, odwiedzić (謙譲語)", "u", "n3-4", "pass,caus", ""],
+["いただく", "いただく", "otrzymać; jeść, pić (謙譲語)", "u", "n3-4", "pass,caus", ""],
+["おる", "おる", "być (謙譲語)", "u", "n3-4", "pot,vol,pass,caus,tai,plain", "Prawie zawsze z ます: おります, おりません, おりました. Zwykłe おらない / おった brzmią gwarowo lub staroświecko."],
+["存じる", "ぞんじる", "wiedzieć, sądzić (謙譲語)", "ru", "n3-4", "pot,vol,pass,caus,tai,plain", "Używany prawie wyłącznie z ます: ぞんじます, ぞんじません, ぞんじております. To zwykła grupa RU."],
+["差し上げる", "さしあげる", "dawać (謙譲語)", "ru", "n3-4", "pass,caus", ""],
+["承知する", "しょうちする", "przyjąć do wiadomości (grzecznie)", "irr", "n3-4", "vol,pass,caus,tai", ""],
+["太る", "ふとる", "tyć", "u", "n3-5", "", ""],
+["痩せる", "やせる", "chudnąć", "ru", "n3-5", "", ""],
+["控える", "ひかえる", "ograniczać, powstrzymywać się", "ru", "n3-5", "", ""],
+["続ける", "つづける", "kontynuować", "ru", "n3-5", "", ""],
+["治る", "なおる", "wyzdrowieć, zostać wyleczonym", "u", "n3-5", "pot,vol,pass,caus,tai", ""],
+["守る", "まもる", "chronić, przestrzegać", "u", "n3-6", "", ""],
+["避難する", "ひなんする", "ewakuować się", "irr", "n3-6", "", ""],
+["引っ越してくる", "ひっこしてくる", "wprowadzić się (tutaj)", "irr", "n3-6", "", "Odmieniamy くる: ひっこしてきます, ひっこしてこない."],
+["乗り換える", "のりかえる", "przesiadać się", "ru", "n3-7", "", ""],
+["冷める", "さめる", "stygnąć", "ru", "n3-7", "pot,vol,pass,caus,tai", ""],
+["並べる", "ならべる", "ustawiać w rzędzie", "ru", "n3-8", "", ""],
+["並ぶ", "ならぶ", "stać w rzędzie, w kolejce", "u", "n3-8", "", ""],
+["飾る", "かざる", "dekorować", "u", "n3-8", "", ""],
+["貼る", "はる", "przyklejać", "u", "n3-8", "", ""],
+["減る", "へる", "zmniejszać się", "u", "n3-9", "pot,vol,pass,caus,tai", "Wygląda na RU, ale to grupa U: へります, へって."],
+["増える", "ふえる", "zwiększać się", "ru", "n3-9", "pot,vol,pass,caus,tai", ""],
+["合格する", "ごうかくする", "zdać (egzamin)", "irr", "n3-9", "", ""],
+["引き受ける", "ひきうける", "podjąć się, przyjąć (zadanie)", "ru", "n2-1", "", ""],
+["取り組む", "とりくむ", "zająć się, podjąć działania", "u", "n2-2", "", ""],
+["進む", "すすむ", "postępować, posuwać się", "u", "n2-3", "", ""],
+["上回る", "うわまわる", "przewyższać", "u", "n2-8", "pot,vol,pass,caus,tai", ""],
+["下回る", "したまわる", "być poniżej", "u", "n2-8", "pot,vol,pass,caus,tai", ""],
+["駆けつける", "かけつける", "przybiec, pośpieszyć na miejsce", "ru", "n1-2", "", ""],
+["漏らす", "もらす", "ujawnić, wypuścić (informację)", "u", "n1-2", "", ""],
+["立ち入る", "たちいる", "wchodzić (na teren)", "u", "n1-2", "", "Wygląda na RU, ale to grupa U: たちいります, たちいって."],
+["欠く", "かく", "brakować, nie mieć", "u", "n1-2", "pot,vol,pass,caus,tai", ""],
+["抱え込む", "かかえこむ", "brać wszystko na siebie, dusić w sobie", "u", "n1-4", "", ""],
+["侮る", "あなどる", "lekceważyć, nie doceniać", "u", "n1-5", "", ""],
+["励む", "はげむ", "przykładać się, starać się", "u", "n1-6", "", ""],
+["おごる", "おごる", "postawić (komuś jedzenie, drinka)", "u", "pro-1", "", ""],
+["助かる", "たすかる", "być wybawionym, mieć ułatwienie", "u", "pro-1", "pot,vol,pass,caus,tai", ""],
+["見送る", "みおくる", "odłożyć, zrezygnować (z propozycji)", "u", "pro-3", "", ""],
+["申し伝える", "もうしつたえる", "przekazać (wiadomość, skromnie)", "ru", "pro-3", "pot,vol,pass,caus,tai", ""],
+["ググる", "ぐぐる", "wyguglować", "u", "pro-5", "", ""],
+["バズる", "ばずる", "stać się viralem", "u", "pro-5", "pass", ""],
+["ディスる", "でぃする", "obrażać, hejtować", "u", "pro-5", "", ""]
+];
+
 window.PAIRS = window.PAIRS || [];
 
 // 1. 忘れる / 別れる
@@ -25010,7 +25341,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-09 15:11";
+window.APP_VERSION = "2026-10-10 03:50";
 const PASS = 60; // próg zaliczenia lekcji i egzaminu (%)
 /* ===================== podpisy ćwiczeń, wyjaśnienia ===================== */
 function mistKey(it) { const s = JSON.stringify(it); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
@@ -25089,7 +25420,7 @@ function runQuiz(root, items, opts = {}) {
     card.className = "card qcard";
     body.innerHTML = ""; body.appendChild(card);
     renderItem(card, q.it, (ok, yours) => {
-      if (!firstTry.has(q.i)) { firstTry.set(q.i, ok); noteMistake(q.it, ok, opts); log.push({ it: q.it, ok, yours: yours || "" }); }
+      if (!firstTry.has(q.i)) { firstTry.set(q.i, ok); noteMistake(q.it, ok, opts); noteStat(q.it, ok); log.push({ it: q.it, ok, yours: yours || "" }); }
       if (!ok && !q.retry && P) queue.push({ it: q.it, i: q.i, retry: true });
       bar.style.width = (100 * firstTry.size / total) + "%";
     }, () => { pos++; next(); }, { mode, retry: q.retry });
@@ -26355,6 +26686,929 @@ function viewPair(id) {
 }
 const withSec = (arr, sec) => arr.map(x => Object.assign({}, x, { sec }));
 
+/* ===================== trenery: odmiana czasowników i liczby ===================== */
+// wspólne: lekcje, które uczeń ma już za sobą
+const lDone = id => { const s = S.lessons[id] || {}; return !!(s.done || s.prac); };
+const lName = id => { const l = LESSONS[id], L = LESSON_LEVEL[id]; return l ? `${L.short} · ${l.title}` : id; };
+let _LORD = null;
+const lOrd = id => { if (!_LORD) { _LORD = {}; let i = 0; LV.forEach(L => L.lessons.forEach(l => { _LORD[l.id] = i++; })); } return id in _LORD ? _LORD[id] : 999; };
+// {漢字|かな} tylko nad częścią z kanji: 食べる/たべる → {食|た}べる
+function rubyWR(w, r) {
+  if (!HAS_KANJI.test(w) || w === r) return w;
+  let i = 0; while (i < w.length - 1 && i < r.length - 1 && w[w.length - 1 - i] === r[r.length - 1 - i] && !HAS_KANJI.test(w[w.length - 1 - i])) i++;
+  return i ? `{${w.slice(0, w.length - i)}|${r.slice(0, r.length - i)}}${w.slice(w.length - i)}` : `{${w}|${r}}`;
+}
+const chips = (list, sel, attr) => list.map(x => `<button class="chip ${sel.includes(x.id) ? "on" : ""}" data-${attr}="${x.id}">${x.html}</button>`).join("");
+const pctOf = st => st && st.n ? Math.round(100 * st.ok / st.n) : null;
+
+/* ---------- odmiana: silnik ---------- */
+const CJ = {
+  I: { う: "い", く: "き", ぐ: "ぎ", す: "し", つ: "ち", ぬ: "に", ぶ: "び", む: "み", る: "り" },
+  A: { う: "わ", く: "か", ぐ: "が", す: "さ", つ: "た", ぬ: "な", ぶ: "ば", む: "ま", る: "ら" },
+  E: { う: "え", く: "け", ぐ: "げ", す: "せ", つ: "て", ぬ: "ね", ぶ: "べ", む: "め", る: "れ" },
+  O: { う: "お", く: "こ", ぐ: "ご", す: "そ", つ: "と", ぬ: "の", ぶ: "ぼ", む: "も", る: "ろ" },
+  TE: { う: "って", つ: "って", る: "って", む: "んで", ぶ: "んで", ぬ: "んで", く: "いて", ぐ: "いで", す: "して" }
+};
+const TE_RULE = { う: "う・つ・る → って", つ: "う・つ・る → って", る: "う・つ・る → って", む: "む・ぶ・ぬ → んで", ぶ: "む・ぶ・ぬ → んで", ぬ: "む・ぶ・ぬ → んで", く: "く → いて", ぐ: "ぐ → いで", す: "す → して" };
+const TE_FOR = { "って": "う, つ, る", "んで": "む, ぶ, ぬ", "いて": "く", "いで": "ぐ", "して": "す" };
+const HONOR_ARU = /(いらっしゃる|おっしゃる|くださる|なさる|ござる)$/;
+// warianty form: końcówka grupy RU, nazwa, znaczenie
+const CV = {
+  dict: { ru: "る", name: "forma słownikowa", mean: "podstawowa forma ze słownika" },
+  masu: { ru: "ます", name: "forma ～ます", mean: "robię / zrobię (grzecznie)" },
+  masen: { ru: "ません", name: "forma ～ません", mean: "nie robię (grzecznie)" },
+  mashita: { ru: "ました", name: "forma ～ました", mean: "czas przeszły (grzecznie)" },
+  masendeshita: { ru: "ませんでした", name: "forma ～ませんでした", mean: "przeczenie w przeszłości (grzecznie)" },
+  te: { ru: "て", name: "forma て", mean: "łączy zdania; ～てください, ～ています" },
+  nai: { ru: "ない", name: "forma ない", mean: "przeczenie w formie prostej" },
+  ta: { ru: "た", name: "forma た", mean: "czas przeszły w formie prostej" },
+  nakatta: { ru: "なかった", name: "forma ～なかった", mean: "przeczenie w przeszłości (forma prosta)" },
+  tai: { ru: "たい", name: "forma ～たい", mean: "chcę (coś zrobić)" },
+  pot: { ru: "られる", name: "forma potencjalna", mean: "mogę, umiem" },
+  vol: { ru: "よう", name: "forma wolicjonalna", mean: "zróbmy! / mam zamiar" },
+  ba: { ru: "れば", name: "forma ～ば", mean: "jeśli…" },
+  pass: { ru: "られる", name: "strona bierna", mean: "jest robione / ktoś mi to robi" },
+  caus: { ru: "させる", name: "strona sprawcza", mean: "kazać / pozwolić komuś" }
+};
+const CFORMS = [
+  { id: "masu", label: "～ます", l: "n5a-4", vars: ["masu", "masen", "mashita", "masendeshita"] },
+  { id: "te", label: "～て", l: "n5a-6", vars: ["te"] },
+  { id: "nai", label: "～ない", l: "n4-1", vars: ["nai"] },
+  { id: "ta", label: "～た, ～なかった", l: "n4-2", vars: ["ta", "nakatta"] },
+  { id: "tai", label: "～たい", l: "n4-4", vars: ["tai"] },
+  { id: "pot", label: "mogę (potencjalna)", l: "n4-5", vars: ["pot"] },
+  { id: "vol", label: "zróbmy (～よう)", l: "n4-7", vars: ["vol"] },
+  { id: "ba", label: "～ば", l: "d3-1", vars: ["ba"] },
+  { id: "pass", label: "strona bierna", l: "d3-4", vars: ["pass"] },
+  { id: "caus", label: "strona sprawcza", l: "d3-5", vars: ["caus"] }
+];
+const VAR_FORM = {}; CFORMS.forEach(f => f.vars.forEach(v => { VAR_FORM[v] = f.id; }));
+const SURU_E = { dict: "する", masu: "します", masen: "しません", mashita: "しました", masendeshita: "しませんでした", te: "して", nai: "しない", ta: "した", nakatta: "しなかった", tai: "したい", pot: "できる", vol: "しよう", ba: "すれば", pass: "される", caus: "させる" };
+const KURU_E = { dict: ["く", "る"], masu: ["き", "ます"], masen: ["き", "ません"], mashita: ["き", "ました"], masendeshita: ["き", "ませんでした"], te: ["き", "て"], nai: ["こ", "ない"], ta: ["き", "た"], nakatta: ["こ", "なかった"], tai: ["き", "たい"], pot: ["こ", "られる"], vol: ["こ", "よう"], ba: ["く", "れば"], pass: ["こ", "られる"], caus: ["こ", "させる"] };
+let _VB = null;
+function VB() {
+  if (_VB) return _VB;
+  const list = (window.VERBS || []).map(x => ({ w: x[0], r: x[1], m: x[2], g: x[3], l: x[4], no: (x[5] || "").split(",").filter(Boolean), note: x[6] || "" }))
+    .filter(v => LESSONS[v.l] && /^[ぁ-ゖー]+$/.test(v.r));
+  list.sort((a, b) => lOrd(a.l) - lOrd(b.l));
+  return _VB = list;
+}
+const isKuru = v => v.g === "irr" && /くる$/.test(v.r) && !/する$/.test(v.r);
+const isIku = v => v.g === "u" && /いく$/.test(v.r) && (/行く$/.test(v.w) || /いく$/.test(v.w));
+// odmiana: {k: czytanie kaną, w: zapis z furiganą, alt: inne poprawne czytania}
+function conj(v, f) {
+  if (v.g === "irr") {
+    const preR = v.r.slice(0, -2);
+    if (isKuru(v)) {
+      const e = KURU_E[f], kan = /来る$/.test(v.w), preW = v.w.slice(0, -2);
+      const pre = rubyWR(preW, preR);
+      const res = { k: preR + e[0] + e[1], w: pre + (kan ? `{来|${e[0]}}` : e[0]) + e[1], alt: [] };
+      if (f === "pot") res.alt.push(preR + "これる");
+      return res;
+    }
+    const preW = v.w.slice(0, -2), e = SURU_E[f];
+    return { k: preR + e, w: rubyWR(preW, preR) + e, alt: [] };
+  }
+  if (v.g === "ru") {
+    const sR = v.r.slice(0, -1), sW = v.w.slice(0, -1), e = CV[f].ru;
+    const res = { k: sR + e, w: rubyWR(sW + e, sR + e), alt: [] };
+    if (f === "pot") res.alt.push(sR + "れる");
+    return res;
+  }
+  const last = v.r.slice(-1), bR = v.r.slice(0, -1), bW = v.w.slice(0, -1);
+  const honor = HONOR_ARU.test(v.r), I = honor ? "い" : CJ.I[last];
+  let e;
+  if (v.r === "ある" && (f === "nai" || f === "nakatta")) { const k = f === "nai" ? "ない" : "なかった"; return { k, w: k, alt: [] }; }
+  switch (f) {
+    case "dict": e = last; break;
+    case "masu": e = I + "ます"; break;
+    case "masen": e = I + "ません"; break;
+    case "mashita": e = I + "ました"; break;
+    case "masendeshita": e = I + "ませんでした"; break;
+    case "te": e = isIku(v) ? "って" : CJ.TE[last]; break;
+    case "ta": e = (isIku(v) ? "って" : CJ.TE[last]).replace(/て$/, "た").replace(/で$/, "だ"); break;
+    case "nai": e = CJ.A[last] + "ない"; break;
+    case "nakatta": e = CJ.A[last] + "なかった"; break;
+    case "tai": e = CJ.I[last] + "たい"; break; // おっしゃりたい, なさりたい (い tylko przed ます)
+    case "pot": e = CJ.E[last] + "る"; break;
+    case "vol": e = CJ.O[last] + "う"; break;
+    case "ba": e = CJ.E[last] + "ば"; break;
+    case "pass": e = CJ.A[last] + "れる"; break;
+    case "caus": e = CJ.A[last] + "せる"; break;
+  }
+  const res = { k: bR + e, w: rubyWR(bW + e, bR + e), alt: [] };
+  if (/いらっしゃる$/.test(v.r) && (f === "te" || f === "ta")) res.alt.push(v.r.replace(/っしゃる$/, "") + (f === "te" ? "して" : "した")); // いらして, いらした
+  return res;
+}
+const GNAME = { u: "grupa U", ru: "grupa RU", irr: "czasownik nieregularny" };
+const PLAIN_OK = ["dict", "masu", "masen", "mashita", "masendeshita", "te"];
+const cfOk = (v, f) => !v.no.includes(VAR_FORM[f]) && !(v.no.includes("plain") && !PLAIN_OK.includes(f)) && !(v.r === "ある" && ["pot", "pass", "caus", "vol", "tai"].includes(f));
+// zasada tworzenia formy – do wyjaśnień
+function conjRule(v, f) {
+  const c = conj(v, f), last = v.r.slice(-1), M = x => conj(v, x).w;
+  const masuE = { masu: "ます", masen: "ません", mashita: "ました", masendeshita: "ませんでした" }[f];
+  if (v.g === "irr") {
+    const ku = isKuru(v), base = ku ? "くる" : "する";
+    const ex = { masu: "き", te: "き", ta: "き", tai: "き", nai: "こ", nakatta: "こ", pot: "こ", vol: "こ", pass: "こ", caus: "こ", ba: "く" };
+    if (f === "pot" && !ku) return `Formą potencjalną od する jest osobny czasownik できる${v.r !== "する" ? ` (${rubyWR(v.w.slice(0, -2), v.r.slice(0, -2))}する → ${c.w})` : ""}.`;
+    if (ku) return f === "ba" ? "くる jest nieregularne, ale w formie ～ば pierwsza sylaba zostaje く: くる → くれば." : f === "dict" ? "くる – forma słownikowa." : `くる jest nieregularne: pierwsza sylaba く zmienia się w ${ex[VAR_FORM[f] === "masu" ? "masu" : f] || "き"} – ${base} → ${KURU_E[f].join("")}${f === "pot" ? " (potocznie これる)" : ""}.`;
+    return `する jest nieregularne: ${base} → ${SURU_E[f]}.`;
+  }
+  if (masuE) {
+    if (v.g === "ru") return `Grupa RU: odcinasz る i dodajesz ${masuE}.`;
+    if (HONOR_ARU.test(v.r)) return `Grzecznościowe czasowniki na -aru zamieniają る na い (nie ✗り) i dodają ${masuE}.`;
+    return `Grupa U: ostatnie „u” zamieniasz na „i” (${last} → ${CJ.I[last]}) i dodajesz ${masuE}.`;
+  }
+  switch (f) {
+    case "te": return v.g === "ru" ? "Grupa RU: る → て." : isIku(v) ? "行く to wyjątek: いって (nie ✗いいて)." : `Grupa U, końcówka ${last}: ${TE_RULE[last]}.`;
+    case "ta": return `Formę た tworzysz jak formę て, tylko て → た (で → だ): ${M("te")} → ${c.w}.`;
+    case "nai": return v.r === "ある" ? "ある to wyjątek: przeczenie to po prostu ない." : v.g === "ru" ? "Grupa RU: る → ない." : last === "う" ? "Grupa U: „u” → „a” + ない, ale う zmienia się w わ (nie ✗あ)." : `Grupa U: ostatnie „u” → „a” (${last} → ${CJ.A[last]}) + ない.`;
+    case "nakatta": return `Przeczenie w przeszłości: weź formę ない i zamień ない → なかった (${M("nai")} → ${c.w}).`;
+    case "tai": return HONOR_ARU.test(v.r) ? `Przed たい jest ～り: ${c.w} (forma z い, jak w ${M("masu")}, występuje tylko przed ます). Odmienia się jak przymiotnik: ～たくない = nie chcę.` : `Forma ます bez ます + たい: ${M("masu")} → ${c.w}. Odmienia się jak przymiotnik: ～たくない = nie chcę.`;
+    case "pot": return v.g === "ru" ? `Grupa RU: る → られる (potocznie często ～れる: ${c.alt[0]}).` : `Grupa U: ostatnie „u” → „e” + る (${last} → ${CJ.E[last]}る). Powstaje czasownik z grupy RU.`;
+    case "vol": return v.g === "ru" ? "Grupa RU: る → よう." : `Grupa U: ostatnie „u” → „o” + う (${last} → ${CJ.O[last]}う), czyli długie „o”.`;
+    case "ba": return v.g === "ru" ? "Grupa RU: る → れば." : `Grupa U: ostatnie „u” → „e” + ば (${last} → ${CJ.E[last]}ば).`;
+    case "pass": return v.g === "ru" ? "Grupa RU: る → られる (tak samo jak forma potencjalna – znaczenie widać ze zdania)." : last === "う" ? "Grupa U: う → わ + れる." : `Grupa U: ostatnie „u” → „a” + れる (${last} → ${CJ.A[last]}れる).`;
+    case "caus": return v.g === "ru" ? "Grupa RU: る → させる." : last === "う" ? "Grupa U: う → わ + せる." : `Grupa U: ostatnie „u” → „a” + せる (${last} → ${CJ.A[last]}せる).`;
+  }
+  return "";
+}
+function conjEx(v, f) {
+  const c = conj(v, f);
+  return `${rubyWR(v.w, v.r)} (${toRomaji(v.r)}) – „${v.m}”, ${GNAME[v.g]}. ${conjRule(v, f)} Wynik: ${c.w} (${toRomaji(c.k)}).${v.note ? " " + v.note : ""}`;
+}
+// typowe błędne formy (z wyjaśnieniem) + inne formy tego samego czasownika
+const C_NEAR = { masu: ["masen", "mashita", "te", "dict"], masen: ["masu", "masendeshita", "nai"], mashita: ["masu", "ta", "masendeshita"], masendeshita: ["masen", "mashita", "nakatta"], te: ["ta", "masu", "nai"], nai: ["masen", "nakatta", "dict"], ta: ["te", "nakatta", "mashita"], nakatta: ["nai", "ta", "masendeshita"], tai: ["masu", "te", "vol"], pot: ["pass", "caus", "ba", "dict"], vol: ["masu", "pot", "ba"], ba: ["pot", "vol", "ta"], pass: ["pot", "caus", "dict"], caus: ["pass", "pot", "dict"] };
+function conjWrong(v, f) {
+  const c = conj(v, f), good = new Set([c.k, ...c.alt]), out = [];
+  const real = {}; Object.keys(CV).forEach(f2 => { if (f2 !== f && cfOk(v, f2)) { const x = conj(v, f2); if (!real[x.k]) real[x.k] = f2; } });
+  const add = (k, w, why) => {
+    if (!k || good.has(k) || out.some(o => o.k === k)) return;
+    if (real[k]) why = `${w} to ${CV[real[k]].name} („${CV[real[k]].mean}”), a tu potrzebna jest ${CV[f].name}.`;
+    out.push({ k, w, why });
+  };
+  const dictM = rubyWR(v.w, v.r), last = v.r.slice(-1), bR = v.r.slice(0, -1), bW = v.w.slice(0, -1), mk = e => ({ k: bR + e, w: rubyWR(bW + e, bR + e) });
+  if (v.g === "u" && last === "る" && !HONOR_ARU.test(v.r)) { const x = conj(Object.assign({}, v, { g: "ru" }), f); add(x.k, x.w, `Tak odmieniałby się czasownik z grupy RU. ${dictM} wygląda podobnie, ale należy do grupy U.`); }
+  if (v.g === "ru") { const x = conj(Object.assign({}, v, { g: "u" }), f); add(x.k, x.w, `Tak odmienia się grupa U. ${dictM} kończy się na -iru/-eru i należy do grupy RU.`); }
+  if (v.g === "u" && (f === "te" || f === "ta")) {
+    const ta = f === "ta", conv = s => ta ? s.replace(/て$/, "た").replace(/で$/, "だ") : s;
+    const ruleTa = isIku(v) ? `行く${v.r !== "いく" ? ` (także w ${dictM})` : ""} to wyjątek: ${ta ? "いった, nie ✗いいた" : "いって, nie ✗いいて"}` : `${TE_RULE[last].split(" → ")[0]} → ${conv(CJ.TE[last])}`;
+    const stem = HONOR_ARU.test(v.r) ? "い" : CJ.I[last];
+    const s = mk(stem + (ta ? "た" : "て")); add(s.k, s.w, `Częsty błąd: formy ${ta ? "た" : "て"} nie robi się od formy ます (${conj(v, "masu").w} → ✗${s.w}). ${ruleTa}.`);
+    if (isIku(v)) { const x = mk(conv("いて")); add(x.k, x.w, `行く to wyjątek: ${ta ? "いった" : "いって"}, choć inne czasowniki na く mają ${ta ? "いた" : "いて"}.`); }
+    for (const alt of shuffle(Object.keys(TE_FOR))) { if (alt === CJ.TE[last]) continue; const x = mk(conv(alt)); add(x.k, x.w, `Końcówka ${conv(alt)} jest dla czasowników na ${TE_FOR[alt]}. ${dictM} kończy się na ${last}: ${ruleTa}.`); }
+  }
+  if (v.g === "u" && last === "う" && ["nai", "nakatta", "pass", "caus"].includes(f)) { const x = mk("あ" + c.k.slice(v.r.length)); add(x.k, x.w, "Czasowniki na う zamieniają je na わ, a nie na あ (かう → かわない)."); }
+  if (v.r === "ある" && f === "nai") add("あらない", "あらない", "ある ma nieregularne przeczenie: samo ない.");
+  if (v.g === "irr") {
+    const preR = v.r.slice(0, -2), preW = rubyWR(v.w.slice(0, -2), preR), kan = /来る$/.test(v.w);
+    const K = (a, b) => ({ k: preR + a + b, w: preW + (kan ? `{来|${a}}` : a) + b });
+    if (isKuru(v)) {
+      const bad = { masu: [["く", "ます"], ["こ", "ます"]], te: [["く", "て"], ["こ", "て"]], ta: [["く", "た"], ["こ", "た"]], nai: [["き", "ない"], ["く", "ない"]], nakatta: [["き", "なかった"], ["く", "なかった"]], tai: [["く", "たい"]], vol: [["き", "よう"], ["く", "よう"]], ba: [["こ", "れば"], ["き", "れば"]], pot: [["き", "られる"]], pass: [["き", "られる"]], caus: [["き", "させる"]] }[VAR_FORM[f] === "masu" ? "masu" : f] || [];
+      bad.forEach(([a, b]) => { const x = K(a, f.startsWith("mas") ? KURU_E[f][1] : b); add(x.k, x.w, `くる jest nieregularne: w tej formie zaczyna się od ${KURU_E[f][0]} (${KURU_E[f].join("")}).`); });
+    } else {
+      const bad = { masu: ["すます"], te: ["すて", "さて"], ta: ["すた"], nai: ["すない", "さない"], nakatta: ["すなかった"], tai: ["すたい"], pot: ["される", "しれる"], vol: ["すよう"], ba: ["しれば"], pass: ["しられる"], caus: ["しさせる"] }[VAR_FORM[f] === "masu" ? "masu" : f] || [];
+      bad.forEach(b => { const e = f.startsWith("mas") ? b.replace(/ます$/, CV[f].ru) : b; add(preR + e, preW + e, `する jest nieregularne: poprawnie ${SURU_E[f]}.`); });
+    }
+  }
+  for (const f2 of C_NEAR[f] || []) { if (!cfOk(v, f2)) continue; const x = conj(v, f2); add(x.k, x.w, `${x.w} to ${CV[f2].name} („${CV[f2].mean}”), a tu potrzebna jest ${CV[f].name}.`); }
+  return out;
+}
+// zadania do treningu
+function genConj(verbs, forms, n) {
+  const vars = forms.flatMap(id => (CFORMS.find(f => f.id === id) || { vars: [] }).vars);
+  const items = [];
+  let vq = shuffle(verbs), guard = 0;
+  while (items.length < n && guard++ < n * 20) {
+    if (!vq.length) vq = shuffle(verbs);
+    const v = vq.pop(), okv = vars.filter(f => cfOk(v, f)); if (!okv.length) continue;
+    const f = okv[Math.floor(Math.random() * okv.length)], c = conj(v, f), k = items.length % 5;
+    const dictM = rubyWR(v.w, v.r), sub = CV[f].name, base = { skill: "Odmiana", sub, ex: conjEx(v, f), say: c.k };
+    const A = /[ァ-ヺ]/.test(plain(c.w)) ? [plain(c.w), ...c.alt] : [c.k, plain(c.w), ...c.alt]; // カンニングします, nie かんにんぐします
+    const head = `<span style="font-size:30px">${dictM}</span> <span class="small muted">${esc(toRomaji(v.r))} · „${esc(v.m)}”</span><br>→ <b>${esc(CV[f].name)}</b> <span class="small muted">(${esc(CV[f].mean)})</span>`;
+    if (k === 2 || k === 4) {
+      const wr = conjWrong(v, f).slice(0, 3); if (wr.length < 2) { items.push(Object.assign({ t: "type", label: "Odmień czasownik", q: head, a: A, sayShow: c.w }, base)); continue; }
+      const opts = shuffle([{ k: c.k, w: c.w, why: "" }, ...wr]);
+      items.push(Object.assign({ t: "mc", label: "Która forma jest poprawna?", q: head, opts: opts.map(o => o.w), a: opts.findIndex(o => o.k === c.k), why: opts.map(o => o.why), info: opts.map(o => ({ r: `„${toPolish(o.k)}”` })) }, base));
+    } else if (k === 3) {
+      // rozpoznawanie: jaka to forma?
+      const others = shuffle(Object.keys(CV).filter(f2 => f2 !== f && f2 !== "dict" && cfOk(v, f2) && conj(v, f2).k !== c.k && !c.alt.includes(conj(v, f2).k)));
+      const near = (C_NEAR[f] || []).filter(x => others.includes(x)), pickF = [...new Set([...near, ...others])].slice(0, 3);
+      if (pickF.length < 3 || (v.g !== "u" && f === "pot") || (v.g !== "u" && f === "pass")) { items.push(Object.assign({ t: "type", label: "Odmień czasownik", q: head, a: A, sayShow: c.w }, base)); continue; }
+      const fs = shuffle([f, ...pickF]);
+      items.push(Object.assign({ t: "mc", label: "Jaka to forma?", q: `<span style="font-size:30px">${c.w}</span> <span class="small muted">od ${dictM} „${esc(v.m)}”</span>`, speakQ: c.k, opts: fs.map(x => `${CV[x].name} – ${CV[x].mean}`), a: fs.indexOf(f),
+        why: fs.map(x => x === f ? "" : `${CV[x].name} wyglądałaby tak: ${conj(v, x).w}.`) }, base));
+    } else if (k === 1 && TTS.ok) {
+      const seenK = new Set([c.k, ...c.alt]);
+      const near = (C_NEAR[f] || []).filter(x => { if (!cfOk(v, x)) return false; const k2 = conj(v, x).k; if (seenK.has(k2)) return false; seenK.add(k2); return true; });
+      const fs = shuffle([f, ...near].slice(0, 4));
+      if (fs.length < 3) { items.push(Object.assign({ t: "type", label: "Odmień czasownik", q: head, a: A, sayShow: c.w }, base)); continue; }
+      items.push(Object.assign({ t: "listen", label: "Którą formę słyszysz?", jp: c.k, raw: true, opts: fs.map(x => conj(v, x).w), a: fs.indexOf(f), info: fs.map(x => ({ r: `„${toPolish(conj(v, x).k)}”`, m: CV[x].name })),
+        why: fs.map(x => x === f ? "" : `To ${CV[x].name} („${CV[x].mean}”).`) }, base));
+    } else items.push(Object.assign({ t: "type", label: "Odmień czasownik", q: head, a: A, sayShow: c.w }, base));
+  }
+  return items;
+}
+
+/* ---------- odmiana: widok ---------- */
+function conjPool(mode) {
+  const all = VB();
+  if (mode === "all") return all;
+  if (LV.some(L => L.id === mode)) return all.filter(v => LESSON_LEVEL[v.l].id === mode);
+  const done = all.filter(v => lDone(v.l));
+  return done.length >= 8 ? done : all.slice(0, 20);
+}
+function viewConj(q) {
+  const all = VB();
+  const cs = Object.assign({ pool: "done", n: 10 }, S.settings.conj || {});
+  if (!cs.forms || !cs.forms.length) { const un = CFORMS.filter(f => lDone(f.l)).map(f => f.id); cs.forms = un.length ? un.slice(-3) : ["masu"]; }
+  const save = () => { S.settings.conj = cs; saveState(); };
+  const pool = conjPool(cs.pool), firstOnly = cs.pool === "done" && all.filter(v => lDone(v.l)).length < 8;
+  const st = S.stat || {};
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Odmiana czasowników</div><h1>Odmiana czasowników 🔄</h1>
+    <p class="muted">Wybierz formy, a aplikacja wylosuje czasowniki. Po każdej odpowiedzi zobaczysz zasadę dla grupy czasownika i czytanie. Zadań nie zabraknie – każdy trening jest inny.</p>
+    <details class="card"><summary><b>📋 Ściąga: trzy grupy czasowników</b></summary>
+      <p><b>Grupa RU</b> – czasowniki zakończone na <i>-iru</i> lub <i>-eru</i> (たべる, みる): odcinasz る i dodajesz końcówkę.<br><b>Grupa U</b> – cała reszta (のむ, かく, かう): zmienia się samogłoska ostatniej sylaby.<br><b>Nieregularne</b>: する i くる (oraz złożenia: べんきょうする, もってくる).<br><b>Pułapki:</b> かえる (wracać), はいる (wchodzić), はしる (biegać), しる (wiedzieć), きる (ciąć), いる (potrzebować) wyglądają jak RU, a są z grupy U.</p>
+      <div class="tblw"><table class="voc ctab"><tr><th>forma</th><th>RU: たべる</th><th>U: のむ</th><th>U: かう</th><th>する</th><th>くる</th></tr>
+      ${Object.keys(CV).filter(f => f !== "dict").map(f => `<tr><td>${esc(CV[f].name)}</td>${[["食べる", "たべる", "ru"], ["飲む", "のむ", "u"], ["買う", "かう", "u"], ["する", "する", "irr"], ["来る", "くる", "irr"]].map(([w, r, g]) => `<td class="jp">${ruby(conj({ w, r, g, m: "", l: "", no: [], note: "" }, f).w)}</td>`).join("")}</tr>`).join("")}</table></div></details>
+    <div class="card"><b>1. Formy do ćwiczenia</b><div class="chips" id="cforms">${chips(CFORMS.map(f => { const p = pctOf(st["Odmiana|" + CV[f.vars[0]].name]); return { id: f.id, html: `${esc(f.label)}${lDone(f.l) ? "" : ` <span class="small muted">· ${esc(LESSON_LEVEL[f.l].short)} lekcja ${LESSONS[f.l]._n}</span>`}${p !== null ? ` <span class="small">${p}%</span>` : ""}` }; }), cs.forms, "f")}</div>
+      <p class="small muted">Przy formach z lekcji, których jeszcze nie masz za sobą, widać numer lekcji. Możesz je wybrać, ale lepiej najpierw przerobić daną lekcję.</p>
+      <b>2. Czasowniki</b><div class="row" style="margin:6px 0"><select id="cpool"><option value="done">z lekcji, które masz za sobą</option><option value="all">wszystkie z kursu (${all.length})</option>${LV.filter(L => all.some(v => LESSON_LEVEL[v.l].id === L.id)).map(L => `<option value="${L.id}">tylko ${esc(L.short)}</option>`).join("")}</select>
+        <select id="cn">${[10, 20, 30].map(n => `<option value="${n}">${n} zadań</option>`).join("")}</select></div>
+      <p class="small muted">${firstOnly ? "Na początek: 20 czasowników z pierwszych lekcji (gdy przerobisz więcej lekcji, dojdą kolejne)." : `W puli: ${pool.length} ${plN(pool.length, "czasownik", "czasowniki", "czasowników")}.`}</p>
+      <button class="btn pri go">▶ Ćwicz odmianę</button></div>
+    <div class="card"><b>🔎 Tabela odmiany</b><p class="small muted">Wpisz czasownik w romaji, kaną albo po polsku, żeby zobaczyć wszystkie jego formy.</p>
+      <input class="tinput" id="csearch" placeholder="np. taberu, のむ, pisać" autocomplete="off" autocapitalize="off" spellcheck="false"><div id="cres"></div></div>`;
+  $("#cpool").value = cs.pool; $("#cn").value = String(cs.n);
+  $$("#cforms .chip").forEach(b => b.onclick = () => { const id = b.dataset.f; cs.forms = cs.forms.includes(id) ? cs.forms.filter(x => x !== id) : [...cs.forms, id]; if (!cs.forms.length) cs.forms = [id]; save(); b.classList.toggle("on", cs.forms.includes(id)); });
+  $("#cpool").onchange = e => { cs.pool = e.target.value; save(); viewConj(); };
+  $("#cn").onchange = e => { cs.n = +e.target.value; save(); };
+  const make = () => genConj(conjPool(cs.pool), cs.forms, cs.n);
+  $(".go").onclick = () => runQuiz(app(), make(), { mode: "practice", back: "#/odmiana", regen: make, src: "odmiana", color: "#7b5ea7", doneMsg: "Pomyłki trafiają do zeszytu błędów, a wynik każdej formy widać w „Moich słabych stronach”." });
+  const inp = $("#csearch"), res = $("#cres");
+  const show = () => {
+    const raw = inp.value.trim(); if (!raw) { res.innerHTML = ""; return; }
+    const kana = romajiToKana(raw.toLowerCase(), true), lo = raw.toLowerCase();
+    const hits = all.filter(v => v.r.startsWith(kana) || v.w.startsWith(raw) || v.m.toLowerCase().includes(lo)).slice(0, 6);
+    res.innerHTML = hits.length ? hits.map(v => `<div class="card" style="margin-top:10px"><b class="jp" style="font-size:22px">${ruby(rubyWR(v.w, v.r))}</b> ${sayBtn(v.r, { raw: true })} <span class="muted">${esc(toRomaji(v.r))} · „${esc(v.m)}” · ${GNAME[v.g]} · ${esc(lName(v.l))}</span>${v.note ? `<div class="small">💡 ${ruby(esc(v.note))}</div>` : ""}
+      <div class="tblw"><table class="voc">${Object.keys(CV).filter(f => cfOk(v, f)).map(f => { const c = conj(v, f); return `<tr><td class="small">${esc(CV[f].name)}</td><td class="jp">${ruby(c.w)}${c.alt.length ? ` <span class="small muted">(też ${c.alt.join(", ")})</span>` : ""}</td><td class="small muted">${esc(toRomaji(c.k))}</td><td>${sayBtn(c.k, { raw: true })}</td></tr>`; }).join("")}</table></div></div>`).join("") : `<p class="small muted">Nie ma takiego czasownika w kursie.</p>`;
+  };
+  inp.oninput = show;
+  if (q) { inp.value = q; show(); }
+}
+
+/* ---------- liczby: czytania ---------- */
+const NU = {
+  d: ["", "いち", "に", "さん", "よん", "ご", "ろく", "なな", "はち", "きゅう"],
+  h: ["", "ひゃく", "にひゃく", "さんびゃく", "よんひゃく", "ごひゃく", "ろっぴゃく", "ななひゃく", "はっぴゃく", "きゅうひゃく"],
+  s: ["", "せん", "にせん", "さんぜん", "よんせん", "ごせん", "ろくせん", "ななせん", "はっせん", "きゅうせん"]
+};
+const cross = (a, b) => a.flatMap(x => b.map(y => x + y));
+// 1–9999: wszystkie poprawne czytania (pierwsze = najczęstsze)
+function num4(x) {
+  const s = Math.floor(x / 1000), h = Math.floor(x / 100) % 10, t = Math.floor(x / 10) % 10, u = x % 10;
+  const tens = t ? (t === 1 ? ["じゅう"] : t === 7 ? ["ななじゅう", "しちじゅう"] : [NU.d[t] + "じゅう"]) : [""];
+  const units = u === 7 ? ["なな", "しち"] : [NU.d[u]];
+  return cross(cross([NU.s[s] + NU.h[h]], tens), units);
+}
+// 0–9 999 999
+function numR(n) {
+  if (n === 0) return ["ゼロ", "れい"];
+  const m = Math.floor(n / 10000), rest = n % 10000;
+  const pre = m ? num4(m).map(x => (m >= 1000 && m < 2000 ? x.replace(/^せん/, "いっせん") : x) + "まん") : [""]; // 1000万 = いっせんまん
+  return cross(pre, rest ? num4(rest) : [""]);
+}
+// sama liczba: też podręcznikowe し/く przy 4, 9, 14, 19 (ale nie w cenach, godzinach itd.)
+const NUM_EXTRA = { 4: ["し"], 9: ["く"], 14: ["じゅうし"], 19: ["じゅうく"] };
+const numRead = n => numR(n).concat(NUM_EXTRA[n] || []);
+const yenR = n => numR(n).map(x => (n % 10 === 4 ? x.replace(/よん$/, "よ") : x) + "えん");
+const HOURS = ["", "いちじ", "にじ", "さんじ", "よじ", "ごじ", "ろくじ", "しちじ", "はちじ", "くじ", "じゅうじ", "じゅういちじ", "じゅうにじ"];
+const hourR = h => h === 7 ? ["しちじ", "ななじ"] : [HOURS[h]];
+const MIN_U = [[""], ["いっぷん"], ["にふん"], ["さんぷん"], ["よんぷん", "よんふん"], ["ごふん"], ["ろっぷん"], ["ななふん", "しちふん"], ["はっぷん", "はちふん"], ["きゅうふん"]];
+function minR(m) {
+  const t = Math.floor(m / 10), u = m % 10, tp = t === 0 ? "" : t === 1 ? "" : NU.d[t];
+  if (u === 0) return [tp + "じゅっぷん", tp + "じっぷん"];
+  return MIN_U[u].map(x => (t ? (t === 1 ? "じゅう" : NU.d[t] + "じゅう") : "") + x);
+}
+function timeR(h, m, ampm) {
+  const pre = ampm ? [ampm === "am" ? "ごぜん" : "ごご"] : [""];
+  const mins = m === 0 ? [""] : m === 30 ? ["はん", ...minR(30)] : minR(m);
+  return cross(cross(pre, hourR(h)), mins);
+}
+const MONTHS = ["", "いちがつ", "にがつ", "さんがつ", "しがつ", "ごがつ", "ろくがつ", "しちがつ", "はちがつ", "くがつ", "じゅうがつ", "じゅういちがつ", "じゅうにがつ"];
+const MONTH_PL = ["", "stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "września", "października", "listopada", "grudnia"];
+const MONTH_N = ["", "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec", "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień"];
+const DAY_SPECIAL = { 1: ["ついたち"], 2: ["ふつか"], 3: ["みっか"], 4: ["よっか"], 5: ["いつか"], 6: ["むいか"], 7: ["なのか"], 8: ["ようか"], 9: ["ここのか"], 10: ["とおか"], 14: ["じゅうよっか"], 20: ["はつか"], 24: ["にじゅうよっか"] };
+function dayR(d) {
+  if (DAY_SPECIAL[d]) return DAY_SPECIAL[d];
+  const t = Math.floor(d / 10), u = d % 10, tp = t === 1 ? "じゅう" : NU.d[t] + "じゅう";
+  if (u === 0) return [tp + "にち"];
+  const U = { 1: ["いち"], 2: ["に"], 3: ["さん"], 5: ["ご"], 6: ["ろく"], 7: ["しち", "なな"], 8: ["はち"], 9: ["く", "きゅう"] }[u];
+  return U.map(x => tp + x + "にち");
+}
+const WEEK = [["月曜日", "げつようび", "poniedziałek"], ["火曜日", "かようび", "wtorek"], ["水曜日", "すいようび", "środa"], ["木曜日", "もくようび", "czwartek"], ["金曜日", "きんようび", "piątek"], ["土曜日", "どようび", "sobota"], ["日曜日", "にちようび", "niedziela"]];
+function ageR(n) {
+  if (n === 20) return ["はたち", "にじゅっさい", "にじっさい"];
+  const t = Math.floor(n / 10), u = n % 10, tps = t === 0 ? [""] : t === 1 ? ["じゅう"] : t === 7 ? ["ななじゅう", "しちじゅう"] : [NU.d[t] + "じゅう"];
+  if (u === 0) { const ps = t === 1 ? [""] : t === 7 ? ["なな", "しち"] : [NU.d[t]]; return ps.flatMap(p => [p + "じゅっさい", p + "じっさい"]); }
+  const U = { 1: ["いっさい"], 8: ["はっさい", "はちさい"], 7: ["ななさい", "しちさい"] }[u] || [NU.d[u] + "さい"];
+  return tps.flatMap(tp => U.map(x => tp + x));
+}
+const lat = n => { const s = String(n); return n === 1 ? "rok" : (s.endsWith("2") || s.endsWith("3") || s.endsWith("4")) && !(n % 100 >= 12 && n % 100 <= 14) ? "lata" : "lat"; };
+const CNT = {
+  tsu: { k: "つ", what: "rzeczy ogólnie, do 10 (też gdy nie znasz licznika)", objs: [["🍎", "jabłka"], ["🍙", "onigiri"], ["🎁", "prezenty"]], r: ["ひとつ", "ふたつ", "みっつ", "よっつ", "いつつ", "むっつ", "ななつ", "やっつ", "ここのつ", "とお"], q: "いくつ", tip: "Tu używa się rdzennie japońskich liczebników (innych niż いち, に, さん): ひとつ, ふたつ, みっつ… aż do とお (10)." },
+  nin: { k: "人", what: "osoby", objs: [["🧑", "osoby"], ["👩‍🎓", "studentki i studenci"]], r: ["ひとり", "ふたり", "さんにん", "よにん", "ごにん", "ろくにん", "ななにん|しちにん", "はちにん", "きゅうにん", "じゅうにん"], q: "なんにん", tip: "Dla 1 i 2 osób są osobne słowa: ひとり, ふたり. 4 osoby to よにん (nie ✗よんにん)." },
+  hon: { k: "本", what: "rzeczy długie i cienkie (butelki, długopisy, parasole)", objs: [["✏️", "ołówki"], ["🍾", "butelki"], ["🌂", "parasole"]], r: ["いっぽん", "にほん", "さんぼん", "よんほん", "ごほん", "ろっぽん", "ななほん", "はっぽん|はちほん", "きゅうほん", "じゅっぽん|じっぽん"], q: "なんぼん", tip: "1, 6, 8, 10 → ぽん (いっぽん, ろっぽん, はっぽん, じゅっぽん); 3 → ぼん (さんぼん); reszta ほん." },
+  mai: { k: "枚", what: "rzeczy płaskie (kartki, koszulki, bilety)", objs: [["📄", "kartki"], ["👕", "koszulki"], ["🎫", "bilety"]], r: ["いちまい", "にまい", "さんまい", "よんまい", "ごまい", "ろくまい", "ななまい", "はちまい", "きゅうまい", "じゅうまい"], q: "なんまい", tip: "Bez wyjątków: liczba + まい." },
+  satsu: { k: "冊", what: "książki i zeszyty", objs: [["📚", "książki"], ["📓", "zeszyty"]], r: ["いっさつ", "にさつ", "さんさつ", "よんさつ", "ごさつ", "ろくさつ", "ななさつ", "はっさつ|はちさつ", "きゅうさつ", "じゅっさつ|じっさつ"], q: "なんさつ", tip: "1, 8, 10 → いっさつ, はっさつ, じゅっさつ; reszta regularnie." },
+  dai: { k: "台", what: "maszyny i pojazdy (samochody, rowery, komputery)", objs: [["🚗", "samochody"], ["🚲", "rowery"], ["💻", "komputery"]], r: ["いちだい", "にだい", "さんだい", "よんだい", "ごだい", "ろくだい", "ななだい", "はちだい", "きゅうだい", "じゅうだい"], q: "なんだい", tip: "Bez wyjątków: liczba + だい." },
+  hiki: { k: "匹", what: "małe zwierzęta (koty, psy, ryby)", objs: [["🐈", "koty"], ["🐟", "ryby"], ["🐕", "psy"]], r: ["いっぴき", "にひき", "さんびき", "よんひき", "ごひき", "ろっぴき", "ななひき", "はっぴき|はちひき", "きゅうひき", "じゅっぴき|じっぴき"], q: "なんびき", tip: "Jak 本: 1, 6, 8, 10 → ぴき; 3 → びき; reszta ひき." },
+  ko: { k: "個", what: "małe przedmioty (jajka, jabłka, cukierki)", objs: [["🥚", "jajka"], ["🍬", "cukierki"]], r: ["いっこ", "にこ", "さんこ", "よんこ", "ごこ", "ろっこ", "ななこ", "はっこ|はちこ", "きゅうこ", "じゅっこ|じっこ"], q: "なんこ", tip: "1, 6, 8, 10 → いっこ, ろっこ, はっこ, じゅっこ; reszta regularnie." },
+  hai: { k: "杯", what: "napoje i jedzenie w kubkach, szklankach lub miskach", objs: [["☕", "kawy"], ["🍺", "piwa"], ["🍜", "miski ramenu"]], r: ["いっぱい", "にはい", "さんばい", "よんはい", "ごはい", "ろっぱい", "ななはい", "はっぱい|はちはい", "きゅうはい", "じゅっぱい|じっぱい"], q: "なんばい", tip: "Jak 本: 1, 6, 8, 10 → ぱい; 3 → ばい; reszta はい." }
+};
+const cntR = (c, n) => CNT[c].r[n - 1].split("|");
+const NSECS = [
+  { id: "small", label: "Liczby 0–100", l: "n5a-2" },
+  { id: "big", label: "Duże liczby i 万", l: "n5a-2" },
+  { id: "yen", label: "Ceny ～円", l: "n5a-3" },
+  { id: "time", label: "Godziny i minuty", l: "n5a-2" },
+  { id: "date", label: "Daty i dni tygodnia", l: "n5a-6" },
+  { id: "age", label: "Wiek ～歳", l: "n5a-2" },
+  { id: "cnt", label: "Liczniki (本, 枚, 人…)", l: "n4-6" }
+];
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+const digAns = n => [String(n), fmt(n), fmt(n).replace(/ /g, ",")];
+const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const anyOf = a => a[Math.floor(Math.random() * a.length)];
+function numTips(n) {
+  const t = [], s = String(n);
+  if (/[479]/.test(s)) t.push("4, 7 i 9 czytamy zwykle よん, なな, きゅう");
+  if (n >= 100) {
+    const h = Math.floor(n / 100) % 10, k = Math.floor(n / 1000) % 10;
+    if ([3, 6, 8].includes(h)) t.push(`${h}00 = ${NU.h[h]} (zmienia się dźwięk)`);
+    if (h === 1) t.push("100 to samo ひゃく, bez いち");
+    if ([3, 8].includes(k)) t.push(`${k}000 = ${NU.s[k]}`);
+    if (k === 1) t.push("1000 to samo せん");
+  }
+  if (n >= 10000) t.push("liczymy po 10 000 (まん): " + fmt(n) + " = " + Math.floor(n / 10000) + " × まん" + (n % 10000 ? " + " + fmt(n % 10000) : "") + "; 10 000 to いちまん");
+  return t.length ? " Uwaga: " + t.join("; ") + "." : "";
+}
+// zadania z liczb; każde: {skill: "Liczby", sub: nazwa działu}
+function genNums(secs, n) {
+  const items = [];
+  for (let i = 0; i < n * 3 && items.length < n; i++) {
+    const sec = secs[i % secs.length], k = Math.floor(i / secs.length) % 3, base = { skill: "Liczby", sub: (NSECS.find(s => s.id === sec) || {}).label };
+    const it = numItem(sec, k); if (it) items.push(Object.assign(it, base));
+  }
+  return shuffle(items);
+}
+function numItem(sec, k) {
+  const listen = (r, opts, a, info, why, ex) => ({ t: "listen", label: "Co słyszysz?", jp: r, raw: true, opts, a, info, why, ex });
+  if (sec === "small" || sec === "big" || sec === "yen") {
+    let n;
+    if (sec === "small") n = Math.random() < 0.4 ? anyOf([4, 7, 9, 14, 17, 19, 40, 47, 70, 74, 90, 99, 100]) : rnd(0, 99);
+    else if (sec === "big") n = anyOf([rnd(100, 999), rnd(1000, 9999), anyOf([300, 600, 800, 3000, 8000, 1000, 10000, 100000, 1000000]), rnd(10000, 99999), rnd(1, 9) * 10000 + rnd(1, 9) * 1000]);
+    else n = Math.random() < 0.25 ? anyOf([4, 14, 24, 104, 304, 804]) : anyOf([rnd(1, 99) * 10, rnd(1, 99) * 100, rnd(10, 98) * 50]);
+    const R = sec === "yen" ? yenR(n) : numRead(n), shown = sec === "yen" ? `${fmt(n)} 円` : fmt(n);
+    const ex = `${shown} = ${R[0]} („${toPolish(R[0])}”)${R.length > 1 ? `; poprawnie też: ${R.slice(1).join(", ")}` : ""}.${numTips(n)}${sec === "yen" && n % 10 === 4 ? " Przy cenach 4 przed えん to よ: よえん (nie ✗よんえん)." : ""}`;
+    if (k === 0) return { t: "type", latin: true, label: "Posłuchaj i wpisz cyframi", q: "🔊 Jaką liczbę słyszysz?", speakQ: R[0], a: digAns(n), say: R[0], ex };
+    if (k === 1) return { t: "type", label: "Jak to przeczytać? (wpisz kaną lub romaji)", q: `<span style="font-size:34px">${shown}</span>`, a: R, say: R[0], sayShow: R[0], ex };
+    const near = [...new Set([n + 1, n - 1, n + 10, n - 10, n * 10, n + 100, n % 100 === 0 ? n + 50 : n + 5].filter(x => x >= 0 && x !== n && x <= 9999999))].slice(0, 6);
+    const os = shuffle([n, ...shuffle(near).slice(0, 3)]);
+    return listen(R[0], os.map(x => sec === "yen" ? fmt(x) + " 円" : fmt(x)), os.indexOf(n), os.map(x => ({ r: `„${toPolish((sec === "yen" ? yenR(x) : numR(x))[0])}”` })), os.map(x => x === n ? "" : `${fmt(x)} brzmi: ${(sec === "yen" ? yenR(x) : numR(x))[0]}.`), ex);
+  }
+  if (sec === "time") {
+    const h = Math.random() < 0.4 ? anyOf([4, 7, 9]) : rnd(1, 12), m = anyOf([0, 0, 30, 15, 45, 10, 20, rnd(1, 9), rnd(1, 59), 1, 6, 8, 3, 4]), ap = anyOf(["", "", "am", "pm"]);
+    const R = timeR(h, m, ap), shown = `${ap ? (ap === "am" ? "午前" : "午後") + " " : ""}${h}:${String(m).padStart(2, "0")}`;
+    const tips = []; if ([4, 7, 9].includes(h)) tips.push("godziny 4, 7, 9 to よじ, しちじ, くじ"); if ([1, 3, 4, 6, 8, 0].includes(m % 10) && m) tips.push("minuty: po 1, 3, 4, 6, 8 i 10 mówimy ぷん (いっぷん, さんぷん, よんぷん, ろっぷん, はっぷん, じゅっぷん), po pozostałych liczbach ふん"); if (m === 30) tips.push(`pół godziny (:30) to はん, dodawane do bieżącej godziny: ${h}:30 = ${hourR(h)[0]}はん (dosłownie „${h} i pół”, a nie jak polskie „wpół do”)`);
+    const ex = `${shown} = ${R[0]} („${toPolish(R[0])}”)${R.length > 1 ? `; poprawnie też: ${R.slice(1).join(", ")}` : ""}.${tips.length ? " Uwaga: " + tips.join("; ") + "." : ""}${ap ? " 午前 (ごぜん) = przed południem, 午後 (ごご) = po południu – mówimy je przed godziną." : ""}`;
+    if (k === 0) {
+      const mm = String(m).padStart(2, "0"), hs = [String(h), String(h).padStart(2, "0")];
+      if (ap === "pm" && h < 12) hs.push(String(h + 12)); if (ap === "am" && h === 12) hs.push("0", "00");
+      const a = hs.flatMap(hh => [`${hh}:${mm}`, `${hh}${mm}`, ...(m === 0 ? [hh] : [])]);
+      return { t: "type", latin: true, label: "Posłuchaj i wpisz godzinę", q: "🔊 Która godzina? (np. 7:30)", speakQ: R[0], a, say: R[0], ex };
+    }
+    if (k === 1) return { t: "type", label: "Jak to przeczytać? (wpisz kaną lub romaji)", q: `<span style="font-size:34px">${shown}</span>`, a: R, say: R[0], sayShow: R[0], ex };
+    const wrongH = { 4: ["よんじ", "しじ"], 9: ["きゅうじ"], 7: [] }[h] || [];
+    const wrongM = m ? ({ 1: "いちふん", 3: "さんふん", 6: "ろくふん", 8: "はちぷん", 0: "じゅうふん" }[m % 10]) : null;
+    const opts = [R[0]], why = [""];
+    wrongH.forEach(x => { opts.push(R[0].replace(HOURS[h], x)); why.push(`Godzina ${h} to ${HOURS[h]} – jeden z trzech wyjątków (4 よじ, 7 しちじ, 9 くじ).`); });
+    if (wrongM && m !== 30) { const t = Math.floor(m / 10), tp = t ? (t === 1 ? "じゅう" : NU.d[t] + "じゅう") : ""; const bad = (m % 10 === 0 ? (t === 1 ? "" : NU.d[t]) + "じゅうふん" : tp + wrongM); opts.push(R[0].replace(minR(m)[0], bad)); why.push(`${m} ${plN(m, "minuta", "minuty", "minut")} to ${minR(m)[0]} (po 1, 3, 4, 6, 8 i 10 mówimy ぷん, po pozostałych liczbach ふん).`); }
+    for (const h2 of [h % 12 + 1, (h + 1) % 12 + 1]) { opts.push(R[0].replace(hourR(h)[0], hourR(h2)[0])); why.push(`To godzina ${h2}, nie ${h}.`); }
+    const uniq = [...new Map(opts.map((o, i) => [o, why[i]])).entries()].filter(([o], i) => i === 0 || !R.includes(o)).slice(0, 4);
+    const os = shuffle(uniq);
+    return { t: "mc", label: "Jak to przeczytać?", q: `<span style="font-size:34px">${shown}</span>`, opts: os.map(x => x[0]), a: os.findIndex(x => x[0] === R[0]), why: os.map(x => x[1]), info: os.map(x => ({ r: `„${toPolish(x[0])}”` })), say: R[0], ex };
+  }
+  if (sec === "date") {
+    if (k === 2 && Math.random() < 0.5) {
+      const w = anyOf(WEEK), os = shuffle([w, ...shuffle(WEEK.filter(x => x !== w)).slice(0, 3)]);
+      return { t: "mc", label: "Jaki to dzień tygodnia?", q: `<span style="font-size:30px">${ruby(`{${w[0]}|${w[1]}}`)}</span>`, speakQ: w[1], opts: os.map(x => x[2]), a: os.indexOf(w), why: os.map(x => x === w ? "" : `${x[2]} to ${x[1]} (${x[0]}).`), info: os.map(x => ({ jp: `{${x[0]}|${x[1]}}` })), say: w[1], ex: `${w[0]} (${w[1]}, „${toPolish(w[1])}”) = ${w[2]}. Dni tygodnia: 月 księżyc (pon.), 火 ogień (wt.), 水 woda (śr.), 木 drzewo (czw.), 金 złoto (pt.), 土 ziemia (sob.), 日 słońce (niedz.) + ようび.` };
+    }
+    const mo = Math.random() < 0.4 ? anyOf([4, 7, 9]) : rnd(1, 12), d = Math.random() < 0.6 ? anyOf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 20, 24]) : rnd(1, 28);
+    const R = cross([MONTHS[mo]], dayR(d)), shown = `${mo}月${d}日`, pl = `${d} ${MONTH_PL[mo]}`;
+    const tips = []; if ([4, 7, 9].includes(mo)) tips.push("miesiące 4, 7, 9 to しがつ, しちがつ, くがつ"); if (DAY_SPECIAL[d]) tips.push("dni 1–10, 14, 20 i 24 mają własne czytania (ついたち, ふつか, みっか…, はつか)"); else tips.push("pozostałe dni to liczba + にち");
+    const ex = `${shown} = ${pl} = ${R[0]} („${toPolish(R[0])}”)${R.length > 1 ? `; poprawnie też: ${R.slice(1).join(", ")}` : ""}. Uwaga: ${tips.join("; ")}.`;
+    if (k === 0) {
+      const conf = { 1: 10, 10: 1, 2: 20, 20: 2, 3: 6, 6: 3, 4: 8, 8: 4, 5: 9, 9: 5, 7: 8, 14: 24, 24: 14 }[d] || (d % 28) + 1;
+      const alts = [[mo, conf], [mo % 12 + 1, d], [mo, conf === (d % 27) + 2 ? (d + 13) % 28 + 1 : (d % 27) + 2]].filter(([a, b]) => a !== mo || b !== d);
+      const os = shuffle([[mo, d], ...alts]);
+      return listen(R[0], os.map(([a, b]) => `${b} ${MONTH_PL[a]}`), os.findIndex(([a, b]) => a === mo && b === d), os.map(([a, b]) => ({ r: `„${toPolish(MONTHS[a] + dayR(b)[0])}”` })), os.map(([a, b]) => a === mo && b === d ? "" : `${b} ${MONTH_PL[a]} to ${MONTHS[a]}${dayR(b)[0]}.`), ex);
+    }
+    if (k === 1) return { t: "type", label: "Jak to przeczytać? (wpisz kaną lub romaji)", q: `<span style="font-size:34px">${shown}</span> <span class="small muted">(${pl})</span>`, a: R, say: R[0], sayShow: R[0], ex };
+    const naive = { 1: "いちにち", 2: "ににち", 3: "さんにち", 4: "よんにち", 5: "ごにち", 6: "ろくにち", 7: "ななにち", 8: "はちにち", 9: "きゅうにち", 10: "じゅうにち", 14: "じゅうよんにち", 20: "にじゅうにち", 24: "にじゅうよんにち" }[d];
+    const opts = [[R[0], ""]];
+    if (naive) opts.push([MONTHS[mo] + naive, d === 1 ? "いちにち znaczy „jeden dzień” (czas trwania), a 1. dzień miesiąca to ついたち." : `Dzień ${d} ma własne czytanie: ${dayR(d)[0]}.`]);
+    if (mo === 4 || mo === 9) opts.push([(mo === 4 ? "よんがつ" : "きゅうがつ") + dayR(d)[0], `Miesiąc ${mo} to ${MONTHS[mo]} (wyjątek: 4 しがつ, 7 しちがつ, 9 くがつ).`]);
+    const d2 = d === 4 ? 8 : d === 8 ? 4 : d === 3 ? 6 : d === 6 ? 3 : d === 2 ? 20 : d === 20 ? 2 : (d % 28) + 1; opts.push([MONTHS[mo] + dayR(d2)[0], `${dayR(d2)[0]} to ${d2}. dzień miesiąca.`]);
+    const mo2 = mo % 12 + 1; opts.push([MONTHS[mo2] + dayR(d)[0], `${MONTHS[mo2]} to ${MONTH_N[mo2]} (${mo2}月).`]);
+    const os = shuffle(opts.filter((o, i) => i === 0 || !R.includes(o[0])).slice(0, 4));
+    return { t: "mc", label: "Jak to przeczytać?", q: `<span style="font-size:34px">${shown}</span> <span class="small muted">(${pl})</span>`, opts: os.map(x => x[0]), a: os.findIndex(x => x[0] === R[0]), why: os.map(x => x[1]), info: os.map(x => ({ r: `„${toPolish(x[0])}”` })), say: R[0], ex };
+  }
+  if (sec === "age") {
+    const n = Math.random() < 0.5 ? anyOf([1, 8, 10, 18, 20, 21, 28, 30, 11, 40]) : rnd(2, 89), R = ageR(n);
+    const ex = `${n} ${lat(n)} = ${n}歳 = ${R[0]} („${toPolish(R[0])}”)${R.length > 1 ? `; poprawnie też: ${R.slice(1).join(", ")}` : ""}. Uwaga: 1, 8 i 10 → いっさい, はっさい, じゅっさい; 20 lat to はたち.`;
+    if (k === 0) return { t: "type", latin: true, label: "Posłuchaj i wpisz cyframi", q: "🔊 Ile lat?", speakQ: R[0], a: digAns(n), say: R[0], ex };
+    return { t: "type", label: "Jak to powiesz? (wpisz kaną lub romaji)", q: `<span style="font-size:30px">${n}歳</span> <span class="small muted">(${n} ${lat(n)})</span>`, a: R, say: R[0], sayShow: R[0], ex };
+  }
+  if (sec === "cnt") {
+    const c = anyOf(Object.keys(CNT)), C = CNT[c], o = anyOf(C.objs), n = Math.random() < 0.6 ? anyOf([1, 3, 6, 8, 10, 4]) : rnd(1, 10), R = cntR(c, n);
+    const pic = `<span style="font-size:26px;letter-spacing:2px">${o[0].repeat(n)}</span>`;
+    const ex = `${n}${C.k} (${o[1]}) = ${R[0]} („${toPolish(R[0])}”)${R.length > 1 ? `; poprawnie też: ${R.slice(1).join(", ")}` : ""}. Licznik ${C.k} liczy ${C.what}. ${C.tip} Pytanie „ile?” to ${C.q}.`;
+    if (k === 0 && c !== "tsu") {
+      const others = shuffle(Object.keys(CNT).filter(x => x !== c && x !== "tsu" && !(c === "hai" && x === "hon") && !(c === "hon" && x === "hai"))).slice(0, 3), os = shuffle([c, ...others]);
+      return { t: "mc", label: "Którego licznika użyjesz?", q: `${pic}<br><b>${esc(o[1])}</b> – ile ich jest?`, opts: os.map(x => `～${CNT[x].k} (${CNT[x].what.split(" (")[0]})`), a: os.indexOf(c), why: os.map(x => x === c ? "" : `～${CNT[x].k} liczy ${CNT[x].what}, np. ${cntR(x, 3)[0]}.`), say: R[0], ex: ex + (c === "nin" ? " Ludzi nigdy nie liczy się przez ～つ – zawsze ひとり, ふたり, さんにん…" : c === "hiki" ? "" : " Przy rzeczach (do 10) można też użyć ogólnego ～つ (ひとつ, ふたつ…), ale właściwy licznik brzmi naturalniej.") };
+    }
+    if (k === 1) return { t: "type", label: "Jak to powiesz? (wpisz kaną lub romaji)", q: `${pic}<br><b>${esc(o[1])}</b>: ${n} × ～${C.k}`, a: R, say: R[0], sayShow: R[0], ex };
+    const near = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(x => x !== n)).slice(0, 3), os = shuffle([n, ...near]);
+    return listen(R[0], os.map(x => `${x}${C.k}`), os.indexOf(n), os.map(x => ({ r: `„${toPolish(cntR(c, x)[0])}”` })), os.map(x => x === n ? "" : `${x}${C.k} to ${cntR(c, x)[0]}.`), ex);
+  }
+  return null;
+}
+function viewNums() {
+  const ns = Object.assign({ n: 10 }, S.settings.nums || {});
+  if (!ns.secs || !ns.secs.length) { const un = NSECS.filter(s => lDone(s.l)).map(s => s.id); ns.secs = un.length ? un : ["small"]; }
+  const save = () => { S.settings.nums = ns; saveState(); };
+  const st = S.stat || {};
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Liczby, godziny, daty</div><h1>Liczby, godziny, daty i ceny 🔢</h1>
+    <p class="muted">Losowe liczby do słuchania i czytania, razem z wyjątkami (さんびゃく, よじ, ついたち, いっぽん). Każdy trening jest inny, a po każdej odpowiedzi jest wyjaśnienie.</p>
+    <details class="card"><summary><b>📋 Ściąga: wyjaśnienia i wyjątki</b></summary>
+      <p><b>Liczby:</b> 4 よん, 7 なな, 9 きゅう. 100 ひゃく, 1000 せん (bez いち). <b>300 さんびゃく, 600 ろっぴゃく, 800 はっぴゃく, 3000 さんぜん, 8000 はっせん.</b> 10 000 = いちまん; liczymy po 万: 25 000 = にまんごせん.<br>
+      <b>Ceny:</b> liczba + えん; 4円 = よえん.<br>
+      <b>Godziny:</b> liczba + じ; wyjątki 4 よじ, 7 しちじ, 9 くじ; :30 = はん (7:30 = しちじはん, dosłownie „7 i pół”). Minuty: いっぷん, にふん, さんぷん, よんぷん, ごふん, ろっぷん, ななふん, はっぷん, きゅうふん, じゅっぷん.<br>
+      <b>Daty:</b> miesiąc = liczba + がつ (4 しがつ, 7 しちがつ, 9 くがつ). Dni: ついたち, ふつか, みっか, よっか, いつか, むいか, なのか, ようか, ここのか, とおか, …, 14 じゅうよっか, 20 はつか, 24 にじゅうよっか; reszta liczba + にち.<br>
+      <b>Wiek:</b> liczba + さい; 1 いっさい, 8 はっさい, 10 じゅっさい, 20 lat = はたち.<br>
+      <b>Liczniki:</b> ${Object.values(CNT).map(c => `<b>～${c.k}</b> – ${esc(c.what)}`).join("; ")}.</p></details>
+    <div class="card"><b>Co ćwiczysz?</b><div class="chips" id="nsecs">${chips(NSECS.map(s => { const p = pctOf(st["Liczby|" + s.label]); return { id: s.id, html: `${esc(s.label)}${lDone(s.l) ? "" : ` <span class="small muted">· ${esc(LESSON_LEVEL[s.l].short)} lekcja ${LESSONS[s.l]._n}</span>`}${p !== null ? ` <span class="small">${p}%</span>` : ""}` }; }), ns.secs, "s")}</div>
+      <div class="row" style="margin:8px 0"><select id="nn">${[10, 20, 30].map(n => `<option value="${n}">${n} zadań</option>`).join("")}</select></div>
+      <button class="btn pri go">▶ Ćwicz</button></div>`;
+  $("#nn").value = String(ns.n);
+  $$("#nsecs .chip").forEach(b => b.onclick = () => { const id = b.dataset.s; ns.secs = ns.secs.includes(id) ? ns.secs.filter(x => x !== id) : [...ns.secs, id]; if (!ns.secs.length) ns.secs = [id]; save(); b.classList.toggle("on", ns.secs.includes(id)); });
+  $("#nn").onchange = e => { ns.n = +e.target.value; save(); };
+  const make = () => genNums(ns.secs, ns.n);
+  $(".go").onclick = () => runQuiz(app(), make(), { mode: "practice", back: "#/liczby", regen: make, src: "liczby", color: "#e76f51", doneMsg: "Pomyłki trafiają do zeszytu błędów, a wynik każdego działu widać w „Moich słabych stronach”." });
+}
+
+/* ===================== powtarzanie za lektorem (z nagrywaniem) i scenki we dwoje ===================== */
+// nagrywanie własnego głosu: MediaRecorder (iPhone: audio/mp4, Android/Chrome: webm)
+const REC = {
+  ok: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder),
+  denied: false,
+  mime() { for (const m of ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"]) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) { } } return ""; },
+  session(t) { try { if (navigator.audioSession) navigator.audioSession.type = t; } catch (e) { } },
+  async start() {
+    TTS.stop();
+    this.session("play-and-record");
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    catch (e) { this.session("playback"); throw e; }
+    const mime = this.mime(), chunks = [];
+    let mr;
+    try { mr = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); } catch (e) { stream.getTracks().forEach(t => t.stop()); this.session("playback"); throw e; }
+    mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    const done = new Promise(res => {
+      mr.onstop = () => { stream.getTracks().forEach(t => t.stop()); this.session("playback"); res(chunks.length ? new Blob(chunks, { type: mr.mimeType || mime || "audio/webm" }) : null); };
+    });
+    try { mr.start(); } catch (e) { stream.getTracks().forEach(t => t.stop()); this.session("playback"); throw e; }
+    return { stop() { if (mr.state !== "inactive") mr.stop(); return done; } };
+  }
+};
+// iPhone pozwala odtworzyć dźwięk tylko po dotknięciu – „odblokowujemy” odtwarzacz od razu, a gramy po lektorze
+function unlockAudio(a) {
+  a.muted = true;
+  const p = a.play();
+  const back = () => { a.pause(); a.currentTime = 0; a.muted = false; };
+  if (p && p.then) p.then(back).catch(() => { a.muted = false; }); else back();
+}
+const shLen = s => reading(s).replace(/[ゃゅょャュョ、。！？!?「」　\s…・ー]/g, "").length;
+
+// czytanie całego zdania po polsku: partykuły は/へ/を czytamy „ła”, „e”, „o” i oddzielamy spacją
+function plSentence(s) {
+  const P = "\u0001", E = "\u0002", O = "\u0003", mk = c => c === "は" ? P : E;
+  const src = String(s).replace(/(こんにち|こんばん)は/g, "$1わ").replace(/？/g, "?").replace(/！/g, "!");
+  // reguły tylko poza {kanji|czytanie} – inaczej {母|はは} dałoby „ha ła”
+  const m = src.split(/(\{[^{}|]+\|[^{}|]+\})/).map((x, i) => i % 2 ? x : x
+    .replace(/^([はへ])/, (y, c) => i ? mk(c) : y)                                   // tuż po słowie z kanji: {私|わたし}は
+    .replace(/([ぁ-ゖァ-ヺー])([はへ])(?=$|[^ぁ-ゖ])/g, (y, a, c) => a + mk(c))         // przed kanji, katakaną lub znakiem: これは{本|ほん}
+    .replace(/([てでにとの])は(?=[ぁ-ゖ])(?!ず|らはら)/g, "$1" + P)                     // では, には, のは (ale nie はず)
+    .replace(/(さん|くん|ちゃん|さま|これ|それ|あれ|どれ|ここ|そこ|あそこ|わたし|ぼく|きょう|あした|きのう|いま|みんな)は(?=[ぁ-ゖ])/g, "$1" + P)
+    .replace(/を/g, O)).join("");
+  return reading(m).split(/([\u0001\u0002\u0003])/).map(x => x === P ? " ła " : x === E ? " e " : x === O ? " o " : toPolish(x)).join("").replace(/\s+([,.!?])/g, "$1").replace(/\s+/g, " ").trim();
+}
+/* ---------- 🎙 Powtarzaj za lektorem ---------- */
+function shadowPool(kind, scope) {
+  const lv = LV.filter(L => kind === "words" || L.id !== "kana");
+  const doneL = lv.flatMap(L => L.lessons.filter(l => lDone(l.id)));
+  let ls = scope === "done" ? doneL : (lv.find(L => L.id === scope) || lv[0]).lessons;
+  let fallback = false;
+  if (scope === "done" && !ls.length) { ls = lv[0].lessons.slice(0, 4); fallback = true; }
+  const out = [];
+  ls.forEach(l => {
+    if (kind === "words") (l.vocab || []).forEach(v => { if (HAS_JP.test(v[1])) out.push({ jp: wordMarkup(v[0], v[1]), say: v[1], raw: true, pl: v[2] }); });
+    else {
+      (l.grammar || []).forEach(g => (g.examples || []).forEach(e => out.push({ jp: e[0], pl: e[1] })));
+      if (l.dialog && l.dialog.lines) l.dialog.lines.forEach(d => out.push({ jp: d[1], pl: d[2], g: l.dialog.cast[d[0]] }));
+    }
+  });
+  const seen = new Set();
+  const list = out.filter(x => { const k = plain(x.jp); if (!HAS_JP.test(k) || seen.has(k) || shLen(x.jp) > 34) return false; seen.add(k); return true; });
+  return { list, fallback };
+}
+function viewShadow() {
+  const c = Object.assign({ kind: "sent", scope: "done", n: 8 }, S.settings.shadow || {});
+  const save = () => { S.settings.shadow = c; saveState(); };
+  const lv = LV.filter(L => c.kind === "words" || L.id !== "kana");
+  if (c.scope !== "done" && !lv.some(L => L.id === c.scope)) c.scope = "done";
+  const { list, fallback } = shadowPool(c.kind, c.scope);
+  const opt = (v, t, cur) => `<option value="${v}" ${String(cur) === String(v) ? "selected" : ""}>${t}</option>`;
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Powtarzaj za lektorem</div><h1>Powtarzaj za lektorem 🎙</h1>
+    <p class="muted">Posłuchaj zdania, nagraj się, a potem porównaj: aplikacja odtworzy najpierw lektora, a zaraz po nim Twoje nagranie. Tak najłatwiej usłyszeć różnicę w melodii, długich samogłoskach i pauzach.</p>
+    ${REC.ok ? "" : `<div class="warnbox">Ta przeglądarka nie pozwala nagrywać dźwięku, więc ćwiczysz bez nagrania: lektor czyta, Ty powtarzasz na głos w przerwie, a potem lektor czyta jeszcze raz.</div>`}
+    <div class="card grid fitgrid" style="gap:10px">
+      <label>Co: <select id="sk">${opt("sent", "Zdania z lekcji i scenek", c.kind)}${opt("words", "Pojedyncze słowa", c.kind)}</select></label>
+      <label>Skąd: <select id="ss">${opt("done", "z lekcji, które masz za sobą", c.scope)}${lv.map(L => opt(L.id, "tylko " + esc(L.short), c.scope)).join("")}</select></label>
+      <label>Ile: <select id="sn">${[5, 8, 12].map(n => opt(n, n + (c.kind === "words" ? " słów" : " zdań"), c.n)).join("")}</select></label>
+      <p class="small muted" style="margin:0">${fallback ? "Nie masz jeszcze ukończonych lekcji, więc na start są materiały z pierwszych lekcji." : `W puli: ${list.length}. Krótsze idą na początek.`}</p>
+      <div><button class="btn pri go" ${list.length ? "" : "disabled"}>▶ Zaczynam</button></div>
+    </div>
+    <details class="card"><summary><b>💡 Jak ćwiczyć, żeby to działało</b></summary>
+      <p class="small">1. Najpierw posłuchaj 2–3 razy (🐢 to wolniejsza wersja).<br>2. Naśladuj melodię, a nie tylko dźwięki: japoński jest „równy” – każde uderzenie rytmu trwa tyle samo, a ん, małe っ i przedłużona samogłoska (ー, おう, えい) to osobne uderzenia (とうきょう = と・う・きょ・う).<br>3. Uważaj na długie samogłoski (おう, えい, ー) i małe っ – to krótka pauza przed spółgłoską.<br>4. Porównaj i oceń szczerze. Do trudnych zdań wracaj następnego dnia.</p>
+      ${IOS ? `<p class="small">📱 iPhone zapyta o dostęp do mikrofonu – zezwól. Jeśli nagranie jest ciche, wyłącz tryb cichy i podgłośnij telefon.</p>` : ""}</details>`;
+  $("#sk").onchange = e => { c.kind = e.target.value; save(); viewShadow(); };
+  $("#ss").onchange = e => { c.scope = e.target.value; save(); viewShadow(); };
+  $("#sn").onchange = e => { c.n = +e.target.value; save(); };
+  $(".go").onclick = () => shadowSession(pick(list, c.n).sort((a, b) => shLen(a.jp) - shLen(b.jp)));
+}
+function shadowSession(items) {
+  let i = 0, good = 0, url = "", rec = null, token = 0, offHide = null, empties = 0;
+  const audio = new Audio();
+  const cleanup = () => {
+    token++; TTS.stop();
+    if (offHide) offHide();
+    if (rec) { rec.stop(); rec = null; }
+    audio.pause(); audio.removeAttribute("src"); try { audio.load(); } catch (e) { }
+    if (url) URL.revokeObjectURL(url); url = "";
+  };
+  players.push({ stop: cleanup });
+  const sayIt = (x, o = {}) => TTS.speak(x.raw ? x.say : sayText(x.jp), Object.assign({ gender: x.g || "" }, o));
+  function draw() {
+    if (i >= items.length) {
+      cleanup(); addXP(good * 2 + 3);
+      app().innerHTML = `<div class="card result"><div style="font-size:48px">🎙</div><h2>Gotowe!</h2><p>„Brzmi podobnie”: ${good} z ${items.length}. +${good * 2 + 3} XP</p>
+        <p class="small muted">Wymowa poprawia się po kilku dniach powtarzania tych samych ${items[0].raw ? "słów" : "zdań"} – wróć do nich jutro.</p>
+        <div class="row" style="justify-content:center"><button class="btn pri again">↻ Te same jeszcze raz</button><a class="btn" href="#/powtarzaj">Inne</a><a class="btn" href="#/">Start</a></div></div>`;
+      $(".again").onclick = () => shadowSession(items);
+      return;
+    }
+    const x = items[i], r = x.raw ? x.say : reading(x.jp), what = x.raw ? "słowo" : "zdanie";
+    app().innerHTML = `<div class="quiz"><div class="qhead"><a class="btn sm" href="#/powtarzaj" aria-label="Zakończ">✕</a><div class="prog" style="--c:#2a9d8f"><i style="width:${100 * i / items.length}%"></i></div><span class="small muted">${i + 1}/${items.length}</span></div>
+      <div class="card shcard">
+        <div class="jp shjp">${ruby(x.jp)}</div>
+        <div class="small muted">czytaj „${esc(x.raw ? toPolish(r) : plSentence(x.jp))}”</div>
+        <div class="shpl">${esc(x.pl || "")}</div>
+        <div class="row shctl" style="justify-content:center;margin-top:12px"><button class="btn lis">🔊 Posłuchaj</button><button class="btn slow">🐢 Wolno</button>${recBtn(x.raw ? x.say : x.jp)}</div>
+        <div class="shrec"></div>
+      </div></div>`;
+    const box = $(".shrec");
+    // podczas nagrywania i pauzy na powtórzenie przyciski głosu są wyłączone (głos nagrałby się razem z Tobą)
+    const lockCtl = on => $$(".shctl button").forEach(b => { b.disabled = on; });
+    $(".lis").onclick = () => { token++; audio.pause(); sayIt(x); };
+    $(".slow").onclick = () => { token++; audio.pause(); sayIt(x, { slow: true }); };
+    const est = Math.min(20000, 2500 + shLen(x.jp) * 500);
+    const grade = () => {
+      if ($(".shgrade", box)) return;
+      box.insertAdjacentHTML("beforeend", `<div class="shgrade"><div class="small muted">Jak Ci poszło?</div><div class="row" style="justify-content:center">
+        <button class="btn g0">😕 Jeszcze nie</button><button class="btn g1">🙂 Prawie</button><button class="btn g2" style="border-color:var(--ok)">😀 Brzmi podobnie</button></div></div>`);
+      const fin = v => { noteStat({ skill: "Wymowa", sub: x.raw ? "Słowa" : "Zdania" }, v > 0); if (v === 2) good++; cleanup(); i++; draw(); };
+      $(".g0", box).onclick = () => fin(0); $(".g1", box).onclick = () => fin(1); $(".g2", box).onclick = () => fin(2);
+    };
+    const bar = ms => `<div class="recbar"><i style="animation-duration:${ms}ms"></i></div>`;
+    // bez nagrywania: lektor → pauza na powtórzenie → lektor jeszcze raz
+    const noRec = () => {
+      lockCtl(false);
+      box.innerHTML = `<button class="btn pri rep">🗣 Powtarzam na głos</button><p class="small muted">Lektor przeczyta ${what}, potem masz chwilę na powtórzenie, a na koniec usłyszysz je jeszcze raz.</p>`;
+      $(".rep", box).onclick = async () => {
+        const t = ++token; lockCtl(true);
+        box.innerHTML = `<div class="small muted">🔊 Słuchaj…</div>`;
+        await sayIt(x); if (t !== token) return;
+        box.innerHTML = `<div class="yt">🗣 Twoja kolej – powtórz!</div>${bar(est)}`;
+        await sleep(est); if (t !== token) return;
+        box.innerHTML = `<div class="small muted">🔊 Tak brzmi wzór:</div>`;
+        await sayIt(x); if (t !== token) return;
+        lockCtl(false);
+        box.innerHTML = `<button class="btn rep2">↻ Jeszcze raz</button>`;
+        $(".rep2", box).onclick = () => { noRec(); $(".rep", box).click(); };
+        grade();
+      };
+    };
+    const recUI = () => {
+      lockCtl(false);
+      box.innerHTML = `<button class="btn pri recgo">🎙 Nagraj się</button><p class="small muted">Najpierw posłuchaj, potem naciśnij i powiedz ${what}. Nagranie zatrzyma się samo (albo naciśnij ⏹).</p>
+        <button class="btn sm norec">🗣 Ćwiczę bez nagrywania</button>`;
+      $(".norec", box).onclick = () => { token++; noRec(); };
+      $(".recgo", box).onclick = async ev => {
+        ev.currentTarget.disabled = true;
+        const t = ++token;
+        TTS.stop(); lockCtl(true);
+        let r;
+        try { r = await REC.start(); }
+        catch (e) {
+          if (t !== token) return;
+          const no = e && (e.name === "NotAllowedError" || e.name === "SecurityError");
+          if (no) {
+            REC.denied = true;
+            toast(IOS ? "Brak dostępu do mikrofonu. Możesz go włączyć w Ustawieniach iPhone’a (Safari → Mikrofon). Na razie ćwiczysz bez nagrania." : "Brak dostępu do mikrofonu. Możesz go włączyć w ustawieniach strony (ikona obok adresu → Uprawnienia → Mikrofon). Na razie ćwiczysz bez nagrania.", 7000);
+            noRec();
+          } else { toast("Mikrofon jest teraz zajęty albo niedostępny. Spróbuj jeszcze raz za chwilę.", 5000); recUI(); }
+          return;
+        }
+        if (t !== token) { r.stop(); return; }
+        rec = r;
+        box.innerHTML = `<div class="yt"><span class="recdot"></span> Nagrywam – mów!</div>${bar(est)}<button class="btn sm stop" style="margin-top:8px">⏹ Stop</button>`;
+        let stopped = false;
+        // wyjście z aplikacji w trakcie nagrania: odrzucamy próbę
+        const onHide = () => { if (!document.hidden || stopped) return; stopped = true; offHide(); token++; const r0 = rec; rec = null; if (r0) r0.stop(); recUI(); };
+        document.addEventListener("visibilitychange", onHide);
+        offHide = () => { document.removeEventListener("visibilitychange", onHide); offHide = null; };
+        const stop = async () => {
+          if (stopped || !rec) return; stopped = true;
+          if (offHide) offHide();
+          const r0 = rec; rec = null;
+          const b = await r0.stop();
+          if (t !== token) return;
+          if (!b || b.size < 200) {
+            if (++empties >= 2) { REC.denied = true; toast("Nagranie nie działa na tym urządzeniu – ćwiczysz bez nagrania."); noRec(); }
+            else { toast("Nagranie wyszło puste – spróbuj jeszcze raz."); recUI(); }
+            return;
+          }
+          empties = 0; lockCtl(false);
+          if (url) URL.revokeObjectURL(url);
+          url = URL.createObjectURL(b); audio.src = url;
+          box.innerHTML = `<div class="row" style="justify-content:center"><button class="btn pri cmp">▶ Porównaj</button><button class="btn mine">▶ Tylko ja</button><button class="btn sm again">🎙 Nagraj jeszcze raz</button></div>
+            <p class="small muted">„Porównaj” odtwarza najpierw lektora, a zaraz po nim Twoje nagranie.</p>`;
+          const playMine = () => new Promise(res => { audio.onended = res; audio.onerror = res; audio.currentTime = 0; const p = audio.play(); if (p && p.catch) p.catch(res); });
+          $(".cmp", box).onclick = async () => { const t2 = ++token; audio.pause(); unlockAudio(audio); await sayIt(x); if (t2 !== token) return; await sleep(350); if (t2 === token) await playMine(); };
+          $(".mine", box).onclick = () => { token++; TTS.stop(); playMine(); };
+          $(".again", box).onclick = () => { token++; TTS.stop(); audio.pause(); recUI(); };
+          grade();
+          if (!IOS) $(".cmp", box).click(); // iPhone odtwarza nagranie tylko po dotknięciu
+        };
+        $(".stop", box).onclick = stop;
+        setTimeout(stop, est);
+      };
+    };
+    if (REC.ok && !REC.denied) recUI(); else noRec();
+    if (S.settings.autoplay) sayIt(x);
+  }
+  draw();
+}
+
+/* ---------- 👫 Scenki we dwoje ---------- */
+function duoDialogs() {
+  const out = [];
+  LV.forEach(L => L.lessons.forEach(l => {
+    const d = l.dialog;
+    if (d && d.lines && d.cast && Object.keys(d.cast).length === 2 && d.lines.length >= 4 && d.lines.every(x => x[0] in d.cast)) out.push({ l, L, d });
+  }));
+  return out;
+}
+function viewDuoList() {
+  const all = duoDialogs(), done = all.filter(x => lDone(x.l.id));
+  const item = x => `<a class="card li" href="#/we-dwoje/${x.l.id}"><span class="num">${lDone(x.l.id) ? "✓" : "🎬"}</span>
+    <span class="t"><b>${esc(x.d.title || x.l.title)}</b><span class="small muted">${esc(x.L.short)} · lekcja ${x.l._n}: ${esc(x.l.title)} · ${x.d.lines.length} ${plN(x.d.lines.length, "kwestia", "kwestie", "kwestii")}</span></span></a>`;
+  const byL = LV.map(L => ({ L, xs: all.filter(x => x.L === L && !lDone(x.l.id)) })).filter(g => g.xs.length);
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Scenki we dwoje</div><h1>Scenki we dwoje 👫</h1>
+    <p class="muted">Dwie osoby, jeden telefon. Każda gra jedną postać ze scenki. Aplikacja pokazuje tylko kwestię osoby, która właśnie mówi, więc trzeba słuchać partnera, a nie czytać mu przez ramię. Można czytać z tekstu albo mówić z pamięci (widać wtedy tylko polskie zdanie).</p>
+    ${done.length ? `<h2>Z lekcji, które masz za sobą</h2><div class="lesson-list">${done.map(item).join("")}</div>` : `<div class="hint">Nie masz jeszcze ukończonych lekcji ze scenką – możesz zacząć od dowolnej poniżej (najłatwiejsze są na górze).</div>`}
+    <h2>${done.length ? "Pozostałe" : "Wszystkie scenki"}</h2>
+    ${byL.map((g, k) => `<details class="card" ${k === 0 && !done.length ? "open" : ""}><summary><b>${esc(g.L.title)}</b> <span class="pill">${g.xs.length}</span></summary><div class="lesson-list" style="margin-top:10px">${g.xs.map(item).join("")}</div></details>`).join("")}`;
+}
+function viewDuo(id) {
+  const x = duoDialogs().find(y => y.l.id === id);
+  if (!x) return viewDuoList();
+  const d = x.d, cast = Object.keys(d.cast);
+  const c = Object.assign({ n1: "", n2: "", mode: "read", lektor: "after" }, S.settings.duo || {});
+  let swap = false;
+  const save = () => { S.settings.duo = c; saveState(); };
+  const nm = k => (k === 1 ? c.n1 : c.n2) || `Osoba ${k}`;
+  const roleOf = k => cast[(k - 1 + (swap ? 1 : 0)) % 2];
+  const opt = (v, t, cur) => `<option value="${v}" ${cur === v ? "selected" : ""}>${t}</option>`;
+  const kwN = n => `${n} ${plN(n, "kwestia", "kwestie", "kwestii")}`;
+  const setup = () => {
+    app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/we-dwoje">Scenki we dwoje</a> › ${esc(d.title || x.l.title)}</div>
+      <h1>🎬 ${esc(d.title || x.l.title)}</h1><p class="small muted">${esc(x.L.short)} · lekcja ${x.l._n}: ${esc(x.l.title)} · ${d.lines.length} ${plN(d.lines.length, "kwestia", "kwestie", "kwestii")}</p>
+      <div class="card grid fitgrid" style="gap:12px">
+        <div><b>Kto gra?</b>
+          <div class="duoroles">${[1, 2].map(k => `<div class="duorole"><input class="tinput dn" data-k="${k}" maxlength="20" placeholder="Osoba ${k}" value="${esc(k === 1 ? c.n1 : c.n2)}" autocomplete="off">
+            <div class="small">gra <b class="jp rl${k}">${esc(roleOf(k))}</b> <span class="muted">(${d.cast[roleOf(k)] === "f" ? "kobieta" : "mężczyzna"}, ${kwN(d.lines.filter(l => l[0] === roleOf(k)).length)})</span></div></div>`).join("")}</div>
+          <button class="btn sm sw">⇄ Zamień role</button></div>
+        <label><b>Jak gracie?</b><br><select id="dm">${opt("read", "📖 Czytamy z tekstu (z furiganą i czytaniem)", c.mode)}${opt("mem", "🧠 Mówimy z pamięci (widać tylko polskie zdanie)", c.mode)}</select></label>
+        <label><b>Lektor</b><br><select id="dl">${opt("after", "czyta każdą kwestię po was (do porównania)", c.lektor)}${opt("before", "czyta kwestię przed wami (powtarzacie po nim)", c.lektor)}${opt("off", "wyłączony", c.lektor)}</select></label>
+        <div><button class="btn pri go">▶ Zaczynamy</button></div>
+      </div>
+      <p class="small muted">Wskazówka: połóżcie telefon między sobą albo podawajcie go sobie – aplikacja zawsze pokazuje, czyja jest teraz kolej.</p>`;
+    $$(".dn").forEach(inp => inp.oninput = () => { c[inp.dataset.k === "1" ? "n1" : "n2"] = inp.value.trim(); save(); });
+    $(".sw").onclick = () => { swap = !swap; setup(); };
+    $("#dm").onchange = e => { c.mode = e.target.value; save(); };
+    $("#dl").onchange = e => { c.lektor = e.target.value; save(); };
+    $(".go").onclick = () => play();
+  };
+  function play() {
+    let i = 0, token = 0, hints = 0;
+    const said = { 1: 0, 2: 0 };
+    const stop = () => { token++; TTS.stop(); };
+    players.push({ stop });
+    const who = role => roleOf(1) === role ? 1 : 2;
+    const lineSay = (ln, o = {}) => say(ln[1], Object.assign({ gender: d.cast[ln[0]], rate: S.settings.rate }, o));
+    function turn() {
+      if (i >= d.lines.length) return end();
+      const t = ++token, ln = d.lines[i], k = who(ln[0]), prev = d.lines[i - 1], same = prev && prev[0] === ln[0];
+      const mem = c.mode === "mem";
+      let shown = !mem, hinted = false;
+      const color = k === 1 ? "#457b9d" : "#e76f51";
+      app().innerHTML = `<div class="quiz"><div class="qhead"><a class="btn sm" href="#/we-dwoje/${id}" aria-label="Zakończ">✕</a><div class="prog" style="--c:${color}"><i style="width:${100 * i / d.lines.length}%"></i></div><span class="small muted">${i + 1}/${d.lines.length}</span></div>
+        <div class="card duoturn" style="--c:${color}">
+          <div class="duowho">${avatarSVG(ln[0], d.cast[ln[0]], cast.indexOf(ln[0]))}<div><div class="small muted">${same ? "Dalej mówi" : "Kolej:"}</div><b class="duoname">${esc(nm(k))}</b> <span class="small muted">jako <span class="jp">${esc(ln[0])}</span></span></div></div>
+          ${prev && !same ? `<button class="btn sm prevb"><span>👂 Odsłuchaj poprzednią kwestię (<span class="jp">${esc(prev[0])}</span>)</span></button>` : ""}
+          <div class="duoline"></div>
+          <div class="row duobtns" style="justify-content:center;margin-top:12px"></div>
+        </div></div>`;
+      const box = $(".duoline"), btns = $(".duobtns");
+      const pb = $(".prevb"); if (pb) pb.onclick = () => lineSay(prev);
+      const showLine = () => {
+        box.innerHTML = mem && !shown ? `<div class="small muted">Powiedz po japońsku:</div><div class="duopl">„${esc(ln[2])}”</div>`
+          : `<div class="jp duojp">${ruby(ln[1])}</div><div class="small muted">czytaj „${esc(plSentence(ln[1]))}”</div><div class="duopl small">${esc(ln[2])}</div>`;
+      };
+      const ask = () => {
+        btns.innerHTML = `${mem && !shown ? `<button class="btn hint1">👁 Podpowiedź</button>` : `<button class="btn lis">🔊 Wzór</button>`}<button class="btn pri done">✓ Powiedziane</button>`;
+        const h = $(".hint1", btns); if (h) h.onclick = () => { shown = true; hinted = true; hints++; showLine(); ask(); };
+        const l = $(".lis", btns); if (l) l.onclick = () => lineSay(ln);
+        $(".done", btns).onclick = async () => {
+          said[k]++;
+          const wasShown = shown;
+          if (!shown) { shown = true; showLine(); }
+          btns.innerHTML = "";
+          if (c.lektor === "after") { await lineSay(ln); if (t !== token) return; await sleep(250); }
+          if (t !== token) return;
+          i++;
+          const nx = d.lines[i];
+          // zmiana osoby albo kwestia z pamięci (żeby zobaczyć, czy było dobrze): zatrzymujemy się na „Dalej”
+          if ((nx && who(nx[0]) !== k) || (mem && !wasShown && c.lektor !== "after")) {
+            btns.innerHTML = `<button class="btn pri nxt">${!nx ? "Zakończ scenkę" : who(nx[0]) !== k ? `Dalej → kolej: ${esc(nm(who(nx[0])))}` : "Dalej →"}</button>`;
+            $(".nxt", btns).onclick = () => turn();
+            if (mem && !hinted) box.insertAdjacentHTML("afterbegin", `<div class="small" style="color:var(--ok)">✓ Z pamięci!</div>`);
+          } else turn();
+        };
+      };
+      showLine(); ask();
+      if (c.lektor === "before") (async () => { await sleep(300); if (t === token) await lineSay(ln); })();
+    }
+    function end() {
+      stop(); addXP(5 + d.lines.length);
+      app().innerHTML = `<div class="card result"><div style="font-size:48px">🎉</div><h2>Scenka zagrana!</h2>
+        <p>${esc(nm(1))} (${esc(roleOf(1))}): ${kwN(said[1])} · ${esc(nm(2))} (${esc(roleOf(2))}): ${kwN(said[2])}${c.mode === "mem" ? `<br>Podpowiedzi: ${hints}` : ""}</p>
+        <p class="small muted">+${5 + d.lines.length} XP. Teraz najlepiej zamienić się rolami – każda postać ma inne zwroty.</p>
+        <div class="row" style="justify-content:center"><button class="btn pri swp">⇄ Zamieńcie się rolami</button><button class="btn rep">↻ Jeszcze raz</button>${c.mode === "read" ? `<button class="btn mem">🧠 Teraz z pamięci</button>` : ""}<a class="btn" href="#/we-dwoje">Inna scenka</a></div></div>`;
+      $(".swp").onclick = () => { swap = !swap; play(); };
+      $(".rep").onclick = () => play();
+      const m = $(".mem"); if (m) m.onclick = () => { c.mode = "mem"; save(); play(); };
+    }
+    turn();
+  }
+  setup();
+}
+
+/* ===================== moje słabe strony ===================== */
+// wynik pierwszej próby każdego zadania: S.stat[umiejętność] i S.stat["umiejętność|dział"] = {n, ok, h: ostatnie odpowiedzi "1"/"0", d}
+function noteStat(it, ok) {
+  S.stat = S.stat || {};
+  const put = k => { const s = S.stat[k] || (S.stat[k] = { n: 0, ok: 0, h: "" }); s.n++; if (ok) s.ok++; s.h = (s.h + (ok ? "1" : "0")).slice(-40); s.d = today(); };
+  const sk = skillOf(it);
+  put(sk); if (it.sub) put(sk + "|" + it.sub);
+  saveState();
+}
+const recentPct = s => s && s.h && s.h.length ? Math.round(100 * s.h.split("").filter(c => c === "1").length / s.h.length) : pctOf(s);
+const SKILL_INFO = {
+  "Słówka": ["🈶", "znaczenie i zapis słów"],
+  "Słuchanie": ["👂", "rozpoznawanie słów i zdań ze słuchu"],
+  "Rozumienie": ["💭", "rozumienie całych zdań i scenek"],
+  "Gramatyka i zdania": ["📐", "partykuły, formy i budowanie zdań"],
+  "Kanji": ["漢", "znaczenia i czytania znaków"],
+  "Znaki kana": ["あ", "hiragana i katakana"],
+  "Pisanie znaków": ["✍️", "pisanie znaków z pamięci"],
+  "Odmiana": ["🔄", "formy czasowników"],
+  "Liczby": ["🔢", "liczby, godziny, daty, ceny i liczniki"],
+  "Wymowa": ["🎙", "Twoja ocena przy powtarzaniu za lektorem"]
+};
+// lekcje, które uczeń ma za sobą (albo – na start – pierwsze lekcje)
+function weakLessons() {
+  const all = LV.flatMap(L => L.lessons.map(l => ({ l, L })));
+  const done = all.filter(x => lDone(x.l.id));
+  return done.length ? done : all.slice(0, 3);
+}
+function weakItems(skill, n) {
+  const DL = weakLessons(), nonKana = DL.filter(x => x.L.id !== "kana");
+  const mist = Object.values(S.mist || {}).filter(m => m && m.it && skillOf(m.it) === skill).sort((a, b) => b.n - a.n).slice(0, Math.ceil(n / 3)).map(m => m.it);
+  const k = n - mist.length;
+  const vocab = DL.flatMap(x => x.l.vocab || []);
+  let gen = [];
+  if (skill === "Słówka" && vocab.length >= 4) gen = genVocab(vocab, vocab, k, [0, 1, 3, 1]);
+  else if (skill === "Słuchanie") {
+    if (vocab.length >= 4) gen = genVocab(vocab, vocab, Math.ceil(k * 0.6), [2, 4]);
+    gen = gen.concat(pick(nonKana, 4).flatMap(x => genSentences(x.l, x.L, 1, "listen")));
+  } else if (skill === "Rozumienie") gen = pick(nonKana, k).flatMap(x => Math.random() < 0.5 ? genSentences(x.l, x.L, 1, Math.random() < 0.5 ? "listen" : "read") : genDialogQ(x.l, 1));
+  else if (skill === "Kanji") { const kj = DL.flatMap(x => x.l.kanji || []); if (kj.length >= 4) gen = genKanji(pick(kj, k), ALL_KANJI.map(x => x.k), [0, 1, 2]); }
+  else if (skill === "Znaki kana") {
+    const kanaL = LV.find(L => L.id === "kana"), pool = kanaL ? kanaL.lessons.flatMap(l => l.chars || []) : [];
+    const mine = DL.flatMap(x => x.l.chars || []);
+    if (pool.length >= 4) gen = genKana(pick(mine.length >= 4 ? mine : pool, k), pool, [0, 1, 2, 3]);
+  } else if (skill === "Pisanie znaków") gen = genWrite(pick(DL.flatMap(x => lessonChars(x.l)), Math.min(k, 6)), "memory");
+  else if (skill === "Gramatyka i zdania") gen = pick(DL.flatMap(x => (x.l.exercises || []).filter(e => ["mc", "order", "type", "match"].includes(e.t))), k);
+  else if (skill === "Odmiana") {
+    const weakF = weakSubs("Odmiana").map(s => VAR_FORM[Object.keys(CV).find(f => CV[f].name === s)]).filter(Boolean);
+    const un = CFORMS.filter(f => lDone(f.l)).map(f => f.id);
+    const forms = [...new Set(weakF.filter(f => un.includes(f) || !un.length))].slice(0, 3);
+    gen = genConj(conjPool("done"), forms.length ? forms : (un.length ? un : ["masu"]), k);
+  } else if (skill === "Liczby") {
+    const weakS = weakSubs("Liczby").map(s => (NSECS.find(x => x.label === s) || {}).id).filter(Boolean).slice(0, 3);
+    gen = genNums(weakS.length ? weakS : NSECS.filter(s => lDone(s.l)).map(s => s.id).concat("small").slice(0, 3), k);
+  }
+  const seen = new Set();
+  return shuffle(mist.concat(shuffle(gen.filter(Boolean))).filter(it => { const key = mistId(it); if (seen.has(key)) return false; seen.add(key); return true; })).slice(0, n);
+}
+// działy danej umiejętności od najsłabszego (min. 3 odpowiedzi)
+function weakSubs(skill) {
+  const st = S.stat || {};
+  return Object.keys(st).filter(k => k.startsWith(skill + "|") && st[k].n >= 3).sort((a, b) => recentPct(st[a]) - recentPct(st[b])).map(k => k.slice(skill.length + 1));
+}
+const SKILL_ACC = { "Gramatyka i zdania": "gramatykę i zdania", "Odmiana": "odmianę", "Wymowa": "wymowę" };
+function viewWeak() {
+  const st = S.stat || {};
+  const skills = Object.keys(st).filter(k => !k.includes("|")).map(k => ({ k, s: st[k], p: recentPct(st[k]) })).sort((a, b) => (a.s.n >= 5 ? 0 : 1) - (b.s.n >= 5 ? 0 : 1) || a.p - b.p);
+  const ready = skills.filter(x => x.s.n >= 5);
+  const weakest = ready.filter(x => x.p < 90 && x.k !== "Wymowa").slice(0, 3), weakSay = ready.find(x => x.k === "Wymowa" && x.p < 90);
+  const mist = Object.entries(S.mist || {}).filter(([, m]) => m && m.it).sort((a, b) => b[1].n - a[1].n || b[1].t - a[1].t);
+  const fix = LV.flatMap(L => L.lessons.filter(l => { const s = S.lessons[l.id]; return s && s.best && s.best < 75; }).map(l => ({ l, L, b: S.lessons[l.id].best }))).sort((a, b) => a.b - b.b);
+  const col = p => p >= 85 ? "var(--ok)" : p >= 65 ? "var(--warn)" : "var(--bad)";
+  const qprev = it => {
+    let t = it.t === "listen" ? "🔊 " + plain(it.jp) : it.speakQ && /^🔊/.test(stripTags(String(it.q || ""))) ? "🔊 " + it.speakQ : it.t === "write" ? it.ch : String(it.q || it.tr || (it.pairs ? it.pairs.map(x => x[0]).join(", ") : "") || "");
+    t = stripTags(plain(t)).replace(/\s+/g, " ").trim(); t = t.length > 60 ? t.slice(0, 58) + "…" : t;
+    return `${it.label ? `<span class="small muted">${esc(it.label)}:</span> ` : ""}${esc(t)}`;
+  };
+  const row = x => {
+    const [ic, what] = SKILL_INFO[x.k] || ["•", ""], subs = weakSubs(x.k).slice(0, 3);
+    return `<div class="card wrow"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:10px">
+      <div style="min-width:0"><b>${ic} ${esc(x.k)}</b><div class="small muted">${esc(what)} · ${x.s.n} ${x.s.n === 1 ? "odpowiedź" : "odpowiedzi"}${x.s.n < 5 ? " (za mało, żeby ocenić)" : ""}</div></div>
+      <b style="color:${col(x.p)};font-size:20px">${x.p}%</b></div>
+      <div class="prog" style="--c:${col(x.p)}"><i style="width:${x.p}%;background:${col(x.p)}"></i></div>
+      ${subs.length ? `<div class="small" style="margin-top:6px">Najsłabiej: ${subs.map(s => `${esc(s)} <b style="color:${col(recentPct(st[x.k + "|" + s]))}">${recentPct(st[x.k + "|" + s])}%</b>`).join(" · ")}</div>` : ""}
+      <div style="margin-top:8px">${x.k === "Wymowa" ? `<a class="btn sm" href="#/powtarzaj">🎙 Ćwicz wymowę</a>` : `<button class="btn sm wgo" data-sk="${esc(x.k)}">▶ Ćwicz: ${esc(x.k.toLowerCase())}</button>`}</div></div>`;
+  };
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Moje słabe strony</div><h1>Moje słabe strony 🎯</h1>
+    <p class="muted">Tu widać, co idzie najsłabiej. Liczy się pierwsza odpowiedź w każdym zadaniu, z ostatnich 40 zadań danego rodzaju, więc wynik rośnie razem z postępami.</p>
+    ${weakest.length ? `<div class="card" style="border-left:5px solid var(--accent)"><b>Teraz warto poćwiczyć przede wszystkim:</b> ${(l => l.length > 1 ? l.slice(0, -1).join(", ") + " i " + l[l.length - 1] : l[0])(weakest.map(x => esc(SKILL_ACC[x.k] || x.k.toLowerCase())).concat(weakSay ? ["wymowę"] : []))}.
+      <div class="row" style="margin-top:10px"><button class="btn pri wall">▶ Ćwicz najsłabsze (12 zadań)</button>${weakSay ? `<a class="btn" href="#/powtarzaj">🎙 Ćwicz wymowę</a>` : ""}</div></div>`
+      : weakSay ? `<div class="card"><b>Teraz warto poćwiczyć przede wszystkim wymowę.</b><div style="margin-top:10px"><a class="btn pri" href="#/powtarzaj">🎙 Ćwicz wymowę</a></div></div>` : ready.length ? `<div class="card">🎉 Wszystkie ocenione umiejętności mają co najmniej 90% – świetnie! Rób dalej lekcje i powtórki.</div>`
+      : `<div class="card"><p>📊 Za mało danych, żeby coś ocenić. Zrób kilka ćwiczeń (lekcje, trenery, quizy kanji), a tu pojawi się, co idzie najlepiej, a co warto poćwiczyć.</p><p class="small muted">Wyniki zbierają się od tej wersji kursu – wcześniejsze odpowiedzi nie były liczone.</p></div>`}
+    ${skills.length ? `<h2>Umiejętności</h2><div class="grid g2">${skills.map(row).join("")}</div>` : ""}
+    ${mist.length ? `<h2>Najczęstsze pomyłki</h2><div class="card">${mist.slice(0, 8).map(([, m]) => `<div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span class="jp" style="min-width:0;overflow-wrap:anywhere">${qprev(m.it)}</span><span class="pill">${m.n}×</span></div>`).join("")}
+      <div class="row" style="margin-top:10px"><button class="btn mgo">▶ Popraw ${Math.min(8, mist.length)} ${Math.min(8, mist.length) === 1 ? "pomyłkę" : Math.min(8, mist.length) < 5 ? "pomyłki" : "pomyłek"}</button><a class="btn" href="#/bledy">📝 Cały zeszyt błędów</a></div></div>` : ""}
+    ${fix.length ? `<h2>Lekcje do poprawy</h2><p class="small muted">Testy z wynikiem poniżej 75%. Warto zrobić je jeszcze raz.</p><div class="lesson-list">${fix.slice(0, 8).map(x => `<a class="card li" href="#/lesson/${x.l.id}/test"><span class="num">${x.b}%</span><span class="t"><b>${esc(x.l.title)}</b><span class="small muted">${esc(x.L.short)} · lekcja ${x.l._n}</span></span></a>`).join("")}</div>` : ""}`;
+  const opts = { mode: "practice", back: "#/slabe", src: "slabe", color: "#c1121f", nextHref: "#/slabe", nextLabel: "Moje słabe strony" };
+  $$(".wgo").forEach(b => b.onclick = () => {
+    const make = () => weakItems(b.dataset.sk, 10);
+    const items = make();
+    if (!items.length) { toast("Na razie nie ma tu z czego ćwiczyć – przerób kolejną lekcję."); return; }
+    runQuiz(app(), items, Object.assign({ regen: make }, opts));
+  });
+  const wa = $(".wall"); if (wa) wa.onclick = () => {
+    const per = weakest.length === 1 ? [12] : weakest.length === 2 ? [6, 6] : [6, 3, 3];
+    const make = () => shuffle(weakest.flatMap((x, i) => weakItems(x.k, per[i])));
+    const items = make(); if (!items.length) { toast("Na razie nie ma tu z czego ćwiczyć."); return; }
+    runQuiz(app(), items, Object.assign({ regen: make }, opts));
+  };
+  const mg = $(".mgo"); if (mg) mg.onclick = () => runQuiz(app(), shuffle(mist.slice(0, 8).map(([, m]) => m.it)), Object.assign({}, opts, { src: "" }));
+}
+
 /* ===================== dane kursu ===================== */
 const LV = (window.LEVELS || []).slice().sort((a, b) => a.order - b.order);
 const LESSONS = {}; const LESSON_LEVEL = {};
@@ -26400,6 +27654,7 @@ function route() {
   if (p === "rozmowa" && TALKS_IDX().by[a]) furi = furiFor(TALKS_IDX().by[a].level);
   if ((p === "pisz" || p === "wolne") && WR().by[a]) furi = furiFor(WR().by[a].level);
   if (p === "para" && PR().by[a]) furi = furiFor(PR().by[a].level);
+  if (p === "we-dwoje" && LESSON_LEVEL[a]) furi = furiFor(LESSON_LEVEL[a].id);
   if (window.__newVersion && !p) { location.reload(); return; }
   document.body.classList.toggle("nofuri", !furi);
   updateBadge();
@@ -26424,6 +27679,11 @@ function route() {
   if (p === "wolne") return viewWriteFree(a);
   if (p === "pary") return viewPairs();
   if (p === "para") return viewPair(a);
+  if (p === "odmiana") return viewConj(a || "");
+  if (p === "liczby") return viewNums();
+  if (p === "powtarzaj") return viewShadow();
+  if (p === "we-dwoje") return a ? viewDuo(a) : viewDuoList();
+  if (p === "slabe") return viewWeak();
   viewHome();
 }
 function furiFor(levelId) {
@@ -26507,6 +27767,11 @@ function viewHome() {
   <div class="grid g3">
     <a class="card" href="#/kana/hira" style="text-decoration:none"><b class="jp" style="font-size:22px">あ ア</b><div><b>Tabela kana</b></div><div class="small muted">Wszystkie znaki z wymową, pisaniem i quizem.</div></a>
     <a class="card" href="#/review" style="text-decoration:none"><b style="font-size:22px">🔁</b><div><b>Powtórki</b></div><div class="small muted">Fiszki z systemem powtórek – słówka, kanji i gramatyka wracają, zanim je zapomnisz.</div></a>
+    <a class="card" href="#/slabe" style="text-decoration:none"><b style="font-size:22px">🎯</b><div><b>Moje słabe strony</b></div><div class="small muted">Co idzie najsłabiej (słuchanie, kanji, odmiana…) i jeden przycisk, żeby to poćwiczyć.</div></a>
+    <a class="card" href="#/odmiana" style="text-decoration:none"><b style="font-size:22px">🔄</b><div><b>Odmiana czasowników</b></div><div class="small muted">～ます, ～て, ～ない, ～た i dalsze formy na czasownikach z Twoich lekcji, z zasadą przy każdej odpowiedzi.</div></a>
+    <a class="card" href="#/liczby" style="text-decoration:none"><b style="font-size:22px">🔢</b><div><b>Liczby, godziny, daty, ceny</b></div><div class="small muted">Losowe liczby do słuchania i czytania: ceny, godziny, daty, wiek i liczniki (本, 枚, 人).</div></a>
+    <a class="card" href="#/powtarzaj" style="text-decoration:none"><b style="font-size:22px">🎙</b><div><b>Powtarzaj za lektorem</b></div><div class="small muted">Nagraj się i porównaj z lektorem: najpierw wzór, zaraz po nim Twoje nagranie.</div></a>
+    <a class="card" href="#/we-dwoje" style="text-decoration:none"><b style="font-size:22px">👫</b><div><b>Scenki we dwoje</b></div><div class="small muted">Dwie osoby, jeden telefon: każda gra swoją rolę, a aplikacja pokazuje tylko kwestię osoby, która mówi.</div></a>
     <a class="card" href="#/rozmowy" style="text-decoration:none"><b style="font-size:22px">💬</b><div><b>Rozmowy</b></div><div class="small muted">Rozmawiasz z Japończykiem i sam wybierasz, co odpowiedzieć: w sklepie, na stacji, w pracy.</div></a>
     <a class="card" href="#/pary" style="text-decoration:none"><b style="font-size:22px">🔀</b><div><b>Mylące pary</b></div><div class="small muted">Czasowniki, które łatwo pomylić (wasureru – wakareru, akeru – aku): wyjaśnienie, nagrania i ćwiczenia.</div></a>
     <a class="card" href="#/pisanie" style="text-decoration:none"><b style="font-size:22px">✍️</b><div><b>Pisanie</b></div><div class="small muted">Zdania, maile i opowiadania sprawdzane zdanie po zdaniu, plus swobodne pisanie na temat.</div></a>
@@ -26717,6 +27982,9 @@ function learnKana(l) {
 ;
 }
 document.addEventListener("click", e => {
+  // link do strony, na której już jesteśmy (np. „Wróć” po ćwiczeniu): hashchange nie zajdzie, więc odświeżamy sami
+  const a = e.target.closest('a[href^="#"]');
+  if (a && !e.defaultPrevented && a.getAttribute("href") === (location.hash || "#/")) { e.preventDefault(); route(); return; }
   const c = e.target.closest("[data-ch]");
   if (c) {
     const l = LESSONS[location.hash.split("/")[2]]; if (!l || !l.chars) return;
@@ -27129,7 +28397,7 @@ function viewMistakes() {
   }
   const by = {};
   all.forEach(([k, m]) => { const id = m.src || ""; by[id] = (by[id] || 0) + 1; });
-  const name = id => id.startsWith("kanji:") ? "Wszystkie kanji" : STORY[id] ? "Czytanka · " + esc(STORY[id].title) : id.startsWith("exam:") ? "Egzamin " + esc((LV.find(L => L.id === id.slice(5)) || {}).short || "") : id === "kana" ? "Tabela kana" : LESSONS[id] ? esc(LESSON_LEVEL[id].short + " · " + LESSONS[id].title) : "Inne";
+  const name = id => id.startsWith("kanji:") ? "Wszystkie kanji" : STORY[id] ? "Czytanka · " + esc(STORY[id].title) : id.startsWith("exam:") ? "Egzamin " + esc((LV.find(L => L.id === id.slice(5)) || {}).short || "") : id === "kana" ? "Tabela kana" : id === "odmiana" ? "Odmiana czasowników" : id === "liczby" ? "Liczby, godziny, daty" : id === "slabe" ? "Moje słabe strony" : LESSONS[id] ? esc(LESSON_LEVEL[id].short + " · " + LESSONS[id].title) : "Inne";
   app().innerHTML = crumbs + `<div class="card"><p>Masz <b>${all.length}</b> ${all.length === 1 ? "ćwiczenie" : "ćwiczeń"} do poprawy. Każde zniknie po dwóch dobrych odpowiedziach. Pomyłki to normalna część nauki, a powtarzanie ich to najszybsza droga do postępu.</p>
     <div class="row"><button class="btn pri go">▶ Popraw ${Math.min(all.length, 12)} ćwiczeń</button></div></div>
     <h2>Skąd są pomyłki</h2><div class="card">${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([id, n]) => `<div class="row" style="justify-content:space-between;padding:4px 0"><span>${LESSONS[id] ? `<a href="#/lesson/${id}">${name(id)}</a>` : name(id)}</span><span class="pill">${n}</span></div>`).join("")}</div>`;
