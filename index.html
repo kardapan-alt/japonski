@@ -25984,7 +25984,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-11 20:22";
+window.APP_VERSION = "2026-10-11 20:28";
 const PASS = 60; // próg zaliczenia lekcji i egzaminu (%)
 /* ===================== podpisy ćwiczeń, wyjaśnienia ===================== */
 function mistKey(it) { const s = JSON.stringify(it); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
@@ -28681,13 +28681,14 @@ function viewMe() {
     const q = nm.value.trim().toLowerCase();
     const list = q ? NAME_PRESETS.filter(p => p[0].toLowerCase().startsWith(q)).slice(0, 8) : [];
     $(".mechips").innerHTML = list.map(p => `<button class="chip" data-n="${esc(p[0])}">${esc(p[0])} · <span lang="ja">${p[1]}</span></button>`).join("");
-    $$(".mechips .chip").forEach(b => b.onclick = () => { const p = NAME_PRESETS.find(x => x[0] === b.dataset.n); nm.value = p[0]; jp.value = p[1]; plv.value = p[2]; TTS.speak(p[1]); chips(); valid(); });
+    $$(".mechips .chip").forEach(b => b.onclick = () => { const p = NAME_PRESETS.find(x => x[0] === b.dataset.n); nm.value = p[0]; jp.value = p[1]; plv.value = p[2]; TTS.speak(p[1], { gender: g }); chips(); valid(); });
   };
   nm.oninput = () => { const p = NAME_PRESETS.find(x => x[0].toLowerCase() === nm.value.trim().toLowerCase()); if (p && !jp.value) { jp.value = p[1]; if (!plv.value) plv.value = p[2]; } chips(); valid(); };
   jp.addEventListener("input", () => { const v = jp.value, c = H2K(romajiToKana(v, false)); if (c !== v) jp.value = c; valid(); });
   jp.addEventListener("change", () => { jp.value = H2K(romajiToKana(jp.value, true)).replace(/\s+/g, ""); valid(); });
-  $("#mejps").onclick = () => { const v = H2K(romajiToKana(jp.value, true)); if (v) TTS.speak(v); };
-  $$(".meg").forEach(b => b.onclick = () => { g = b.dataset.g; $$(".meg").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); valid(); });
+  const sayName = () => { const v = H2K(romajiToKana(jp.value, true)); if (v) TTS.speak(v, { gender: g }); };   // imię czytane wybranym głosem
+  $("#mejps").onclick = sayName;
+  $$(".meg").forEach(b => b.onclick = () => { g = b.dataset.g; $$(".meg").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); valid(); sayName(); });
   ok.onclick = () => {
     jp.value = H2K(romajiToKana(jp.value, true)).replace(/\s+/g, "");
     if (!KATA_OK(jp.value)) { toast("Imię po japońsku zapisz katakaną (np. カタジナ)."); return; }
