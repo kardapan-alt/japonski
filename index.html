@@ -199,9 +199,10 @@ select,input[type=text],input[type=search]{background:var(--bg2);color:var(--fg)
 .flash .fpl{font-size:22px;font-weight:600}
 .hint{background:var(--bg3);border-radius:10px;padding:10px 12px;font-size:14px}
 .warnbox{background:#fff4dc;color:#5a4100;border:1px solid #f0d58e;border-radius:12px;padding:10px 14px;margin:10px 0;font-size:14px}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;z-index:60;font-size:15px;box-shadow:var(--shadow);max-width:90vw;pointer-events:none}
+#toasts{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:8px;width:max-content;max-width:90vw;pointer-events:none}
+.toast{background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:15px;box-shadow:var(--shadow);max-width:90vw;pointer-events:none}
 /* w trakcie zadania komunikat u góry, żeby nie zasłaniał „Dalej →” ani linijki z terminem */
-body:has(.quiz .qcard) .toast{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
+body:has(.quiz .qcard) #toasts{bottom:auto;top:calc(12px + env(safe-area-inset-top,0px))}
 .pill{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--bg3);font-size:12px;color:var(--fg2)}
 .search-res{display:grid;gap:6px;margin-top:12px}
 .sr{display:flex;gap:10px;align-items:center;padding:8px 12px}
@@ -559,6 +560,7 @@ function saveState() {
   try { localStorage.setItem(STORE, JSON.stringify(S)); }
   catch (e) { if ((e && (e.name === "QuotaExceededError" || e.code === 22)) && !quotaWarned) { quotaWarned = true; toast("Brakuje miejsca na zapis postępów w tej przeglądarce. Zapisz kopię postępów (Ustawienia) i usuń nieużywane profile.", 7000); } }
   if (window.CloudSync && PROF.cur === "p0") CloudSync.push();
+  if (window.GhSync) GhSync.dirty();   // synchronizacja przez GitHub: wysyłka chwilę po ostatniej odpowiedzi
 }
 /* ===================== „ja” w scenkach: imię, głos i formy osoby, która się uczy ===================== */
 // W treściach uczeń to ダニエル / Daniel (Danielu); [[forma męska|forma żeńska]] w jego własnych kwestiach.
@@ -594,9 +596,12 @@ function personaItem(it) {
 }
 const sayOf = (o, jp) => (o && o.say) || jp;
 function lessonState(id) { return S.lessons[id] || (S.lessons[id] = { best: 0, done: false, seen: false }); }
+// kilka komunikatów naraz układa się jeden nad drugim (wspólny pojemnik), zamiast zasłaniać się nawzajem
 function toast(msg, ms = 2200) {
-  const t = document.createElement("div"); t.className = "toast"; t.innerHTML = msg; document.body.appendChild(t);
-  setTimeout(() => t.remove(), ms);
+  let box = document.getElementById("toasts");
+  if (!box) { box = document.createElement("div"); box.id = "toasts"; document.body.appendChild(box); }
+  const t = document.createElement("div"); t.className = "toast"; t.innerHTML = msg; box.appendChild(t);
+  setTimeout(() => { t.remove(); if (!box.children.length) box.remove(); }, ms);
 }
 
 /* ===================== mowa: synteza ===================== */
@@ -25984,7 +25989,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-11 20:28";
+window.APP_VERSION = "2026-10-16 11:58";
 const PASS = 60; // próg zaliczenia lekcji i egzaminu (%)
 /* ===================== podpisy ćwiczeń, wyjaśnienia ===================== */
 function mistKey(it) { const s = JSON.stringify(it); let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
@@ -28584,11 +28589,13 @@ function switchProfile(id) {
   TTS.stop();
   // synchronizacja z kontem (tylko pierwsza osoba): to, co jest w toku, kończy się bez zapisu, zanim wczytamy inną osobę
   if (window.CloudSync && CloudSync.cancel && id !== PROF.cur) CloudSync.cancel();
+  if (window.GhSync) GhSync.cancel();   // GitHub: odczyty dla poprzedniej osoby przerwane, ostatnie odpowiedzi tej osoby jeszcze się wysyłają
   PROF.cur = id; PROF_PICKED = true; saveProfiles(); STORE = profStore(id);
   loadState(); applyTheme(); backfillGrammarSRS(); migrateMist();
   if (typeof memProfileChanged === "function") memProfileChanged();   // etap 1: dziennik odpowiedzi tej osoby
   // powrót do pierwszej osoby: połącz z kontem i wyślij to, co czekało
   if (id === "p0" && window.CloudSync) { if (!CloudSync.db) CloudSync.init(); else CloudSync.pull(true); }
+  if (window.GhSync) GhSync.bind();     // GitHub: folder tej osoby (jeśli ma włączoną synchronizację na tym urządzeniu)
   profChip();
 }
 function profChip() {
@@ -28628,6 +28635,7 @@ function bindProfSettings(sub) {
     try { const st = JSON.parse(localStorage.getItem(profStore(p.id)) || "null"); if (st && window.MEM_LOG) await MEM_LOG.snapshot("przed usunięciem osoby", JSON.stringify({ kind: "jp-osoby-v1", one: 1, prof: { list: [p] }, stores: { [p.id]: st } })); } catch (e) { }
     PROF.list = PROF.list.filter(x => x !== p); saveProfiles();
     try { localStorage.removeItem(profStore(p.id)); } catch (e) { }
+    if (window.GhSync && GhSync.forget) GhSync.forget(p.id);   // token i ustawienia GitHuba tej osoby też znikają z urządzenia
     profChip(); route();
   });
   $("#padd").onclick = addProfile;
@@ -28969,6 +28977,7 @@ function viewTransfer() {
   const mine = dn === "Android" ? "Xiaomi" : dn === "iPad" ? "iPhone" : dn;
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/settings">Ustawienia</a> › Przenoszenie postępów</div>
     <h1>📲 Przenoszenie postępów</h1>
+    ${typeof ghCardHTML === "function" ? ghCardHTML() : ""}
     <p class="muted">Uczysz się na kilku urządzeniach? Wyślij zmiany z jednego i wczytaj je na drugim. Postępy się łączą, więc nic się nie nadpisze.</p>
     ${cloud ? `<p class="small">${esc(cloud)} · w wersji online postępy zapisują się na koncie same. Tutaj przeniesiesz je do aplikacji na telefonie albo do pliku.</p>` : ""}
     <div class="mem-big"><button class="btn" id="msend"><b>📤</b>Wyślij zmiany</button><button class="btn" id="mload"><b>📥</b>Wczytaj zmiany</button></div>
@@ -28976,6 +28985,7 @@ function viewTransfer() {
     <div id="mundo"></div>
     <div class="card" style="margin-top:14px"><b>Wskazówki</b><ul class="small mem-tips" style="padding-left:18px;margin:8px 0 0">${tips.map(([d, t]) => `<li class="${d === mine ? "me" : ""}">${t}${d === mine ? ` <span class="pill">to urządzenie</span>` : ""}</li>`).join("")}
       <li>Na drugim urządzeniu otwórz tę samą stronę: Ustawienia → Przenoszenie postępów → <b>Wczytaj zmiany</b>.</li></ul></div>`;
+  if (typeof ghCardBind === "function") ghCardBind();
   const panel = $("#mpanel");
   $("#msend").onclick = () => { $("#msend").classList.add("on"); $("#mload").classList.remove("on"); memSendPanel(panel, false); };
   $("#mload").onclick = () => { $("#mload").classList.add("on"); $("#msend").classList.remove("on"); memLoadPanel(panel); };
@@ -29094,6 +29104,7 @@ function transferHTML() {
   return `<div class="card" id="przenies" style="margin-bottom:14px"><h2 style="margin-top:0">📲 Przenieś postępy</h2>
     <p class="small">Uczysz się na kilku urządzeniach? Wyślij zmiany z jednego i wczytaj je na drugim – postępy się połączą, nic nie zginie.</p>
     <a class="btn pri" href="#/przenies">📲 Przenoszenie postępów</a>
+    ${typeof ghSettingsLine === "function" ? ghSettingsLine() : ""}
     ${cs ? `<p class="small" style="margin:10px 0 0">${esc(cs)}${CloudSync.state === "on" ? " · postępy zapisują się na Twoim koncie Claude, więc na telefonie i komputerze masz to samo, gdy otwierasz kurs z tego samego linku." : ""}</p>` : ""}
     <details style="margin-top:12px"><summary class="small"><b>Kod dla starszej wersji kursu</b></summary>
     <p class="small muted">Starsza wersja kursu rozumie tylko ten kod. Wczytać tutaj możesz każdy kod: nowy i stary.</p>
@@ -29924,7 +29935,7 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
 
   /* ---------- Ustawienia: cel zapamiętania, pamięć i kopie ---------- */
   const RET_OPTS = [[0.85, "85%", "mniej powtórek"], [0.9, "90%", "zalecane"], [0.93, "93%", "pewniejsza pamięć"]];
-  const WHY = { "przed wczytaniem zmian": 1, "przed przywróceniem": 1, "przed aktualizacją kursu": 1, "przed synchronizacją": 1, "przed zastąpieniem": 1, "przed cofnięciem": 1, "przed wyzerowaniem": 1, "przed usunięciem osoby": 1, "przed wczytaniem kopii wszystkich osób": 1 };
+  const WHY = { "przed wczytaniem zmian": 1, "przed przywróceniem": 1, "przed aktualizacją kursu": 1, "przed synchronizacją": 1, "przed pierwszą synchronizacją": 1, "przed zastąpieniem": 1, "przed cofnięciem": 1, "przed wyzerowaniem": 1, "przed usunięciem osoby": 1, "przed wczytaniem kopii wszystkich osób": 1 };
   const fmtMB = b => b >= 1e9 ? (b / 1e9).toFixed(1).replace(".", ",") + " GB" : b >= 1e6 ? (b / 1e6).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1e3)) + " KB";
   function settingsHTML() {
     const r = ret(), cs = window.CloudSync && window.CloudSync.stateText ? window.CloudSync.stateText() : "";
@@ -30162,6 +30173,28 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
   async function since(t) { await readyP; if (isIdb()) return (await req(store().index("t").getAll(IDBKeyRange.lowerBound(t, true)))).concat(pend.filter(e => e.t > t)); return fb.concat(pend).filter(e => e.t > t); }
   // wpisy tego urządzenia o numerze większym niż q (do wysyłki zmian i do chmury)
   async function ownSince(q) { await readyP; const d = devId(); if (isIdb()) return (await req(store().index("dq").getAll(IDBKeyRange.bound([d, q], [d, Infinity], true, false)))).concat(pend.filter(e => e.d === d && e.q > q)); return fb.concat(pend).filter(e => e.d === d && e.q > q); }
+  // wpisy tego urządzenia nowsze niż wysłane (meta metaKey: {dev, q}) – zapytania składane OD RAZU, synchronicznie:
+  // przy zmianie osoby dziennik zaraz przełącza się na inną bazę, a rozpoczęta transakcja zdąży się jeszcze wykonać
+  function captureOwn(metaKey) {
+    const d = devId(), p0 = pend.filter(e => e.d === d);
+    const pick = (up, evs) => { const q = (up && up.dev === d && +up.q) || 0, seen = new Set(), out = []; for (const e of evs.concat(p0)) if (e.q > q && !seen.has(e.id)) { seen.add(e.id); out.push(e); } return { up: up || null, evs: out }; };
+    if (mode === "idb" && db) {
+      try {
+        const tx = db.transaction(["ev", "meta"]);
+        return new Promise(ok => {
+          const r = tx.objectStore("meta").get(metaKey);
+          r.onsuccess = () => {
+            const up = r.result, q = (up && up.dev === d && +up.q) || 0;
+            try { const r2 = tx.objectStore("ev").index("dq").getAll(IDBKeyRange.bound([d, q], [d, Infinity], true, false)); r2.onsuccess = () => ok(pick(up, r2.result || [])); r2.onerror = () => ok(null); }
+            catch (e) { ok(null); }
+          };
+          r.onerror = () => ok(null); tx.onabort = () => ok(null);
+        });
+      } catch (e) { return Promise.resolve(null); }
+    }
+    if (mode === "fb") return Promise.resolve(pick(metaMem[metaKey], fb.filter(e => e.d === d)));
+    return Promise.resolve(null);
+  }
   // wpisy z innych urządzeń wczytane po czasie t
   async function importedSince(t) { await readyP; if (isIdb()) return req(store().index("ia").getAll(IDBKeyRange.lowerBound(t, true))); return fb.filter(e => (e.ia || 0) > t); }
   async function count() { await readyP; if (isIdb()) return (await idbCount()) + pend.length; return fb.length + pend.length; }
@@ -30208,6 +30241,14 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
   }
 
   // ---------- migawki: cały stan S przed ważnymi zmianami (5 najnowszych) ----------
+  // Najnowsza kopia każdego z tych powodów zostaje zawsze (synchronizacja przy każdym otwarciu nie wypycha jej po kilku dniach).
+  const PIN = { "przed pierwszą synchronizacją": 1, "przed aktualizacją kursu": 1, "przed usunięciem osoby": 1 };
+  function keepOf(list) {   // list: [{id, why}] od najstarszej
+    const keep = new Set(list.slice(-SNAP_MAX).map(x => x.id)), pin = {};
+    list.forEach(x => { if (PIN[x.why]) pin[x.why] = x.id; });
+    Object.values(pin).forEach(id => keep.add(id));
+    return keep;
+  }
   async function snapshot(why, json) {
     await readyP;
     const s = { t: Date.now(), why: why || "", appv: window.APP_VERSION || "", n: await count(), s: json || JSON.stringify(S) };
@@ -30216,13 +30257,14 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
         const id = await new Promise((ok, no) => {
           const tx = db.transaction("snap", "readwrite"), st = tx.objectStore("snap"); let nid = null;
           st.add(s).onsuccess = e => { nid = e.target.result; };
-          st.getAllKeys().onsuccess = e => { const keys = e.target.result; keys.sort((a, b) => a - b).slice(0, Math.max(0, keys.length - SNAP_MAX)).forEach(k => st.delete(k)); };
+          st.getAll().onsuccess = e => { const all = (e.target.result || []).map(x => ({ id: x.id, why: x.why })).sort((a, b) => a.id - b.id), keep = keepOf(all); all.forEach(x => { if (!keep.has(x.id)) st.delete(x.id); }); };
           tx.oncomplete = () => ok(nid); tx.onabort = () => no(tx.error); tx.onerror = () => { };
         });
         if (id !== null) return id;
       } catch (e) { /* za mało miejsca – migawka w pamięci */ }
     }
-    s.id = "m" + s.t.toString(36) + (++snapSeq); snapMem.push(s); if (snapMem.length > SNAP_MAX) snapMem.shift();
+    s.id = "m" + s.t.toString(36) + (++snapSeq); snapMem.push(s);
+    { const keep = keepOf(snapMem); snapMem = snapMem.filter(x => keep.has(x.id)); }
     // bez IndexedDB: najnowsza migawka także w localStorage, żeby cofnięcie przetrwało zamknięcie kursu (gdy się mieści)
     if (mode === "fb") { if (s.s.length > 1e6 || !lsSet(snapKey(prof), JSON.stringify(s))) lsDel(snapKey(prof)); }
     return s.id;
@@ -30249,7 +30291,7 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
   async function persist() { try { if (navigator.storage && navigator.storage.persist) return await navigator.storage.persist(); } catch (e) { } return false; }
 
   window.MEM_LOG = {
-    open, append, addMany, all, byKey, byKeys, since, ownSince, importedSince, count, remove, flush: flushNow,
+    open, append, addMany, all, byKey, byKeys, since, ownSince, captureOwn, importedSince, count, remove, flush: flushNow,
     getMeta, setMeta, snapshot, snapshots, getSnapshot, restoreSnapshot, storageInfo, persist,
     reopen: p => open(p || (typeof PROF !== "undefined" ? PROF.cur : "p0")),
     get ready() { return readyP; },
@@ -30263,18 +30305,344 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
   };
 })();
 
-/* ===================== synchronizacja przez konto (wersja online na claude.ai) =====================
-   W wersji online strona może mieć bazę danych przypisaną do zalogowanej osoby. Wtedy postępy zapisują się
-   na koncie i są takie same na telefonie i komputerze. W pliku offline window.claude nie istnieje i nic się nie dzieje.
+/* ===================== synchronizacja przez konto (wersja online na claude.ai) i przez GitHub ===================== */
+/* Wspólny silnik (MemSyncCore) łączy postępy z kopią zapisaną gdzie indziej: na koncie Claude (CloudSync, niżej)
+   albo w prywatnym repozytorium na GitHubie (GhSync, src/ghsync.js). Silnik dostaje magazyn {doc(ścieżka).get()/set()},
+   ścieżkę bazową i osobę (profil), której dane synchronizuje.
    Zasada: najpierw pobierz i połącz (jak przy wczytaniu zmian), dopiero potem wyślij. Czas zapisu (S.t) nigdy nie decyduje,
    kto wygrywa – dzięki temu nowe urządzenie nie skasuje postępów z konta.
-   Na koncie: meta {n, t, len, v} + p0…p{n-1} (cały stan, układ czytany też przez starsze wersje kursu)
-   oraz dziennik każdego urządzenia: evm_<dev> {n, q} + ev_<dev>_<i> (wpisy dopisywane na końcu), lista urządzeń evdevs {d: [...]}. */
+   W magazynie: meta {n, t, len, v} + części stanu oraz dziennik każdego urządzenia: evm_<dev> {n, q} + ev_<dev>_<i>
+   (wpisy dopisywane na końcu), lista urządzeń evdevs {d: [...]}.
+   Części stanu:
+   – konto Claude: p0…p{n-1} (układ czytany też przez starsze wersje kursu);
+   – GitHub (sets): st_<czas>_<w>_<i> – każdy zapis ma własne nazwy plików, a meta (zapisywana na końcu) wskazuje zestaw (pf).
+     Przerwany zapis (zabita aplikacja, zgubiona odpowiedź, wygasły token) zostawia tylko nieużywane pliki, nigdy pół stanu;
+     stare zestawy kasujemy po udanym zapisie.
+   Magazyn z „cas” (GitHub) odrzuca zapis pliku zmienionego w międzyczasie przez inne urządzenie (błąd z polem conflict):
+   wtedy silnik jeszcze raz pobiera, łączy i wysyła. */
 const CHUNK = 180000;
-window.CloudSync = {
+window.MemSyncCore = {
+  // ustawiane przez twórcę: db, base, prof (osoba), K {seen, up} (klucze w dzienniku), from, firstMsg, CH, minPull, pushDelay, casOK, sets
+  stateText() { return ""; },
+  ui() { },
+  // zmiana osoby: wszystko, co jest w toku, kończy się bez zapisu
+  cancel() {
+    this.tok++;
+    clearTimeout(this.timer); this.timer = 0; this.pending = true;   // to, co nie zdążyło się wysłać, pójdzie przy powrocie tej osoby
+    clearTimeout(this.retryT); this.retryT = 0;
+  },
+  // czy operacja rozpoczęta z numerem tok może jeszcze coś zapisać (ta sama osoba, ten sam dziennik)
+  alive(tok) { const p = this.prof || "p0"; return tok === this.tok && !this.dead && PROF.cur === p && (!window.MEM_LOG || !MEM_LOG.prof || MEM_LOG.prof === p); },
+  // po nieudanym połączeniu: kolejna próba za 15 s, 30 s, 60 s… (najwyżej co 5 minut), dopóki karta jest otwarta
+  retry() {
+    if (!this.db || this.retryT || this.dead || navigator.onLine === false) return;
+    this.retryMs = Math.min(300000, this.retryMs ? this.retryMs * 2 : 15000);
+    this.retryT = setTimeout(() => { this.retryT = 0; this.pull(true); }, this.retryMs);
+  },
+  ok() { this.retryMs = 0; clearTimeout(this.retryT); this.retryT = 0; },
+  // nieudane połączenie (GitHub rozróżnia przyczyny: token, ograniczenie liczby połączeń, brak sieci…)
+  fail(e) { this.state = e && e.gh === "bad" ? "bad" : "err"; this.ui(); this.retry(); },
+  // jedna operacja na raz (pobieranie i wysyłanie nie mogą się przeplatać); busy – coś jest w toku (nie pokazujemy wtedy „zsynchronizowano”)
+  run(fn) {
+    this.busy = (this.busy || 0) + 1; this.ui();
+    const end = () => { this.busy = Math.max(0, (this.busy || 1) - 1); this.ui(); };
+    const p = (this.chain || Promise.resolve()).then(fn, fn);
+    p.then(end, end);
+    this.chain = p.catch(() => { });
+    return p;
+  },
+  pull(force) {
+    if (!this.db || this.dead || PROF.cur !== (this.prof || "p0")) return Promise.resolve(false);
+    if (!force && Date.now() - this.lastPull < (this.minPull || 60000)) return Promise.resolve(false);
+    this.lastPull = Date.now();
+    const tok = this.tok;
+    return this.run(() => this._pull(tok));
+  },
+  // znacznik wersji stanu w magazynie: czas zapisu (+ losowy dopisek przy GitHubie, bo dwa urządzenia mogą zapisać w tej samej milisekundzie)
+  stamp(m) { return m ? m.t + "|" + (m.w || "") : null; },
+  canonOf(o) {
+    const c = Object.assign({}, o); ["t", "settings", "me", "appv"].forEach(k => delete c[k]);
+    return JSON.stringify(c, function (k, v) { if (v && typeof v === "object" && !Array.isArray(v)) { const r = {}; Object.keys(v).sort().forEach(x => r[x] = v[x]); return r; } return v; });
+  },
+  // nazwy części stanu, na które wskazuje meta (null – meta wskazuje coś, czego nie umiemy przeczytać)
+  partNames(m) {
+    const n = +(m && m.n) || 0, out = [];
+    if (m.pf !== undefined && !/^[A-Za-z0-9_-]{1,80}$/.test(String(m.pf))) return null;
+    for (let i = 0; i < n; i++) out.push(m.pf ? m.pf + i : "p" + i);
+    return out;
+  },
+  // zapis jednego dokumentu; cas – tylko gdy nikt go w międzyczasie nie zmienił (magazyny, które to umieją)
+  put(path, v, cas, db) { const d = (db || this.db).doc(path); return cas && this.casOK ? d.set(v, { cas: true }) : d.set(v); },
+  // stan z magazynu: {m, remote, bad, miss} – bad = jest stan, ale nie da się go odczytać; miss = brak części (zestaw właśnie zastąpiony)
+  async readRemote(tok) {
+    const db = this.db, base = this.base;
+    let m = null, remote = null, bad = false, miss = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt) await sleep(1500);
+      if (!this.alive(tok)) return null;
+      const md = await db.doc(base + "meta").get(); m = md.exists ? md.data() : null;   // meta czytamy przy każdej próbie (ktoś mógł właśnie skończyć zapis)
+      if (!m || !(m.n > 0) || this.stamp(m) === this.seenT) return { m, remote: null, bad: false, miss: false };
+      const names = this.partNames(m), parts = [];
+      bad = !names; miss = false;
+      if (bad) break;
+      for (const nm of names) { const d = await db.doc(base + nm).get(); if (!d.exists) { miss = true; break; } parts.push(String((d.data() || {}).s || "")); }
+      if (miss) continue;   // ktoś właśnie zapisał nowy zestaw i skasował stary – jeszcze raz od meta
+      const json = parts.join(""), lenOK = !m.len || json.length === m.len;
+      let o = null; try { o = JSON.parse(json); } catch (e) { }
+      // zestaw (GitHub) z jedną częścią to zawsze cały zapis (także poprawiony ręcznie); poza tym długość musi się zgadzać
+      if (o && typeof o === "object" && o.lessons && (lenOK || (m.pf && names.length === 1))) { remote = o; this.written = m.pf ? [] : parts; bad = false; break; }
+      bad = true;   // ktoś właśnie zapisuje (stary układ) – za chwilę jeszcze raz
+    }
+    return { m, remote, bad: bad && !remote, miss: miss && !remote };
+  },
+  async _pull(tok) {
+    if (!this.alive(tok)) return false;
+    if (navigator.onLine === false) { this.state = "offline"; this.pending = true; this.ui(); return false; }
+    try {
+      const rr = await this.readRemote(tok);
+      if (!rr || !this.alive(tok)) return false;
+      const { m, remote, bad, miss } = rr;
+      if (bad || miss) {
+        // stan w magazynie jest, ale nieczytelny: nic nie łączymy i niczego nie wysyłamy (pusty stan nie może go nadpisać);
+        // „bad” ma na ekranie wyjście dla człowieka (wysłanie połączonego stanu z tego urządzenia), „miss” mija samo
+        // (konto claude.ai: jak dotąd „err” i ponowna próba – tam nie ma wyjścia przez wysłanie)
+        this.state = bad && this.sets ? "bad" : "err"; this.ui(); this.retry(); return false;
+      }
+      const { ev, seen, incomplete } = await this.pullEvents();
+      if (!this.alive(tok)) return false;
+      let changed = false;
+      if (remote || ev.length) {
+        // kopia przed połączeniem najwyżej co 30 minut dla tej osoby (pamiętane w jej dzienniku, nie w silniku – nowy silnik przy każdym otwarciu)
+        const last = Math.max(this.lastSnap || 0, +(await MEM_LOG.getMeta("syncSnap")) || 0);
+        const first = !!(this.firstPull && this.firstWhy);
+        const recent = Date.now() - last < 30 * 60000;
+        const why = first ? this.firstWhy : "przed synchronizacją";
+        const r = await memMergeIn({ st: remote, ev, from: this.from || "konto" }, { why, noSnap: recent && !first });
+        if (r.aborted || !this.alive(tok)) return false;
+        if (r.snap !== null && r.snap !== undefined) { this.lastSnap = Date.now(); await MEM_LOG.setMeta("syncSnap", this.lastSnap); }
+        changed = r.changed;
+        await MEM_LOG.setMeta(this.K.seen, seen);
+      }
+      if (remote) this.remoteCanon = this.canonOf(remote);
+      if (m) { this.seenT = this.stamp(m); this.cur = m; } else { this.remoteCanon = ""; this.written = []; this.cur = null; }
+      const wasFirst = this.firstPull; this.firstPull = false;
+      this.pulled = true; this.state = "on"; this.last = Date.now(); this.ok();
+      if (incomplete) this.retry();   // część dziennika innego urządzenia chwilowo nieczytelna: spróbujemy jeszcze raz
+      if (changed) this.applied(wasFirst && !!remote);
+      // w magazynie czegoś brakuje (albo jest tam starszy stan) → wyślij połączony
+      if (!m || this.canonOf(S) !== this.remoteCanon || this.pending || await this.hasNewEvents()) this.push(true);
+      this.ui();
+      return true;
+    } catch (e) { if (this.alive(tok)) this.fail(e); return false; }
+  },
+  // wpisy z dzienników innych urządzeń; seen[d] = {c: od której części czytać, q: najwyższy przeczytany numer}.
+  // Brakująca albo nieczytelna część: nie przesuwamy seen za nią (incomplete) – przeczytamy ją przy następnym pobraniu.
+  async pullEvents() {
+    const db = this.db, base = this.base, me = memDevId(), out = [];
+    let incomplete = false;
+    const seen = Object.assign({}, (await MEM_LOG.getMeta(this.K.seen)) || {});
+    const dd = await db.doc(base + "evdevs").get(), devs = dd.exists ? ((dd.data() || {}).d || []) : [];
+    this.devs = devs;
+    for (const d of devs) {
+      if (d === me || typeof d !== "string") continue;
+      const md = await db.doc(base + "evm_" + d).get(); if (!md.exists) continue;
+      const m = md.data() || {}, s = seen[d] || { c: 0, q: 0 }, n = +m.n || 0;
+      if ((+m.q || 0) <= s.q) continue;
+      let c = s.c, q = s.q, broken = false;
+      for (let i = s.c; i < n; i++) {
+        let cd = null;
+        try { cd = await db.doc(base + "ev_" + d + "_" + i).get(); } catch (e) { if (!(e && e.gh === "bad")) throw e; }
+        let rows = null;
+        if (cd && cd.exists) { try { rows = JSON.parse((cd.data() || {}).s || "[]"); } catch (e) { rows = null; } }
+        if (!Array.isArray(rows)) { broken = true; break; }
+        for (const r of rows) { if (!Array.isArray(r)) continue; const ev = MEM_LOG.unpack([d].concat(r)); if (ev.q > s.q) out.push(ev); if (ev.q > q) q = ev.q; }
+        c = i + 1;
+      }
+      if (broken) { incomplete = true; seen[d] = { c, q }; }
+      else seen[d] = { c: Math.max(0, n - 1), q: +m.q || 0 };
+    }
+    return { ev: out, seen, incomplete };
+  },
+  async hasNewEvents() { const up = (await MEM_LOG.getMeta(this.K.up)) || {}; return up.dev !== memDevId() || MEM_LOG.lastQ > (up.q || 0); },
+  applied(first) {
+    try { applyTheme(); } catch (e) { }
+    if (first && this.firstMsg) toast(this.firstMsg);
+    if (location.hash === "#/ja" && meOK()) { go("/"); return; }
+    if (!(typeof appBusy === "function" ? appBusy() : (typeof players !== "undefined" && players.length) || document.querySelector(".quiz,.chat,.modal,.wstep,.warea,.ghform,#ghcodeout,#ghcodein"))) { route(); return; }
+    if (document.getElementById("refbar")) return;
+    const b = document.createElement("div"); b.id = "refbar"; b.className = "refbar";
+    b.innerHTML = `<span>Postępy zmieniły się na innym urządzeniu.</span> <button class="btn sm">Odśwież</button>`;
+    b.querySelector("button").onclick = () => { b.remove(); route(); };
+    document.body.appendChild(b);
+  },
+  push(now) {
+    if (!this.db || this.dead || PROF.cur !== (this.prof || "p0")) return;
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => { this.timer = 0; this.write(); }, now ? 0 : (this.pushDelay || 2500));
+  },
+  write() { const tok = this.tok; return this.run(() => this._write(tok)); },
+  async _write(tok) {
+    if (!this.db || !this.alive(tok)) return;
+    if (!this.pulled) { this.pending = true; this.retry(); return; }   // nigdy nie wysyłaj przed pierwszym udanym pobraniem
+    if (navigator.onLine === false) { this.state = "offline"; this.pending = true; this.ui(); return; }
+    try {
+      for (let attempt = 0; ; attempt++) {
+        try { if (!(await this._writeOnce(tok))) return; break; }
+        catch (e) {
+          // inne urządzenie zapisało w tej samej chwili: pobierz wszystko jeszcze raz, połącz i wyślij ponownie
+          if (!(e && e.conflict) || attempt >= 3 || !this.alive(tok)) throw e;
+          this.seenT = null;
+        }
+      }
+      if (!this.alive(tok)) return;
+      this.pending = false; this.state = "on"; this.last = Date.now(); this.ok();
+    } catch (e) { if (this.alive(tok)) { this.pending = true; this.fail(e); } }
+    this.ui();
+  },
+  // false = przerwane (inna osoba, nieudane pobranie) – bez zmiany stanu na „zsynchronizowano”
+  async _writeOnce(tok) {
+    const db = this.db, base = this.base;
+    if (db.check) await db.check(0);   // GitHub: przed każdą wysyłką sprawdzamy, czy repozytorium wciąż jest prywatne
+    const md = await db.doc(base + "meta").get(), m = md.exists ? md.data() : null;
+    if (!this.alive(tok)) return false;
+    if (m && this.stamp(m) !== this.seenT) { if (!(await this._pull(tok))) { this.pending = true; return false; } }   // ktoś zapisał w międzyczasie: najpierw połącz
+    if (!this.alive(tok)) return false;
+    if (!m || this.canonOf(S) !== this.remoteCanon) await this.pushState();
+    if (!this.alive(tok)) { this.pending = true; return false; }
+    await this.pushEvents(tok);
+    return this.alive(tok);
+  },
+  // stan tej osoby zapamiętany na starcie zapisu; zapis kończymy nawet po zmianie osoby (to wciąż jej własne dane).
+  // o (ostatni zapis po zmianie osoby): {db, json, canon, t} uchwycone, zanim wczytano inną osobę
+  async pushState(o) {
+    o = o || {};
+    const db = o.db || this.db, base = this.base, json = o.json || JSON.stringify(S), canon = o.canon || this.canonOf(S);
+    const CH = this.CH || CHUNK, n = Math.ceil(json.length / CH) || 1, t = o.t || S.t || Date.now();
+    const meta = { n, t, len: json.length, v: 2 };
+    if (this.casOK) meta.w = Math.random().toString(36).slice(2, 10);
+    if (this.sets) {
+      // nowy zestaw plików tylko dla tego zapisu; dopóki meta na niego nie wskaże, nikt go nie czyta
+      meta.pf = "st_" + Date.now().toString(36) + "_" + meta.w + "_";
+      const names = this.partNames(meta);
+      try { for (let i = 0; i < n; i++) await this.put(base + names[i], { s: json.slice(i * CH, (i + 1) * CH) }, false, db); }
+      catch (e) { (this.orphans = this.orphans || []).push(...names); throw e; }
+    } else {
+      for (let i = 0; i < n; i++) { const part = json.slice(i * CH, (i + 1) * CH); if (this.written[i] !== part) { await this.put(base + "p" + i, { s: part }, true, db); this.written[i] = part; } }
+      this.written.length = n;
+    }
+    try { await this.put(base + "meta", meta, true, db); }   // meta na końcu
+    catch (e) { if (this.sets) (this.orphans = this.orphans || []).push(...this.partNames(meta)); throw e; }
+    const old = this.cur; this.cur = meta;
+    this.seenT = this.stamp(meta); this.remoteCanon = canon;
+    if (this.sets) await this.sweep(db, old, meta);
+  },
+  // porządki po udanym zapisie (nie przerywają synchronizacji): poprzedni zestaw, pliki z nieudanych zapisów,
+  // raz na sesję także zestawy z zapisów przerwanych wcześniej (starsze niż godzina – młodszy może być właśnie pisany przez inne urządzenie)
+  async sweep(db, old, cur) {
+    const base = this.base, gone = new Set(this.orphans || []);
+    this.orphans = [];
+    if (old && old.pf !== cur.pf) (this.partNames(old) || []).forEach(x => gone.add(x));
+    if (!this.swept && db.list) {
+      this.swept = true;
+      try {
+        for (const f of await db.list(base.replace(/\/+$/, ""))) {
+          const nm = String(f).replace(/\.json$/, ""), mm = /^st_([0-9a-z]+)_[0-9a-z]+_\d+$/.exec(nm);
+          if (mm && !nm.startsWith(cur.pf) && parseInt(mm[1], 36) < Date.now() - 36e5) gone.add(nm);
+        }
+      } catch (e) { }
+    }
+    for (const nm of gone) { if (cur.pf && nm.startsWith(cur.pf)) continue; try { if (db.del) await db.del(base + nm); } catch (e) { } }
+  },
+  // dziennik tego urządzenia: dopisujemy na końcu, przepisujemy tylko ostatni kawałek.
+  // o.cap (ostatni zapis po zmianie osoby): {up, evs} uchwycone wcześniej, o.db – magazyn, o.me – urządzenie
+  async pushEvents(tok, o) {
+    o = o || {};
+    const db = o.db || this.db, base = this.base, me = o.me || memDevId(), CH = this.CH || CHUNK, cap = o.cap || null;
+    let up = cap ? cap.up || null : (await MEM_LOG.getMeta(this.K.up)) || null;
+    if (!cap && !this.alive(tok)) return;
+    if (!up || up.dev !== me) up = { dev: me, n: 0, q: 0, last: "[]" };
+    const evs = (cap ? cap.evs.filter(e => e.q > (up.q || 0)) : await MEM_LOG.ownSince(up.q || 0)).sort((a, b) => a.q - b.q);
+    if ((!cap && !this.alive(tok)) || !evs.length) return;
+    let idx = Math.max(0, up.n - 1), rows = [];
+    try { rows = up.n ? JSON.parse(up.last || "[]") : []; } catch (e) { rows = []; }
+    let len = JSON.stringify(rows).length, q = up.q;
+    for (const ev of evs) {
+      const c = Object.assign({}, ev); delete c.ia;
+      const row = MEM_LOG.pack(c).slice(1), rl = JSON.stringify(row).length + 1;
+      if (rows.length && len + rl > CH) { await this.put(base + "ev_" + me + "_" + idx, { s: JSON.stringify(rows) }, false, db); idx++; rows = []; len = 2; }
+      rows.push(row); len += rl; q = Math.max(q, ev.q);
+    }
+    const last = JSON.stringify(rows);
+    await this.put(base + "ev_" + me + "_" + idx, { s: last }, false, db);
+    await this.put(base + "evm_" + me, { n: idx + 1, q }, false, db);
+    if (!(this.devs || []).includes(me)) {
+      // lista urządzeń jest wspólna: przy jednoczesnym dopisaniu dwóch urządzeń czytamy ją jeszcze raz
+      for (let a = 0; ; a++) {
+        try {
+          const dd = await db.doc(base + "evdevs").get(), devs = dd.exists ? ((dd.data() || {}).d || []) : [];
+          if (!devs.includes(me)) await this.put(base + "evdevs", { d: devs.concat([me]) }, true, db);
+          this.devs = devs.includes(me) ? devs : devs.concat([me]);
+          break;
+        } catch (e) { if (!(e && e.conflict) || a >= 4) throw e; }
+      }
+    }
+    if (!cap && this.alive(tok)) await MEM_LOG.setMeta(this.K.up, { dev: me, n: idx + 1, q, last });
+  },
+  // ostatni zapis po zmianie osoby (wspólny komputer): stan i wpisy tej osoby uchwycone, zanim wczytano następną.
+  // Gdy w magazynie jest w międzyczasie nowszy stan, nie łączymy go tutaj (S to już ktoś inny) – stan pójdzie przy powrocie
+  // tej osoby, a jej odpowiedzi (wpisy dziennika) idą od razu i z nich drugie urządzenie odtworzy karty.
+  finalWrite(cap, db) {
+    return this.run(async () => {
+      try {
+        if (!this.pulled || !cap) return false;
+        const md = await db.doc(this.base + "meta").get(), m = md.exists ? md.data() : null;
+        if (this.stamp(m) === this.seenT && cap.canon !== this.remoteCanon) await this.pushState({ db, json: cap.json, canon: cap.canon, t: cap.t });
+        const own = cap.own ? await cap.own : null;
+        if (own && own.evs && own.evs.length) await this.pushEvents(0, { db, cap: own, me: cap.me });
+        return true;
+      } catch (e) { return false; }
+    });
+  },
+  // stanu w magazynie nie da się odczytać (state „bad”): na prośbę człowieka wysyłamy w jego miejsce stan tego urządzenia,
+  // połączony z odpowiedziami innych urządzeń (te są w osobnych plikach i dają się czytać). Najpierw kopia awaryjna.
+  override() {
+    const tok = this.tok;
+    return this.run(async () => {
+      if (!this.db || !this.alive(tok)) return false;
+      try {
+        try { await MEM_LOG.snapshot("przed zastąpieniem kopii"); } catch (e) { }
+        const { ev, seen } = await this.pullEvents();
+        if (!this.alive(tok)) return false;
+        if (ev.length) {
+          const r = await memMergeIn({ ev, from: this.from || "konto" }, { noSnap: true });
+          if (r.aborted || !this.alive(tok)) return false;
+          if (r.changed) this.applied(false);
+        }
+        await MEM_LOG.setMeta(this.K.seen, seen);
+        // wersję meta znamy także wtedy, gdy jej treści nie da się odczytać (magazyn zapamiętuje ją przed odczytem treści)
+        let m = null;
+        try { const md = await this.db.doc(this.base + "meta").get(); m = md.exists ? md.data() : null; } catch (e) { if (!(e && e.gh === "bad")) throw e; }
+        if (!this.alive(tok)) return false;
+        this.cur = m && typeof m === "object" ? m : null; this.seenT = this.stamp(this.cur); this.remoteCanon = ""; this.written = [];
+        this.pulled = true; this.firstPull = false;
+        await this.pushState();
+        if (!this.alive(tok)) return false;
+        await this.pushEvents(tok);
+        this.pending = false; this.state = "on"; this.last = Date.now(); this.ok(); this.ui();
+        return true;
+      } catch (e) { if (this.alive(tok)) this.fail(e); return false; }
+    });
+  }
+};
+
+/* ---------- konto Claude (tylko w wersji online na claude.ai, tylko pierwsza osoba) ----------
+   W wersji online strona może mieć bazę danych przypisaną do zalogowanej osoby. Wtedy postępy zapisują się
+   na koncie i są takie same na telefonie i komputerze. W pliku offline window.claude nie istnieje i nic się nie dzieje. */
+window.CloudSync = Object.assign(Object.create(MemSyncCore), {
   db: null, base: "", state: "off", last: 0, pulled: false, timer: 0, lastPull: 0, seenT: null, pending: false,
   written: [], remoteCanon: "", lastSnap: 0, hooked: false, chain: null, firstPull: true,
   tok: 0, retryT: 0, retryMs: 0,
+  prof: "p0", K: { seen: "cloudSeen", up: "cloudUp" }, from: "konto", firstMsg: "☁️ Wczytano postępy z Twojego konta",
   stateText() {
     if (!this.db && this.state !== "wait") return "";
     if (this.state === "wait") return "☁️ Łączę z kontem…";
@@ -30298,180 +30666,610 @@ window.CloudSync = {
       window.addEventListener("offline", () => { if (this.db) { this.state = "offline"; this.ui(); } });
     }
     await this.pull(true);
-  },
-  // zmiana osoby: wszystko, co jest w toku, kończy się bez zapisu (konto należy do pierwszej osoby)
-  cancel() {
-    this.tok++;
-    clearTimeout(this.timer); this.timer = 0; this.pending = true;   // to, co nie zdążyło się wysłać, pójdzie przy powrocie tej osoby
-    clearTimeout(this.retryT); this.retryT = 0;
-  },
-  // czy operacja rozpoczęta z numerem tok może jeszcze coś zapisać (ta sama osoba, ten sam dziennik)
-  alive(tok) { return tok === this.tok && PROF.cur === "p0" && (!window.MEM_LOG || !MEM_LOG.prof || MEM_LOG.prof === "p0"); },
-  // po nieudanym połączeniu: kolejna próba za 15 s, 30 s, 60 s… (najwyżej co 5 minut), dopóki karta jest otwarta
-  retry() {
-    if (!this.db || this.retryT || navigator.onLine === false) return;
-    this.retryMs = Math.min(300000, this.retryMs ? this.retryMs * 2 : 15000);
-    this.retryT = setTimeout(() => { this.retryT = 0; this.pull(true); }, this.retryMs);
-  },
-  ok() { this.retryMs = 0; clearTimeout(this.retryT); this.retryT = 0; },
-  // jedna operacja na raz (pobieranie i wysyłanie nie mogą się przeplatać)
-  run(fn) { const p = (this.chain || Promise.resolve()).then(fn, fn); this.chain = p.catch(() => { }); return p; },
-  pull(force) {
-    if (!this.db || PROF.cur !== "p0") return Promise.resolve(false);
-    if (!force && Date.now() - this.lastPull < 60000) return Promise.resolve(false);
-    this.lastPull = Date.now();
-    const tok = this.tok;
-    return this.run(() => this._pull(tok));
-  },
-  canonOf(o) {
-    const c = Object.assign({}, o); ["t", "settings", "me", "appv"].forEach(k => delete c[k]);
-    return JSON.stringify(c, function (k, v) { if (v && typeof v === "object" && !Array.isArray(v)) { const r = {}; Object.keys(v).sort().forEach(x => r[x] = v[x]); return r; } return v; });
-  },
-  // stan z konta: {m, remote, bad} – bad = konto ma stan, ale nie da się go odczytać (np. przerwany zapis)
-  async readRemote(tok) {
-    const db = this.db, base = this.base;
-    let m = null, remote = null, bad = false;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt) await sleep(1500);
-      if (!this.alive(tok)) return null;
-      const md = await db.doc(base + "meta").get(); m = md.exists ? md.data() : null;   // meta czytamy przy każdej próbie (ktoś mógł właśnie skończyć zapis)
-      if (!m || !(m.n > 0) || m.t === this.seenT) return { m, remote: null, bad: false };
-      const parts = [];
-      for (let i = 0; i < m.n; i++) { const d = await db.doc(base + "p" + i).get(); parts.push(d.exists ? String((d.data() || {}).s || "") : ""); }
-      const json = parts.join("");
-      bad = true;
-      if (m.len && json.length !== m.len) continue;   // ktoś właśnie zapisuje – za chwilę jeszcze raz
-      let o = null; try { o = JSON.parse(json); } catch (e) { continue; }
-      bad = false;
-      if (o && o.lessons) { remote = o; this.written = parts; }
-      break;
-    }
-    return { m, remote, bad };
-  },
-  async _pull(tok) {
-    if (!this.alive(tok)) return false;
-    if (navigator.onLine === false) { this.state = "offline"; this.pending = true; this.ui(); return false; }
-    try {
-      const rr = await this.readRemote(tok);
-      if (!rr || !this.alive(tok)) return false;
-      const { m, remote, bad } = rr;
-      if (bad) {
-        // stan na koncie jest, ale nieczytelny: nic nie łączymy i niczego nie wysyłamy (pusty stan nie może go nadpisać); spróbujemy później
-        this.state = "err"; this.ui(); this.retry(); return false;
-      }
-      const { ev, seen } = await this.pullEvents();
-      if (!this.alive(tok)) return false;
-      let changed = false;
-      if (remote || ev.length) {
-        const recent = Date.now() - this.lastSnap < 30 * 60000;
-        const r = await memMergeIn({ st: remote, ev, from: "konto" }, { why: "przed synchronizacją", noSnap: recent });
-        if (r.aborted || !this.alive(tok)) return false;
-        if (r.snap !== null && r.snap !== undefined) this.lastSnap = Date.now();
-        changed = r.changed;
-        await MEM_LOG.setMeta("cloudSeen", seen);
-      }
-      if (remote) this.remoteCanon = this.canonOf(remote);
-      if (m) this.seenT = m.t; else { this.remoteCanon = ""; this.written = []; }
-      const wasFirst = this.firstPull; this.firstPull = false;
-      this.pulled = true; this.state = "on"; this.last = Date.now(); this.ok();
-      if (changed) this.applied(wasFirst && !!remote);
-      // na koncie czegoś brakuje (albo jest tam starszy stan) → wyślij połączony
-      if (!m || this.canonOf(S) !== this.remoteCanon || this.pending || await this.hasNewEvents()) this.push(true);
-      this.ui();
-      return true;
-    } catch (e) { if (this.alive(tok)) { this.state = "err"; this.ui(); this.retry(); } return false; }
-  },
-  async pullEvents() {
-    const db = this.db, base = this.base, me = memDevId(), out = [];
-    const seen = Object.assign({}, (await MEM_LOG.getMeta("cloudSeen")) || {});
-    const dd = await db.doc(base + "evdevs").get(), devs = dd.exists ? ((dd.data() || {}).d || []) : [];
-    this.devs = devs;
-    for (const d of devs) {
-      if (d === me || typeof d !== "string") continue;
-      const md = await db.doc(base + "evm_" + d).get(); if (!md.exists) continue;
-      const m = md.data() || {}, s = seen[d] || { c: 0, q: 0 };
-      if ((+m.q || 0) <= s.q) continue;
-      for (let i = s.c; i < (+m.n || 0); i++) {
-        const cd = await db.doc(base + "ev_" + d + "_" + i).get(); if (!cd.exists) continue;
-        let rows; try { rows = JSON.parse((cd.data() || {}).s || "[]"); } catch (e) { continue; }
-        for (const r of rows) { const ev = MEM_LOG.unpack([d].concat(r)); if (ev.q > s.q) out.push(ev); }
-      }
-      seen[d] = { c: Math.max(0, (+m.n || 0) - 1), q: +m.q || 0 };
-    }
-    return { ev: out, seen };
-  },
-  async hasNewEvents() { const up = (await MEM_LOG.getMeta("cloudUp")) || {}; return up.dev !== memDevId() || MEM_LOG.lastQ > (up.q || 0); },
-  applied(first) {
-    try { applyTheme(); } catch (e) { }
-    if (first) toast("☁️ Wczytano postępy z Twojego konta");
-    if (location.hash === "#/ja" && meOK()) { go("/"); return; }
-    if (!(typeof appBusy === "function" ? appBusy() : (typeof players !== "undefined" && players.length) || document.querySelector(".quiz,.chat,.modal,.wstep,.warea"))) { route(); return; }
-    if (document.getElementById("refbar")) return;
-    const b = document.createElement("div"); b.id = "refbar"; b.className = "refbar";
-    b.innerHTML = `<span>Postępy zmieniły się na innym urządzeniu.</span> <button class="btn sm">Odśwież</button>`;
-    b.querySelector("button").onclick = () => { b.remove(); route(); };
-    document.body.appendChild(b);
-  },
-  push(now) {
-    if (!this.db || PROF.cur !== "p0") return;
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => { this.timer = 0; this.write(); }, now ? 0 : 2500);
-  },
-  write() { const tok = this.tok; return this.run(() => this._write(tok)); },
-  async _write(tok) {
-    if (!this.db || !this.alive(tok)) return;
-    if (!this.pulled) { this.pending = true; this.retry(); return; }   // nigdy nie wysyłaj przed pierwszym udanym pobraniem
-    if (navigator.onLine === false) { this.state = "offline"; this.pending = true; this.ui(); return; }
-    try {
-      const db = this.db, base = this.base;
-      const md = await db.doc(base + "meta").get(), m = md.exists ? md.data() : null;
-      if (!this.alive(tok)) return;
-      if (m && m.t !== this.seenT) { if (!(await this._pull(tok))) { this.pending = true; return; } }   // ktoś zapisał w międzyczasie: najpierw połącz
-      if (!this.alive(tok)) return;
-      if (!m || this.canonOf(S) !== this.remoteCanon) await this.pushState();
-      if (!this.alive(tok)) { this.pending = true; return; }
-      await this.pushEvents(tok);
-      if (!this.alive(tok)) return;
-      this.pending = false; this.state = "on"; this.last = Date.now(); this.ok();
-    } catch (e) { if (this.alive(tok)) { this.state = "err"; this.pending = true; this.retry(); } }
-    this.ui();
-  },
-  // stan tej osoby zapamiętany na starcie zapisu; zapis kończymy nawet po zmianie osoby (to wciąż jej własne dane)
-  async pushState() {
-    const db = this.db, base = this.base, json = JSON.stringify(S), canon = this.canonOf(S), n = Math.ceil(json.length / CHUNK) || 1, t = S.t || Date.now();
-    for (let i = 0; i < n; i++) { const part = json.slice(i * CHUNK, (i + 1) * CHUNK); if (this.written[i] !== part) { await db.doc(base + "p" + i).set({ s: part }); this.written[i] = part; } }
-    this.written.length = n;
-    await db.doc(base + "meta").set({ n, t, len: json.length, v: 2 });   // meta na końcu
-    this.seenT = t; this.remoteCanon = canon;
-  },
-  // dziennik tego urządzenia: dopisujemy na końcu, przepisujemy tylko ostatni kawałek
-  async pushEvents(tok) {
-    const db = this.db, base = this.base, me = memDevId();
-    let up = (await MEM_LOG.getMeta("cloudUp")) || null;
-    if (!this.alive(tok)) return;
-    if (!up || up.dev !== me) up = { dev: me, n: 0, q: 0, last: "[]" };
-    const evs = (await MEM_LOG.ownSince(up.q || 0)).sort((a, b) => a.q - b.q);
-    if (!this.alive(tok) || !evs.length) return;
-    let idx = Math.max(0, up.n - 1), rows = [];
-    try { rows = up.n ? JSON.parse(up.last || "[]") : []; } catch (e) { rows = []; }
-    let len = JSON.stringify(rows).length, q = up.q;
-    for (const ev of evs) {
-      const c = Object.assign({}, ev); delete c.ia;
-      const row = MEM_LOG.pack(c).slice(1), rl = JSON.stringify(row).length + 1;
-      if (rows.length && len + rl > CHUNK) { await db.doc(base + "ev_" + me + "_" + idx).set({ s: JSON.stringify(rows) }); idx++; rows = []; len = 2; }
-      rows.push(row); len += rl; q = Math.max(q, ev.q);
-    }
-    const last = JSON.stringify(rows);
-    await db.doc(base + "ev_" + me + "_" + idx).set({ s: last });
-    await db.doc(base + "evm_" + me).set({ n: idx + 1, q });
-    if (!(this.devs || []).includes(me)) {
-      const dd = await db.doc(base + "evdevs").get(), devs = dd.exists ? ((dd.data() || {}).d || []) : [];
-      if (!devs.includes(me)) await db.doc(base + "evdevs").set({ d: devs.concat([me]) });
-      this.devs = devs.includes(me) ? devs : devs.concat([me]);
-    }
-    if (this.alive(tok)) await MEM_LOG.setMeta("cloudUp", { dev: me, n: idx + 1, q, last });
   }
-};
+});
+
+/* ===================== automatyczna synchronizacja przez GitHub (telefon ↔ komputer, bez naszego serwera) =====================
+   Postępy każdej osoby leżą w jej folderze w PRYWATNYM repozytorium na GitHubie (pliki <folder>/<nazwa>.json).
+   Dostęp: token „fine-grained” ograniczony do tego jednego repozytorium (Contents: Read and write).
+   Silnik łączenia jest ten sam co przy koncie Claude (MemSyncCore w src/memsync.js); tutaj jest tylko magazyn (GitHub
+   Contents API), ustawienia i ekran. Ustawienia (repozytorium, token, folder) leżą w localStorage osobno dla każdej osoby
+   na tym urządzeniu – nigdy w S, w kodach postępów ani w dzienniku. W wersji online na claude.ai tej opcji nie ma (tam jest konto). */
+(function () {
+  const API = () => window.GH_API || "https://api.github.com";
+  const KEY = p => "nauka-japonskiego-gh:" + (p || "p0");
+  const DAY = 864e5;
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch (e) { } };
+  const curP = () => (typeof PROF !== "undefined" && PROF && PROF.cur) || "p0";
+  const tm = t => typeof memPlTime === "function" ? memPlTime(t) : new Date(t).toLocaleTimeString();
+  const dt = t => typeof memPlDate === "function" ? memPlDate(t) : new Date(t).toLocaleDateString();
+  const H = s => typeof esc === "function" ? esc(s) : String(s);
+
+  /* ---------- base64 (UTF-8) ---------- */
+  function b64(str) { const u = new TextEncoder().encode(str); let s = ""; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+  function unb64(s) { const bin = atob(String(s).replace(/\s+/g, "")); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new TextDecoder().decode(u); }
+  const b64url = s => b64(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const unb64url = s => { s = String(s).replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return unb64(s); };
+
+  /* ---------- ustawienia: repozytorium, folder, token ---------- */
+  function slug(s) { return String(s || "").replace(/ł/g, "l").replace(/Ł/g, "L").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40); }
+  // „właściciel/nazwa”, także wklejony adres strony repozytorium: z https:// albo bez, z www., z dalszą częścią
+  // (…/tree/main, …/blob/…), z ?tab=… albo #… na końcu, a także git@github.com:właściciel/nazwa.git
+  function parseRepo(s) {
+    s = String(s || "").trim().replace(/[?#].*$/, "").replace(/^git@github\.com:/i, "").replace(/^(https?:\/\/)?(www\.)?github\.com\//i, "");
+    s = s.split("/").filter(Boolean).slice(0, 2).join("/").replace(/\.git$/i, "");
+    const m = /^([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))\/([A-Za-z0-9._-]{1,100})$/.exec(s);
+    return m && m[2] !== "." && m[2] !== ".." ? m[1] + "/" + m[2] : null;
+  }
+  const okFolder = f => /^[a-z0-9](?:[a-z0-9_-]{0,38}[a-z0-9])?$/.test(f || "");
+  const okToken = t => /^[A-Za-z0-9_]{20,255}$/.test(t || "");
+  function load(p) { try { const o = JSON.parse(lsGet(KEY(p)) || "null"); return o && typeof o === "object" ? o : null; } catch (e) { return null; } }
+  function save(p, o) { return lsSet(KEY(p), JSON.stringify(o)); }
+  const active = c => !!(c && c.on && c.token && parseRepo(c.repo) && okFolder(c.folder));
+  // krótki identyfikator miejsca w repozytorium (do znaczników w dzienniku – bez tokenu)
+  function placeId(c) { const s = (c.repo + "/" + c.folder).toLowerCase(); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return h.toString(36); }
+  // kod konfiguracji: to samo ustawienie na drugim urządzeniu tej samej osoby (działa jak hasło)
+  const encodeCode = c => "GHS1:" + b64url(JSON.stringify({ r: c.repo, f: c.folder, t: c.token, e: c.exp || 0 }));
+  function decodeCode(text) {
+    const m = /GHS1:([A-Za-z0-9_\-+/=]+)/.exec(String(text || "").replace(/\s+/g, ""));
+    if (!m) return null;
+    try { const o = JSON.parse(unb64url(m[1])); const repo = parseRepo(o.r); if (!repo || !okToken(o.t) || !okFolder(o.f)) return null; return { repo, folder: o.f, token: o.t, exp: +o.e || 0 }; } catch (e) { return null; }
+  }
+  // nagłówek github-authentication-token-expiration: „2026-11-10 12:00:00 UTC” albo „… +0200”
+  function parseExp(h) {
+    if (!h) return 0;
+    const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)\s*(UTC|Z|[+-]\d{2}:?\d{2})?$/.exec(String(h).trim());
+    if (!m) { const t = Date.parse(h); return isFinite(t) ? t : 0; }
+    let z = m[3] || "Z"; if (z === "UTC") z = "Z"; else if (/^[+-]\d{4}$/.test(z)) z = z.slice(0, 3) + ":" + z.slice(3);
+    const t = Date.parse(m[1] + "T" + m[2] + z); return isFinite(t) ? t : 0;
+  }
+
+  /* ---------- magazyn: GitHub Contents API ---------- */
+  const gerr = (kind, extra) => Object.assign(new Error("github: " + kind), { gh: kind }, extra || {});
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  // o.onExp(ms) – GitHub podał datę wygaśnięcia tokenu
+  function store(c, o) {
+    o = o || {};
+    const repo = parseRepo(c.repo), token = c.token, sha = {};   // sha: undefined = nie wiemy, null = pliku nie ma, tekst = znana wersja
+    let dead = false, ctl = typeof AbortController === "function" ? new AbortController() : null, checked = null, checkedAt = 0;
+    const R = repo.split("/").map(encodeURIComponent).join("/");
+    const enc = p => String(p).split("/").map(encodeURIComponent).join("/");
+    const url = p => API() + "/repos/" + R + "/contents/" + enc(p) + ".json";
+    // każde połączenie ma limit czasu (G.T.req): martwe połączenie w metrze albo uśpiona aplikacja nie zatrzymuje synchronizacji na zawsze.
+    // Nie polegamy tylko na przerwaniu (abort) – przeglądarka nie zawsze kończy wtedy żądanie – więc odpowiedź i jej treść ścigają się z zegarem.
+    async function call(method, u, body, x) {
+      x = x || {};
+      if (dead && !x.write) throw gerr("aborted");
+      const h = { "Accept": x.raw ? "application/vnd.github.raw+json" : "application/vnd.github+json", "Authorization": "Bearer " + token };
+      if (body) h["Content-Type"] = "application/json";
+      const rc = typeof AbortController === "function" ? new AbortController() : null, lim = +G.T.req || 0;
+      const stop = () => { try { rc.abort(); } catch (e) { } };
+      const late = lim > 0 ? new Promise((_, no) => setTimeout(() => { stop(); no(gerr(dead && !x.write ? "aborted" : "net")); }, lim)) : null;
+      if (late) late.catch(() => { });
+      if (rc && ctl && !x.write) ctl.signal.addEventListener("abort", stop);   // zmiana osoby: odczyty przerywamy od razu
+      let r;
+      try { const f = fetch(u, { method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: "no-store", signal: rc ? rc.signal : undefined }); r = await (late ? Promise.race([f, late]) : f); }
+      catch (e) { throw e && e.gh ? e : gerr(dead && !x.write ? "aborted" : "net"); }
+      finally { if (rc && ctl && !x.write) ctl.signal.removeEventListener("abort", stop); }
+      if (dead && !x.write) throw gerr("aborted");
+      try { const e = parseExp(r.headers.get("github-authentication-token-expiration")); if (e && o.onExp) o.onExp(e); } catch (e) { }
+      r.late = late;
+      return r;
+    }
+    // treść odpowiedzi (też może utknąć albo zostać przerwana)
+    async function body(r, text) { try { const p = text ? r.text() : r.json(); return await (r.late ? Promise.race([p, r.late]) : p); } catch (e) { throw e && e.gh ? e : gerr(dead ? "aborted" : "net"); } }
+    async function bad(r) {
+      let msg = ""; try { msg = String(((await body(r)) || {}).message || ""); } catch (e) { }
+      if (r.status === 401) return gerr("auth");
+      if (r.status === 429 || (r.status === 403 && (r.headers.get("x-ratelimit-remaining") === "0" || /rate limit/i.test(msg)))) {
+        const reset = +r.headers.get("x-ratelimit-reset") * 1000 || 0, ra = +r.headers.get("retry-after") * 1000 || 0;
+        return gerr("rate", { reset: reset || (Date.now() + (ra || 60000)) });
+      }
+      if (r.status === 403) return gerr("perm");
+      if (r.status === 404) return gerr("norepo");
+      if (r.status >= 500) return gerr("net");
+      return gerr("http" + r.status);
+    }
+    // repozytorium istnieje, token je widzi i jest PRYWATNE (do publicznego nic nie wysyłamy).
+    // Wynik pamiętamy najwyżej maxAge ms (domyślnie 5 minut); przed każdą wysyłką silnik pyta od nowa (maxAge 0).
+    function check(maxAge) {
+      const age = maxAge === undefined ? 300000 : maxAge;
+      if (!checked || (checkedAt && Date.now() - checkedAt >= age)) {
+        checkedAt = 0;
+        checked = (async () => {
+          const r = await call("GET", API() + "/repos/" + R);
+          if (!r.ok) throw await bad(r);
+          const j = await body(r);
+          if (!j || j.private !== true) throw gerr("public");
+          checkedAt = Date.now();
+          return j;
+        })().catch(e => { checked = null; checkedAt = 0; throw e; });
+      }
+      return checked;
+    }
+    async function get(p, x) {
+      x = x || {};
+      if (!x.write) await check();
+      const r = await call("GET", url(p), null, x);
+      if (r.status === 404) { sha[p] = null; return { exists: false, data: () => null }; }
+      // 409 przy odczycie: repozytorium bez żadnego pliku („This repository is empty”)
+      if (r.status === 409) { sha[p] = null; return { exists: false, data: () => null }; }
+      if (!r.ok) throw await bad(r);
+      const j = await body(r);
+      if (!j || Array.isArray(j) || j.type !== "file") throw gerr("bad");
+      sha[p] = j.sha;   // wersję znamy, nawet gdy treści nie da się odczytać (świadome zastąpienie nieczytelnej kopii)
+      let text;
+      if (j.encoding === "base64" && j.content) text = unb64(j.content);
+      else if (!j.size) text = "";
+      else {
+        // plik większy niż 1 MB: API nie podaje treści w JSON – czytamy surową treść
+        const r2 = await call("GET", url(p), null, Object.assign({}, x, { raw: true }));
+        if (!r2.ok) throw await bad(r2);
+        text = await body(r2, true);
+      }
+      let v; try { v = JSON.parse(text); } catch (e) { throw gerr("bad"); }   // nieczytelny plik to nie „pusty” plik
+      return { exists: true, data: () => v };
+    }
+    async function learn(p) { try { await get(p, { write: true }); } catch (e) { if (e.gh !== "bad") throw e; } }
+    // cas – zapis tylko wtedy, gdy plik jest w znanej nam wersji (inaczej błąd conflict); bez cas – ponawiamy z nową wersją.
+    // 409/422 przy niezmienionym pliku to zwykle jednoczesny zapis innego pliku w tej samej gałęzi (np. telefon drugiej osoby) –
+    // wtedy po chwili próbujemy jeszcze raz, zamiast uznawać to za konflikt.
+    async function set(p, v, opt) {
+      const cas = !!(opt && opt.cas);
+      if (cas && sha[p] === undefined) await learn(p);
+      const content = b64(JSON.stringify(v)), dev = typeof memDevName === "function" ? memDevName() : "";
+      for (let a = 0; a < 5; a++) {
+        const body = { message: "Postępy: " + p + ".json" + (dev ? " (" + dev + ")" : ""), content };
+        if (sha[p]) body.sha = sha[p];
+        const r = await call("PUT", url(p), body, { write: true });
+        if (r.ok) { let j = null; try { j = await body(r); } catch (e) { } sha[p] = j && j.content && j.content.sha || undefined; return true; }
+        if (r.status === 409 || r.status === 422) {
+          const was = sha[p]; sha[p] = undefined; await learn(p);
+          if (was !== undefined && sha[p] === was) { await wait(400 * (a + 1)); continue; }   // plik bez zmian – jeszcze raz
+          if (cas) throw gerr("conflict", { conflict: true });
+          continue;
+        }
+        throw await bad(r);
+      }
+      throw gerr("net");
+    }
+    // usunięcie pliku (porządki po starych zestawach stanu); brak pliku to też sukces
+    async function del(p) {
+      if (sha[p] === undefined) await learn(p);
+      for (let a = 0; a < 4; a++) {
+        if (!sha[p]) return true;
+        const r = await call("DELETE", url(p), { message: "Porządki: " + p + ".json", sha: sha[p] }, { write: true });
+        if (r.ok || r.status === 404) { sha[p] = null; return true; }
+        if (r.status === 409 || r.status === 422) { sha[p] = undefined; await wait(400 * (a + 1)); await learn(p); continue; }
+        throw await bad(r);
+      }
+      return false;
+    }
+    // nazwy plików w folderze (np. „st_…_0.json”)
+    async function list(dir) {
+      await check();
+      const r = await call("GET", API() + "/repos/" + R + "/contents/" + enc(dir));
+      if (r.status === 404 || r.status === 409) return [];
+      if (!r.ok) throw await bad(r);
+      const j = await body(r);
+      if (!Array.isArray(j)) return [];
+      return j.filter(x => x && x.type === "file" && typeof x.name === "string").map(x => { if (/\.json$/.test(x.name)) sha[dir + "/" + x.name.slice(0, -5)] = x.sha; return x.name; });
+    }
+    return {
+      doc: p => ({ get: () => get(p), set: (v, opt) => set(p, v, opt) }),
+      check, get, set, del, list,
+      // zmiana osoby: odczyty przerywamy od razu, rozpoczęty zapis kończy się (to wciąż dane tej samej osoby)
+      kill() { dead = true; try { if (ctl) ctl.abort(); } catch (e) { } },
+      get dead() { return dead; }
+    };
+  }
+
+  /* ---------- sprawdzenie połączenia (przed włączeniem) ---------- */
+  // {ok, kind, name (osoba, której postępy są już w folderze), st (magazyn)}
+  async function probe(c) {
+    const st = store(c, { onExp: e => { c.exp = e; c.expSrc = "api"; } });
+    try {
+      await st.check();
+      const who = await st.get(c.folder + "/osoba");
+      return { ok: true, name: who.exists ? String((who.data() || {}).name || "") : "", st };
+    } catch (e) { return { ok: false, kind: e.gh || "net", reset: e.reset }; }
+  }
+  async function writeTest(c, st) {
+    try { await st.set(c.folder + "/osoba", { name: (S.me && S.me.name) || "", dev: typeof memDevName === "function" ? memDevName() : "", at: Date.now() }); return { ok: true }; }
+    catch (e) { return { ok: false, kind: e.gh === "norepo" ? "perm" : (e.gh || "net"), reset: e.reset }; }
+  }
+  function errText(kind, c, reset) {
+    const repo = H(c && c.repo || "");
+    return ({
+      net: "Nie mogę połączyć się z GitHubem. Sprawdź internet i spróbuj jeszcze raz.",
+      auth: "GitHub nie przyjął tokenu. Sprawdź, czy skopiował się cały (zaczyna się od github_pat_) i czy nie wygasł.",
+      norepo: `Nie widzę repozytorium „${repo}”. Sprawdź nazwę (właściciel/nazwa) i czy przy tokenie wybrano to repozytorium (Only select repositories).`,
+      public: `⛔ Repozytorium „${repo}” jest publiczne – każdy mógłby zobaczyć Twoje postępy, więc nic tam nie wyślę. Zmień je na prywatne (na GitHubie: Settings → General → Danger Zone → Change repository visibility → Private) i sprawdź jeszcze raz.`,
+      perm: "Token może czytać, ale nie może zapisywać. Na GitHubie przy tokenie ustaw Repository permissions → Contents: Read and write.",
+      rate: `GitHub chwilowo ogranicza liczbę połączeń. Spróbuj ${reset ? "po " + tm(reset) : "za kilka minut"}.`,
+      bad: "W folderze jest plik, którego nie umiem odczytać. Wybierz inny folder albo usuń go na GitHubie."
+    })[kind] || "Coś poszło nie tak po stronie GitHuba. Spróbuj jeszcze raz za chwilę.";
+  }
+
+  /* ---------- sterowanie: jedna aktywna synchronizacja dla osoby, która się teraz uczy ---------- */
+  const STUCK = { auth: 1, perm: 1, norepo: 1, public: 1 };
+  // plik otwarty z dysku (file://): wszystkie pliki HTML z dysku w tej przeglądarce dzielą jeden localStorage,
+  // więc token byłby do odczytania dla każdego z nich – tam synchronizacji nie oferujemy (działa w zainstalowanej aplikacji)
+  const fileMode = () => typeof location !== "undefined" && location.protocol === "file:";
+  function wipeFileTokens() {
+    let n = 0;
+    try {
+      const ks = [];
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("nauka-japonskiego-gh:") === 0) ks.push(k); }
+      for (const k of ks) { let o = null; try { o = JSON.parse(lsGet(k) || "null"); } catch (e) { } if (o && o.token) { lsSet(k, JSON.stringify({ repo: o.repo, folder: o.folder, on: false, wiped: Date.now() })); n++; } }
+    } catch (e) { }
+    return n;
+  }
+  const G = window.GhSync = {
+    eng: null, hooked: false, dirtyT: 0, lastWrite: 0, chains: {}, loopT: 0,
+    // wysyłka 20 s po ostatniej odpowiedzi (nie częściej niż co minutę), pobieranie co 4 minuty; req – limit czasu jednego połączenia,
+    // chainMax – najdłużej czekamy, aż skończy się poprzednia operacja na tym samym folderze
+    T: { debounce: 20000, gap: 60000, every: 240000, req: 25000, chainMax: 30000 },
+    avail: () => !window.claude && !fileMode(),
+    fileMode,
+    cfg: p => load(p || curP()),
+    stuck() { const e = this.eng; return !e || !!STUCK[e.state] || (e.state === "rate" && Date.now() < (e.rateAt || 0)); },
+    // start aplikacji i każda zmiana osoby
+    bind() {
+      this.cancel(true);
+      if (fileMode()) wipeFileTokens();
+      if (!this.avail()) return null;
+      const p = curP(), c = load(p);
+      if (!active(c)) return null;
+      const id = placeId(c), e = Object.create(MemSyncCore);
+      // poprzednia operacja na tym samym folderze (np. ostatni zapis przed zmianą osoby) – czekamy na nią, ale nie dłużej niż chainMax;
+      // inna osoba ma własny łańcuch, więc zawieszone połączenie Daniela nie zatrzymuje synchronizacji Kasi
+      const prev = this.chains[id];
+      Object.assign(e, {
+        db: store(c, { onExp: ms => { c.exp = ms; c.expSrc = "api"; const c2 = load(p); if (c2 && c2.token === c.token && c2.exp !== ms) { c2.exp = ms; c2.expSrc = "api"; save(p, c2); } } }),
+        base: c.folder + "/", prof: p, K: { seen: "ghSeen|" + id, up: "ghUp|" + id }, from: "GitHub", place: id,
+        firstMsg: "🔄 Wczytano postępy z GitHuba", firstWhy: c.synced ? "" : "przed pierwszą synchronizacją",
+        CH: 300000, minPull: 30000, pushDelay: 20000, casOK: true, sets: true, cfg: c,
+        state: "wait", last: 0, pulled: false, timer: 0, lastPull: 0, seenT: null, pending: false, written: [], remoteCanon: "",
+        lastSnap: 0, chain: prev ? Promise.race([prev, wait(this.T.chainMax)]) : null, firstPull: true, tok: 0, retryT: 0, retryMs: 0, dead: false, busy: 0
+      });
+      e.stateText = () => stateText(e);
+      e.ui = () => ui(e);
+      e.fail = function (err) {
+        const k = err && err.gh;
+        if (k === "aborted" || this.dead) return;
+        if (STUCK[k]) { this.state = k; this.ok(); this.ui(); return; }   // tu pomoże tylko człowiek (nowy token, prywatne repozytorium)
+        if (k === "rate") {
+          this.state = "rate"; this.rateAt = err.reset || Date.now() + 60000; clearTimeout(this.retryT);
+          this.retryT = setTimeout(() => { this.retryT = 0; this.pull(true); }, Math.max(30000, this.rateAt - Date.now() + 2000)); this.ui(); return;
+        }
+        this.state = k === "net" ? "offline" : k === "bad" ? "bad" : "err"; this.ui(); this.retry();
+      };
+      const w = e.write;
+      e.write = function () { G.lastWrite = Date.now(); clearTimeout(G.dirtyT); G.dirtyT = 0; return w.call(this); };
+      this.eng = e; this.hook(); expWarn(c);
+      e.pull(true);
+      this.chains[id] = e.chain;
+      return e;
+    },
+    // zmiana osoby: odczyty przerwane; w folderze poprzedniej osoby zapisuje się już tylko jej własny stan.
+    // Jeśli coś czekało na wysłanie (odpowiedzi sprzed chwili), stan i wpisy tej osoby uchwytujemy TERAZ (zanim wczyta się
+    // następna osoba) i wysyłamy ostatni raz. noFinal – ponowne połączenie tej samej osoby albo wyłączenie synchronizacji.
+    cancel(noFinal) {
+      const dirty = !!this.dirtyT;
+      clearTimeout(this.dirtyT); this.dirtyT = 0;
+      const e = this.eng; this.eng = null;
+      if (!e) return;
+      let cap = null;
+      if (!noFinal && !e.dead && e.pulled && !STUCK[e.state] && e.state !== "bad" && (dirty || e.pending || e.timer) && e.prof === curP()) {
+        try {
+          cap = { json: JSON.stringify(S), canon: e.canonOf(S), t: S.t, me: typeof memDevId === "function" ? memDevId() : "",
+            own: window.MEM_LOG && MEM_LOG.captureOwn && (!MEM_LOG.prof || MEM_LOG.prof === e.prof) ? MEM_LOG.captureOwn(e.K.up) : null };
+        } catch (x) { cap = null; }
+      }
+      e.cancel(); e.dead = true; e.db.kill();
+      if (cap) e.finalWrite(cap, store(e.cfg, {}));
+      this.chains[e.place] = e.chain;
+    },
+    // usunięta osoba: jej ustawienia i token znikają z tego urządzenia
+    forget(p) { ["nauka-japonskiego-gh:", "nauka-japonskiego-gh-exp:", "nauka-japonskiego-gh-stop:"].forEach(k => lsDel(k + p)); },
+    // po każdym zapisie postępów (saveState): wysyłka chwilę po ostatniej odpowiedzi
+    dirty() {
+      const e = this.eng; if (!e || e.prof !== curP() || this.stuck()) return;
+      clearTimeout(this.dirtyT);
+      const wait = Math.max(this.T.debounce, this.lastWrite + this.T.gap - Date.now());
+      this.dirtyT = setTimeout(() => { this.dirtyT = 0; if (this.eng === e && !this.stuck()) e.write(); }, wait);
+    },
+    async syncNow() {
+      let e = this.eng; if (!e) return null;
+      if (STUCK[e.state] || e.state === "rate") e = this.bind();   // np. po naprawie repozytorium – zacznij od nowa
+      if (!e) return null;
+      await e.pull(true); await e.write(); await e.chain;
+      return e.state;
+    },
+    // nieczytelna kopia na GitHubie: wyślij w jej miejsce połączony stan tego urządzenia
+    async override() { const e = this.eng; if (!e) return null; await e.override(); await e.chain; return e.state; },
+    hook() {
+      if (this.hooked || typeof document === "undefined" || !document.addEventListener) return;
+      this.hooked = true;
+      document.addEventListener("visibilitychange", () => {
+        const e = this.eng; if (!e || this.stuck()) return;
+        if (document.visibilityState === "visible") e.pull();
+        else if (e.pulled && (this.dirtyT || e.pending)) e.write();   // zamykanie aplikacji / przejście do innej: wyślij od razu
+      });
+      window.addEventListener("online", () => { const e = this.eng; if (e && !this.stuck()) e.pull(true); });
+      window.addEventListener("offline", () => { const e = this.eng; if (e && !this.stuck()) { e.state = "offline"; e.ui(); } });
+      const loop = () => {
+        this.loopT = setTimeout(loop, this.T.every);
+        const e = this.eng;
+        if (e && document.visibilityState === "visible" && navigator.onLine !== false && !this.stuck()) e.pull(true);
+      };
+      this.loopT = setTimeout(loop, this.T.every);
+    },
+    // do ekranu i testów
+    load, save, encodeCode, decodeCode, parseRepo, slug, parseExp, store, placeId, KEY, expNote: c => expNote(c), homeCard: () => homeCard()
+  };
+
+  /* ---------- stan i przypomnienie o wygasającym tokenie ---------- */
+  // dni kalendarzowe (czas lokalny) od dziś do dnia wygaśnięcia: 0 – dziś, 1 – jutro
+  const dayNo = t => { const d = new Date(t); return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY); };
+  const FIX = "wklej nowy token (albo nowy kod konfiguracji z drugiego urządzenia): Przenoszenie postępów → ✏️ Zmień";
+  function expNote(c) {
+    if (!c || !c.exp) return "";
+    const left = c.exp - Date.now(), days = dayNo(c.exp) - dayNo(Date.now());
+    if (left <= 0) return `Token wygasł ${dt(c.exp)}. Utwórz nowy na GitHubie i ${FIX}.`;
+    if (days > 7) return "";
+    const when = days <= 0 ? "dziś" : days === 1 ? "jutro" : "za " + days + " dni";
+    return `Token wygasa ${when} (${dt(c.exp)}). Utwórz nowy na GitHubie i ${FIX}.`;
+  }
+  function expWarn(c) {
+    if (!expNote(c) || typeof toast !== "function") return;
+    const k = "nauka-japonskiego-gh-exp:" + curP(), d = new Date().toDateString();
+    if (lsGet(k) === d) return;
+    lsSet(k, d); setTimeout(() => toast("🔑 " + expNote(c), 6000), 1500);
+  }
+  // synchronizacja stanęła i pomoże tylko człowiek: raz dziennie (dla każdej osoby) komunikat, a na stronie startowej karta
+  const STOP = {
+    auth: ["token wygasł albo jest nieprawidłowy", "✏️ Zmień"],
+    perm: ["token nie może zapisywać w repozytorium", "✏️ Zmień"],
+    norepo: ["kurs nie widzi repozytorium", "✏️ Zmień"],
+    public: ["repozytorium jest publiczne", "zmień je na prywatne"],
+    bad: ["kopii na GitHubie nie da się odczytać", "📤 Wyślij postępy z tego urządzenia"]
+  };
+  function stopWarn(e) {
+    const s = STOP[e.state];
+    if (!s || G.eng !== e || typeof toast !== "function") return;
+    const k = "nauka-japonskiego-gh-stop:" + e.prof, d = new Date().toDateString() + "|" + e.state;
+    if (lsGet(k) === d) return;
+    lsSet(k, d);
+    toast(`⚠️ Synchronizacja z GitHubem wstrzymana – ${s[0]}. Ustawienia → Przenoszenie postępów → ${s[1]}`, 7000);
+  }
+  function homeCard() {
+    const e = G.eng;
+    if (!e || e.prof !== curP() || !STOP[e.state]) return "";
+    return `<div class="card ghhome" style="margin-bottom:14px;border-left:4px solid var(--bad)"><b>⚠️ Synchronizacja z GitHubem wstrzymana</b>
+      <p class="small" style="margin:6px 0 10px">${H(stateText(e))}</p><a class="btn sm pri" href="#/przenies">Przejdź do synchronizacji</a></div>`;
+  }
+  function stateText(e) {
+    const c = e.cfg || {}, repo = c.repo || "";
+    const s = (e.busy && e.state === "on") ? "🔄 Synchronizuję…" : ({
+      wait: "🔄 Łączę z GitHubem…",
+      on: "✓ Zsynchronizowano o " + tm(e.last),
+      offline: "📴 Bez internetu – dośle się później",
+      err: "⚠️ Nie udało się połączyć z GitHubem – spróbuję ponownie",
+      bad: "⚠️ Kopii postępów na GitHubie nie da się odczytać – kurs nic tam nie wysyła, żeby jej nie zepsuć. Możesz wysłać w jej miejsce postępy z tego urządzenia (📤 w Przenoszeniu postępów)",
+      auth: "⚠️ Token wygasł albo jest nieprawidłowy – " + FIX,
+      perm: "⚠️ Token nie może zapisywać w repozytorium – nadaj mu Contents: Read and write",
+      norepo: `⚠️ Nie widzę repozytorium ${repo} – sprawdź nazwę i dostęp tokenu`,
+      public: `⛔ Repozytorium ${repo} jest publiczne – synchronizacja wstrzymana, zmień je na prywatne`,
+      rate: "⏳ GitHub chwilowo ogranicza liczbę połączeń – spróbuję o " + tm(e.rateAt || Date.now())
+    })[e.state] || "";
+    const x = e.state === "auth" ? "" : expNote(c);
+    return s + (x ? " · 🔑 " + x : "");
+  }
+  function ui(e) {
+    if (e.state === "on" && e.cfg && !e.cfg.synced) { const c = load(e.prof); if (c && c.token === e.cfg.token) { c.synced = Date.now(); save(e.prof, c); e.cfg.synced = c.synced; } }
+    if (G.eng !== e) return;
+    stopWarn(e);
+    if (typeof document === "undefined" || !document.querySelectorAll) return;
+    document.querySelectorAll(".ghstat").forEach(el => { el.textContent = stateText(e); el.classList.toggle("ghbad", !!STOP[e.state]); });
+    const hc = document.getElementById("ghhome"); if (hc) hc.innerHTML = homeCard();
+    const ob = document.getElementById("ghbadbox"); if (ob) ob.style.display = e.state === "bad" ? "" : "none";
+  }
+
+  /* ---------- ekran: karta „🔄 Automatyczna synchronizacja” (#/przenies) i linijka w Ustawieniach ---------- */
+  function css() {
+    if (typeof document === "undefined" || document.getElementById("ghcss")) return;
+    const st = document.createElement("style"); st.id = "ghcss";
+    st.textContent = `.ghcard .ghform{display:grid;gap:10px;margin-top:10px}
+.ghcard .ghform .tinput{font:16px/1.3 ui-monospace,Menlo,monospace;padding:10px 12px;margin-top:4px}
+.ghcard .ghform input[type=date]{font-size:16px;margin-top:4px;padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--bg2);color:var(--fg);max-width:100%}
+.ghcard textarea{width:100%;box-sizing:border-box;font:14px ui-monospace,Menlo,monospace;background:var(--bg2);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px;word-break:break-all}
+.ghcard .ghstat{font-weight:600}
+.ghbad{color:var(--bad)}
+.ghcard .ghres{margin-top:8px}
+.ghcard .ghres.ghok{color:var(--ok)}
+.ghcard .ghwarn{border-left:4px solid var(--bad);padding:8px 12px;background:var(--bg2);border-radius:8px;margin:10px 0}
+.ghcard ol{padding-left:20px;margin:8px 0}.ghcard ol li{margin:5px 0}
+.ghcard code{word-break:break-all}`;
+    document.head.appendChild(st);
+  }
+  const HELP = `<details class="ghhelp" style="margin-top:12px"><summary class="small"><b>Jak to założyć – krok po kroku (ok. 5 minut)</b></summary><div class="small">
+    <ol>
+      <li>Zaloguj się na <b>github.com</b> (konto jest darmowe).</li>
+      <li>Nowe repozytorium: „<b>+</b>” w prawym górnym rogu → <b>New repository</b>. Nazwa np. <code>japonski-postepy</code>, zaznacz <b>Private</b> i <b>Add a README file</b> → <b>Create repository</b>.</li>
+      <li>Token: Twoje zdjęcie (prawy górny róg) → <b>Settings</b> → na dole po lewej <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
+      <li><b>Token name</b>: np. <code>japonski</code>. <b>Expiration</b>: wybierz <b>No expiration</b> (token działa tylko dla tego jednego prywatnego repozytorium) – albo <b>Custom</b> i datę za rok. Jeśli token ma datę końca, wpisz ją tutaj w polu „Token ważny do” (kurs sam jej nie odczyta i nie przypomni).</li>
+      <li><b>Repository access</b>: <b>Only select repositories</b> → wybierz <code>japonski-postepy</code>.</li>
+      <li><b>Permissions</b> → <b>Repository permissions</b> → <b>Contents</b>: <b>Read and write</b> (Metadata: Read-only ustawi się samo). Nic więcej nie zaznaczaj.</li>
+      <li><b>Generate token</b> i skopiuj go (zaczyna się od <code>github_pat_</code>). GitHub pokaże go tylko raz.</li>
+      <li>Tutaj: „Włącz synchronizację”, wpisz repozytorium (np. <code>twoja-nazwa/japonski-postepy</code>), token i swój folder → <b>Sprawdź połączenie</b>.</li>
+      <li>Drugie urządzenie tej samej osoby: tutaj „🔑 Kod konfiguracji” → wyślij kod sobie → na drugim urządzeniu „📋 Mam kod konfiguracji” (jeśli synchronizacja już tam działa: ✏️ Zmień → „📋 Mam kod konfiguracji z drugiego swojego urządzenia”).</li>
+      <li>Nowy token (stary wygasł): ✏️ Zmień → wklej nowy token i wpisz jego nową datę ważności → Sprawdź połączenie. Na drugim urządzeniu wklej potem nowy kod konfiguracji.</li>
+    </ol>
+    <p style="margin:6px 0 0">Druga osoba może użyć tego samego repozytorium, ale wpisuje <b>własny folder</b> (np. <code>kasia</code>) – albo zakłada własne repozytorium i token. Token działa jak hasło: nie wklejaj go nigdzie poza tym kursem.</p></div></details>`;
+  function fileCardHTML() {
+    const c = load(curP()) || {};
+    return `<div class="card ghcard" id="ghcard" style="margin-bottom:14px"><h2 style="margin-top:0">🔄 Automatyczna synchronizacja</h2>
+      <p class="small" style="margin:0 0 8px">W pliku otwieranym z dysku synchronizacji z GitHubem nie ma: każdy inny plik HTML otwarty z dysku w tej przeglądarce mógłby odczytać zapisany token. Włącz ją w zainstalowanej aplikacji kursu – na telefonie z ikony na ekranie początkowym, na komputerze w aplikacji zainstalowanej w Chrome albo Edge.</p>
+      <p class="small muted" style="margin:0">Postępy z tego pliku przeniesiesz do aplikacji przyciskiem „📤 Wyślij zmiany”.${c.wiped ? " Token zapisany wcześniej w tym pliku został z niego usunięty." : ""}</p></div>`;
+  }
+  function cardHTML() {
+    if (!window.claude && fileMode()) { css(); return fileCardHTML(); }
+    if (!G.avail()) return "";
+    css();
+    const c = load(curP()), e = G.eng;
+    if (active(c)) {
+      const st = e ? stateText(e) : "";
+      return `<div class="card ghcard" id="ghcard" style="margin-bottom:14px"><h2 style="margin-top:0">🔄 Automatyczna synchronizacja</h2>
+        <p class="small ghstat${e && STOP[e.state] ? " ghbad" : ""}" style="margin:0 0 6px">${H(st)}</p>
+        <div class="ghwarn small" id="ghbadbox"${e && e.state === "bad" ? "" : ` style="display:none"`}><p style="margin:0 0 6px">Kopii postępów w folderze <b>${H(c.folder)}</b> nie da się odczytać (np. plik zmieniony ręcznie na GitHubie). Kurs niczego tam nie wysyła, żeby jej nie zepsuć. Jeśli tak zostaje, wyślij w jej miejsce postępy z tego urządzenia – połączone z odpowiedziami z Twoich innych urządzeń. Przedtem kurs zapisze kopię awaryjną.</p>
+          <button class="btn sm pri" id="ghover">📤 Wyślij postępy z tego urządzenia</button></div>
+        <p class="small muted" style="margin:0 0 10px">Repozytorium <b>${H(c.repo)}</b> · folder <b>${H(c.folder)}</b>. Postępy wysyłają się same chwilę po nauce, przy zamykaniu aplikacji i po powrocie internetu. Bez internetu wszystko czeka i nic nie przeszkadza w nauce.</p>
+        <div class="row"><button class="btn pri" id="ghnow">🔄 Synchronizuj teraz</button><button class="btn" id="ghcode">🔑 Kod konfiguracji</button><button class="btn" id="ghedit">✏️ Zmień</button><button class="btn" id="ghoff">Wyłącz</button></div>
+        <div id="ghpanel"></div>${HELP}</div>`;
+    }
+    return `<div class="card ghcard" id="ghcard" style="margin-bottom:14px"><h2 style="margin-top:0">🔄 Automatyczna synchronizacja</h2>
+      <p class="small" style="margin:0 0 10px">Postępy same przechodzą między Twoim telefonem a komputerem – przez Twoje prywatne repozytorium na GitHubie. Za darmo i bez żadnego naszego serwera. Każda osoba ma swój folder, więc Wasze postępy się nie mieszają.</p>
+      <div class="row ghstartrow"><button class="btn pri" id="ghstart">Włącz synchronizację</button><button class="btn" id="ghpaste">📋 Mam kod konfiguracji</button></div>
+      <div id="ghpanel"></div>${HELP}</div>`;
+  }
+  function formHTML(c) {
+    const exp = c.exp ? (d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"))(new Date(c.exp)) : "";
+    return `<div class="ghform">
+      <label class="small"><b>Repozytorium</b> (właściciel/nazwa)<input class="tinput" id="ghrepo" value="${H(c.repo || "")}" placeholder="np. twoja-nazwa/japonski-postepy" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+      <label class="small"><b>Token</b>${c.token ? " (zostaw puste, żeby zachować obecny)" : ""}<input class="tinput" id="ghtok" type="password" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+      <label class="small"><b>Twój folder</b><input class="tinput" id="ghfold" value="${H(c.folder || slug(S.me && S.me.name) || "")}" placeholder="np. daniel" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+      <p class="small muted" style="margin:-4px 0 0">Folder to Twoja szuflada w repozytorium. Na telefonie i na komputerze wpisz ten sam – wtedy postępy się łączą. Druga osoba wpisuje swój (np. kasia), więc Wasze postępy się nie mieszają.</p>
+      <label class="small"><b>Token ważny do</b> – wpisz, jeśli token ma datę końca (kurs sam jej nie odczyta; przypomni tydzień wcześniej). Przy „No expiration” zostaw puste.<br><input type="date" id="ghexp" value="${exp}"></label>
+      <p class="small muted" id="ghexphint" style="margin:-4px 0 0;display:none">Nowy token? Wpisz jego nową datę ważności.</p>
+      <div class="row"><button class="btn pri" id="ghcheck">Sprawdź połączenie</button><button class="btn" id="ghcancel">Anuluj</button></div>
+      ${c.token ? `<p class="small" style="margin:0"><a href="#" id="ghcodelink">📋 Mam kod konfiguracji z drugiego swojego urządzenia</a></p>` : ""}
+      <div class="small ghres" id="ghres" role="status"></div></div>`;
+  }
+  function bind() {
+    const card = document.getElementById("ghcard"); if (!card) return;
+    const $c = s => card.querySelector(s), panel = $c("#ghpanel");
+    const rerender = () => { const n = document.getElementById("ghcard"); if (!n) return; const d = document.createElement("div"); d.innerHTML = cardHTML(); n.replaceWith(d.firstElementChild); bind(); };
+    const startRow = show => { const r = $c(".ghstartrow"); if (r) r.style.display = show ? "" : "none"; };
+    const form = (pre) => {
+      const c0 = Object.assign({}, load(curP()) || {}, pre || {});
+      panel.innerHTML = formHTML(c0); startRow(false);
+      const res = $c("#ghres");
+      if (pre && pre.token) $c("#ghtok").placeholder = "z kodu konfiguracji ✓";
+      // nowy token ma własną datę ważności: stara data (podpowiedziana z poprzedniego tokenu) znika
+      const ti = $c("#ghtok"), ei = $c("#ghexp"), ev0 = ei.value;
+      ti.addEventListener("input", () => { const v = ti.value.trim(), nw = !!v && v !== c0.token; if (nw && ei.value === ev0) ei.value = ""; if (!nw && !ei.value) ei.value = ev0; const h = $c("#ghexphint"); if (h) h.style.display = nw ? "" : "none"; });
+      ei.addEventListener("input", () => { ei.dataset.touched = "1"; });
+      $c("#ghcancel").onclick = () => { panel.innerHTML = ""; startRow(true); };
+      $c("#ghcheck").onclick = () => connect(c0, pre && pre.token, res, ev0);
+      const cl = $c("#ghcodelink"); if (cl) { if (pre && pre.token) cl.parentNode.remove(); else cl.onclick = ev => { ev.preventDefault(); pasteUI(); }; }
+      return res;
+    };
+    const connect = async (c0, preTok, res, ev0) => {
+      const repo = parseRepo($c("#ghrepo").value), tokIn = $c("#ghtok").value.trim(), folder = slug($c("#ghfold").value), ex = $c("#ghexp").value;
+      const token = tokIn || preTok || c0.token || "";
+      res.className = "small ghres";
+      if (!repo) { res.textContent = "Wpisz repozytorium w postaci właściciel/nazwa, np. twoja-nazwa/japonski-postepy."; return; }
+      if (!okToken(token)) { res.textContent = "Wklej token z GitHuba (zaczyna się od github_pat_)."; return; }
+      if (!okFolder(folder)) { res.textContent = "Wpisz nazwę folderu: małe litery, cyfry i myślniki, np. daniel."; return; }
+      $c("#ghfold").value = folder;
+      const c = { repo, token, folder, on: true, at: Date.now() };
+      // podpowiedziana data należy do poprzedniego tokenu: przy innym tokenie liczy się tylko data wpisana na nowo
+      const sameTok = token === c0.token, exOk = ex && (sameTok || preTok || ex !== ev0 || $c("#ghexp").dataset.touched === "1");
+      if (exOk) { const t = Date.parse(ex + "T23:59:00"); if (isFinite(t)) { c.exp = t; c.expSrc = "user"; } }
+      else if (c0.exp && c0.token === token) { c.exp = c0.exp; c.expSrc = c0.expSrc; }
+      const btn = $c("#ghcheck"); btn.disabled = true; res.textContent = "Sprawdzam połączenie z GitHubem…";
+      try {
+        const p = curP();
+        const pr = await probe(c);
+        if (!document.body.contains(res)) return;
+        if (!pr.ok) { res.className = "small ghres" + (pr.kind === "public" ? " ghbad" : ""); res.textContent = errText(pr.kind, c, pr.reset); return; }
+        const mine = (S.me && S.me.name) || "";
+        const q = preTok
+          ? `Ten kod jest z urządzenia osoby ${pr.name}, a tutaj uczy się ${mine}. Jeśli to Ty (np. inne zdrobnienie imienia) – OK. Postępy połączą się w jednym folderze „${folder}”.`
+          : `W folderze „${folder}” są już postępy osoby ${pr.name}, a tutaj uczy się ${mine}. Jeśli to Ty – OK, postępy połączą się. Jeśli to ktoś inny – Anuluj i wpisz swój folder.`;
+        if (pr.name && mine && pr.name.toLowerCase() !== mine.toLowerCase() && !confirm(q)) {
+          res.textContent = preTok ? "Ten kod jest dla kogoś innego. Wklej kod ze swojego drugiego urządzenia." : "Wybierz swój folder (np. " + (slug(mine) || "imie") + ") i sprawdź jeszcze raz."; return;
+        }
+        const wt = await writeTest(c, pr.st);
+        if (!document.body.contains(res)) return;
+        if (!wt.ok) { res.textContent = errText(wt.kind, c, wt.reset); return; }
+        if (curP() !== p) return;   // w międzyczasie uczy się już ktoś inny
+        const old = load(p);
+        if (old && old.synced && old.repo === c.repo && old.folder === c.folder) c.synced = old.synced;
+        save(p, c);
+        G.bind();
+        toast("✓ Połączono z GitHubem – postępy będą się synchronizować same", 3500);
+        rerender();
+      } finally { if (document.body.contains(btn)) btn.disabled = false; }
+    };
+    const st = $c("#ghstart"); if (st) st.onclick = () => form();
+    const ed = $c("#ghedit"); if (ed) ed.onclick = () => form();
+    const pasteUI = () => {
+      panel.innerHTML = `<div class="ghform"><label class="small"><b>Wklej kod konfiguracji</b> (GHS1:…) z drugiego swojego urządzenia<textarea id="ghcodein" rows="3" style="margin-top:6px" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea></label>
+        <div class="row"><button class="btn pri" id="ghcodego">Wczytaj kod</button><button class="btn" id="ghcancel">Anuluj</button></div><div class="small ghres" id="ghres" role="status"></div></div>`;
+      startRow(false);
+      $c("#ghcancel").onclick = () => { panel.innerHTML = ""; startRow(true); };
+      $c("#ghcodego").onclick = () => {
+        const c = decodeCode($c("#ghcodein").value);
+        if (!c) { $c("#ghres").textContent = "To nie wygląda na kod konfiguracji. Skopiuj cały kod zaczynający się od GHS1:"; return; }
+        form(c); $c("#ghcheck").click();
+      };
+    };
+    const ps = $c("#ghpaste"); if (ps) ps.onclick = pasteUI;
+    const now = $c("#ghnow");
+    if (now) now.onclick = async () => { now.disabled = true; try { await G.syncNow(); } finally { if (document.body.contains(now)) now.disabled = false; } const e = G.eng; if (e) toast(stateText(e), 2500); };
+    const ov = $c("#ghover");
+    if (ov) ov.onclick = async () => {
+      if (!confirm("Wysłać na GitHuba postępy z tego urządzenia w miejsce kopii, której nie da się odczytać? Przedtem kurs zapisze kopię awaryjną, a odpowiedzi z Twoich innych urządzeń zostaną dołączone.")) return;
+      ov.disabled = true;
+      try { await G.override(); } finally { if (document.body.contains(ov)) ov.disabled = false; }
+      const e = G.eng; if (e) toast(stateText(e), 3000);
+    };
+    const off = $c("#ghoff");
+    if (off) off.onclick = () => {
+      if (!confirm("Wyłączyć automatyczną synchronizację na tym urządzeniu? Postępy zostają tutaj i na GitHubie, a token zostanie usunięty z tego urządzenia.")) return;
+      const p = curP(), c = load(p) || {};
+      G.cancel(true); save(p, { repo: c.repo, folder: c.folder, on: false });
+      toast("Synchronizacja wyłączona na tym urządzeniu");
+      rerender();
+    };
+    const code = $c("#ghcode");
+    if (code) code.onclick = () => {
+      panel.innerHTML = `<div class="ghwarn small"><p style="margin:0 0 6px"><b>⚠️ Ten kod działa jak hasło.</b> Jest w nim Twój token: kto go ma, może czytać i zmieniać postępy w tym repozytorium. Wyślij go tylko sobie (np. w notatce albo wiadomości do siebie) i usuń po wklejeniu na drugim urządzeniu.</p>
+        <button class="btn sm" id="ghshow">Pokaż kod</button></div>`;
+      $c("#ghshow").onclick = () => {
+        const c = load(curP()); if (!active(c)) return;
+        const t = encodeCode(c);
+        panel.innerHTML = `<div class="ghwarn small"><p style="margin:0 0 6px"><b>⚠️ Działa jak hasło – tylko dla Ciebie.</b> Na drugim urządzeniu: Przenoszenie postępów → 🔄 Automatyczna synchronizacja → „📋 Mam kod konfiguracji” (jeśli synchronizacja już tam działa: ✏️ Zmień → „📋 Mam kod konfiguracji z drugiego swojego urządzenia”).</p>
+          <textarea id="ghcodeout" rows="3" readonly>${H(t)}</textarea><div class="row" style="margin-top:6px"><button class="btn sm pri" id="ghcopy">📋 Kopiuj</button><button class="btn sm" id="ghhide">Ukryj</button></div></div>`;
+        $c("#ghhide").onclick = () => { panel.innerHTML = ""; };
+        $c("#ghcopy").onclick = () => {
+          const ta = $c("#ghcodeout");
+          const fb = () => { ta.focus(); ta.select(); toast("Zaznacz kod i skopiuj go ręcznie."); };
+          try { navigator.clipboard.writeText(t).then(() => toast("Skopiowano ✓ Wklej go tylko na swoim drugim urządzeniu."), fb); } catch (e) { fb(); }
+        };
+      };
+    };
+  }
+  // linijka w Ustawieniach (karta „Przenieś postępy”)
+  function settingsLine() {
+    if (!window.claude && fileMode()) return `<p class="small" style="margin:10px 0 0">🔄 Automatyczna synchronizacja telefonu z komputerem działa w zainstalowanej aplikacji kursu – nie w pliku otwieranym z dysku. <a href="#/przenies">Więcej</a></p>`;
+    if (!G.avail()) return "";
+    const c = load(curP()), e = G.eng;
+    if (active(c) && e) return `<p class="small" style="margin:10px 0 0">🔄 GitHub: <span class="ghstat${STOP[e.state] ? " ghbad" : ""}">${H(stateText(e))}</span> · <a href="#/przenies">ustawienia</a></p>`;
+    return `<p class="small" style="margin:10px 0 0">🔄 <a href="#/przenies">Automatyczna synchronizacja telefonu z komputerem</a> – wyłączona</p>`;
+  }
+  window.ghCardHTML = cardHTML;
+  window.ghCardBind = bind;
+  window.ghSettingsLine = settingsLine;
+  window.ghHomeCard = homeCard;
+  // plik z dysku: tokeny zapisane wcześniej (przez starszą wersję) usuwamy od razu przy starcie, także zanim ktoś wybierze osobę
+  if (!window.claude && fileMode()) wipeFileTokens();
+})();
 
 /* ===================== etap 1: klawiatura z kaną ===================== */
 // kbdAttach(input, opts) – przycisk „あ” obok pola odpowiedzi; po włączeniu pod polem pojawia się klawiatura z tabelą gojūon.
@@ -31462,7 +32260,7 @@ function viewHome() {
   const nx = nextLesson();
   const gap = typeof flowGap === "function" ? flowGap() : null;
   const gentle = gap !== null && gap >= 3;
-  app().innerHTML = `${installHTML()}${iosMoveHTML()}${typeof memHomeCards === "function" ? memHomeCards() : ""}
+  app().innerHTML = `${installHTML()}${iosMoveHTML()}${typeof memHomeCards === "function" ? memHomeCards() : ""}<div id="ghhome">${typeof ghHomeCard === "function" ? ghHomeCard() : ""}</div>
   <div class="hero fhero">
     ${planHTML(nx, gentle)}
     <div class="fside">${flowWeekHTML()}${typeof tipFor === "function" ? tipFor(gentle ? "break" : "home") : ""}</div>
@@ -32525,7 +33323,8 @@ if (window.PWA_MODE && navigator.serviceWorker && location.protocol.startsWith("
 document.addEventListener("voices", () => { const h = location.hash; if ((!h || h === "#/") && $("#app .hero")) { if (!!$("#app .hero .warnbox") !== (TTS.ready && !TTS.voices.length)) route(); } else if (h.startsWith("#/settings") && $("#vcard") && +$("#vcard").dataset.vn !== TTS.voices.length) route(); });
 // drugie okno / powrót do aplikacji: wczytaj świeże postępy, żeby nie nadpisać ich starą kopią
 // trwa coś, czego nie wolno przerwać przeładowaniem widoku: ćwiczenie, rozmowa, okno, pisanie, odtwarzanie
-function appBusy() { return !!(players.length || document.querySelector(".quiz,.chat,.modal,.wstep,.warea")); }
+// otwarty formularz GitHuba (✏️ Zmień, wklejanie albo pokazany kod konfiguracji) też się liczy: odświeżenie skasowałoby wpisany token
+function appBusy() { return !!(players.length || document.querySelector(".quiz,.chat,.modal,.wstep,.warea,.ghform,#ghcodeout,#ghcodein")); }
 window.addEventListener("storage", e => {
   if (e.key !== STORE) return;
   loadState(); applyTheme();
@@ -32571,7 +33370,7 @@ function viewCheat(id) {
 }
 
 // kilka osób: z kontem łączymy się dopiero, gdy wiadomo, kto się uczy (switchProfile → CloudSync.init dla pierwszej osoby)
-if (!(PROF.list.length > 1 && !PROF_PICKED)) CloudSync.init();
+if (!(PROF.list.length > 1 && !PROF_PICKED)) { CloudSync.init(); if (window.GhSync) GhSync.bind(); }
 
 </script>
 </body></html>
