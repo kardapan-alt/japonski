@@ -28152,7 +28152,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-17 16:45";
+window.APP_VERSION = "2026-10-17 18:44";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -28244,7 +28244,7 @@ function runQuiz(root, items, opts = {}) {
       if (!firstTry.has(q.i)) { firstTry.set(q.i, ok); lg.ok = ok; lg.ms = Date.now() - lg.t0; noteMistake(q.it, ok, opts); noteStat(q.it, ok); log.push({ it: q.it, ok, yours: yours || "" }); }
       if (!ok && !q.retry && P) queue.push({ it: q.it, i: q.i, retry: true });
       bar.style.width = (100 * firstTry.size / total) + "%";
-    }, () => { pos++; next(); }, { mode, retry: q.retry, onHint: () => { lg.h = 1; }, onFinal: logAns });
+    }, () => { pos++; next(); }, { mode, retry: q.retry, src: opts.src || "", onHint: () => { lg.h = 1; }, onFinal: logAns });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function finish() {
@@ -28261,7 +28261,7 @@ function runQuiz(root, items, opts = {}) {
         <p>Za pierwszym razem dobrze: <b>${good} z ${total}</b> · +${xp} pkt</p>
         <p class="muted">${opts.doneMsg || (bad.length ? "Pomyłki są w porządku – to normalna część nauki. Poniżej możesz je przejrzeć z wyjaśnieniem." : "Świetnie, wszystko za pierwszym razem!")}</p>
         <div class="row" style="justify-content:center;margin-top:14px">${again}${nextB}<a class="btn" href="${opts.back || "#/"}">Wróć</a></div></div>
-        ${bad.length ? `<details class="card rvbox"><summary><b>📝 Twoje pomyłki (${bad.length})</b> – zobacz, co było dobrze i dlaczego</summary>${bad.map(reviewHTML).join("")}</details>` : ""}`;
+        ${bad.length ? `<details class="card rvbox"><summary><b>📝 Twoje pomyłki (${bad.length})</b> – zobacz, co było dobrze i dlaczego</summary>${bad.map(x => reviewHTML(Object.assign({ src: opts.src }, x))).join("")}</details>` : ""}`;
     } else {
       const pass = PASS, passed = pct >= pass;
       const emo = !passed ? "💪" : pct >= 90 ? "🏆" : pct >= 75 ? "🎉" : "👍";
@@ -28272,7 +28272,7 @@ function runQuiz(root, items, opts = {}) {
         <p>${good} z ${total} dobrze · +${xp} pkt</p><p class="muted">${msg}</p>
         <div class="skills">${Object.entries(sk).map(([k, v]) => `<div class="skr"><span>${esc(k)}</span><div class="prog sm" style="--c:${v[0] / v[1] >= PASS / 100 ? "var(--ok)" : "var(--bad)"}"><i style="width:${Math.round(100 * v[0] / v[1])}%"></i></div><b>${v[0]}/${v[1]}</b></div>`).join("")}</div>
         <div class="row" style="justify-content:center;margin-top:14px">${again}${nextB}<a class="btn" href="${opts.back || "#/"}">Wróć</a></div></div>
-        ${bad.length ? `<h2>📝 Do powtórki (${bad.length})</h2><p class="small muted">Każda pomyłka trafiła też do zeszytu błędów.</p>${bad.map(reviewHTML).join("")}` : ""}`;
+        ${bad.length ? `<h2>📝 Do powtórki (${bad.length})</h2><p class="small muted">Każda pomyłka trafiła też do zeszytu błędów.</p>${bad.map(x => reviewHTML(Object.assign({ src: opts.src }, x))).join("")}` : ""}`;
     }
     $(".again", body).onclick = () => runQuiz(root, opts.regen ? opts.regen() : shuffle(items), opts);
     opts.onFinish && opts.onFinish(pct);
@@ -28324,7 +28324,7 @@ function reviewHTML(x) {
     ${x.yours ? `<div class="rvy">✗ Twoja odpowiedź: ${x.yours}</div>` : `<div class="rvy">✗ Bez odpowiedzi</div>`}
     <div class="rva">✓ Poprawnie: <span class="jpline">${a.ans || ""}</span> ${a.say ? sayBtn(a.say) : ""}</div>
     ${a.jp ? `<div class="jpline small">${a.jp}</div>` : ""}${a.tr ? `<div class="small">„${esc(a.tr)}”</div>` : ""}
-    ${it.ex ? `<div class="fex">📘 ${ruby(it.ex)}</div>` : ""}</div>`;
+    ${it.ex ? `<div class="fex">📘 ${ruby(it.ex)}</div>` : ""}${window.AIHelp ? AIHelp.btnHTML(it, { src: x.src, yours: x.yours, ok: false }) : ""}</div>`;
 }
 // notka przy opcji (po odpowiedzi): czytanie, znaczenie, dlaczego nie
 function optNote(it, i) {
@@ -28393,6 +28393,7 @@ function feedback(card, ok, it, extra = {}) {
   btn.onclick = extra.onNext;
   setTimeout(() => fb.scrollIntoView({ block: "nearest", behavior: "smooth" }), 60);
   if (speak && S.settings.autoplay) a.sayRaw ? TTS.speak(a.sayRaw) : say(a.say);
+  if (window.AIHelp) AIHelp.answered(card, ok, a.yours);   // 💬 Zapytaj: w teście dopiero teraz, pod „Dalej”
 }
 
 // kilka kwestii po kolei (różne głosy, 350 ms przerwy); przerywa się po wyjściu z ekranu albo ponownym stuknięciu
@@ -28450,6 +28451,7 @@ function renderItem(card, it, report, onNext, ctx = {}) {
         b.classList.add("bad"); b.disabled = true;
         const note = optNote(it, i);
         $(".try", card).innerHTML = `<div class="fb bad soft"><b>✗ To nie to.</b>${note ? `<div class="small">${note}</div>` : ""}<div class="small muted">Spróbuj jeszcze raz.</div></div>`;
+        if (window.AIHelp) AIHelp.tried(card, it.opts[i], $(".try", card).innerHTML);   // 💬 Zapytaj widzi nieudaną próbę
         return;
       }
       rep(ok, ok ? "" : ruby(it.opts[i]));
@@ -28488,11 +28490,13 @@ function renderItem(card, it, report, onNext, ctx = {}) {
       if (ok) { rep(true); end(true); return; }
       if (P && tries === 0) {
         tries++; rep(false, ruby(ans.map(t => t.w).join("")));
+        const tried = ans.map(t => t.w);
         let k = 0; while (k < ans.length && ans[k].w === it.words[k]) k++;
         // klocki od pierwszego złego wracają na dół
         bank = shuffle(ans.slice(k)); ans = ans.slice(0, k);
         draw();
         $(".try", card).innerHTML = `<div class="fb bad soft"><b>✗ Jeszcze nie.</b> <span class="small">${k ? `Początek jest dobry (${k} ${k === 1 ? "klocek" : k < 5 ? "klocki" : "klocków"}). ` : ""}Pozostałe klocki wróciły na dół – ułóż je jeszcze raz.</span></div>`;
+        if (window.AIHelp) AIHelp.tried(card, tried.join(""), $(".try", card).innerHTML);
         return;
       }
       rep(false, ruby(ans.map(t => t.w).join("")));
@@ -28530,6 +28534,7 @@ function renderItem(card, it, report, onNext, ctx = {}) {
         const pre = n => { for (let i = 1; i <= orig.length; i++) if (normAnswer(orig.slice(0, i)).length >= n) return orig.slice(0, i); return orig; };
         inp.classList.add("bad"); setTimeout(() => inp.classList.remove("bad"), 600);
         $(".try", card).innerHTML = `<div class="fb bad soft"><b>✗ Jeszcze nie.</b> <span class="small">${k >= target.length ? `Początek „${esc(orig)}” jest dobry – odpowiedź jest krótsza. ` : `${k ? `Początek „${esc(pre(k))}” jest dobry. ` : ""}Podpowiedź: zaczyna się od „${esc(pre(k + 1))}…”. `}Popraw i sprawdź jeszcze raz.</span></div>`;
+        if (window.AIHelp) AIHelp.tried(card, inp.value, $(".try", card).innerHTML);
         inp.focus(); return;
       }
       done = true;
@@ -28572,6 +28577,7 @@ function renderItem(card, it, report, onNext, ctx = {}) {
   } else if (it.t === "write") {
     writeItem(card, it, head, P, rep, fin);
   }
+  if (window.AIHelp) AIHelp.mount(card, it, { mode: ctx.mode, src: ctx.src, onHint: ctx.onHint });   // 💬 Zapytaj (src/aihelp.js)
 }
 
 /* ---------- zadanie: napisz znak palcem (kolejność kresek sprawdzana) ---------- */
@@ -29375,6 +29381,9 @@ function viewTalk(id) {
     return reveal ? `<div class="opt ${o.ok ? "ok" : "bad"} rvopt"><div>${o.ok ? "✓ " : "✗ "}${ruby(o.jp)}</div>${o.ok ? `<div class="small muted">${esc(o.pl)}</div>` : o.fb ? `<div class="small">${ruby(esc(o.fb))}</div>` : ""}</div>`
       : `<button class="opt" data-k="${k}">${ruby(o.jp)}</button>`;
   }).join("");
+  // 💬 Zapytaj (src/aihelp.js): kwestia jak zadanie wyboru, z ostatnimi zdaniami rozmowy
+  const aih = s => window.AIHelp && AIHelp.mount($(".yourturn", box), { t: "mc", label: "Rozmowa – co powiesz?", q: s.you, opts: s.options.map(o => o.jp), a: Math.max(0, s.options.findIndex(o => o.ok)), why: s.options.map(o => o.ok ? "" : o.fb || "") },
+    { src: t.after || t.life || "", extra: `Rozmowa „${t.title}”. Ostatnie zdania: ${said.slice(-3).map(x => (x[0] || "Uczeń") + ": " + x[1] + " (" + x[2] + ")").join(" / ") || "(początek rozmowy)"}` });
   // wybór z podanych odpowiedzi (jak dotąd)
   const chooseStep = (s, res) => {
     let tries = 0;
@@ -29382,19 +29391,21 @@ function viewTalk(id) {
     box.innerHTML = `<div class="card yourturn"><div class="small muted">🎯 Twoja kolej</div><b>${esc(s.you)}</b>
       <div class="opts">${optsHTML(s, order)}</div><div class="tfb"></div></div>`;
     box.scrollIntoView({ block: "end", behavior: "smooth" });
+    aih(s);
     $$(".opt", box).forEach(b => b.onclick = () => {
       const o = s.options[+b.dataset.k];
       tries++;
-      if (o.ok) { chose++; if (tries === 1) first++; res(o); return; }
+      if (o.ok) { chose++; if (tries === 1) first++; if (window.AIHelp) AIHelp.answered($(".yourturn", box), true, o.jp); res(o); return; }
       b.classList.add("bad"); b.disabled = true;
       $(".tfb", box).innerHTML = `<div class="fb bad"><div class="h">✗ Nie tak.</div><div class="small">${ruby(esc(o.fb || ""))}</div><div class="small muted">Spróbuj jeszcze raz.</div></div>`;
+      if (window.AIHelp) AIHelp.tried($(".yourturn", box), o.jp, $(".tfb", box).innerHTML);   // 💬 Zapytaj widzi nieudany wybór
     });
   };
   // najpierw powiedz sam, potem zobacz odpowiedzi i oceń się
   const speakStep = (s, res, my) => {
     const okO = s.options.find(o => o.ok) || s.options[0];
     const secs = +S.settings.talkTimer || 0;
-    let timer = null, recScore = -1;
+    let timer = null, recScore = -1, heardTxt = "";
     const canSR = SREC_OK && navigator.onLine !== false, canRec = REC.ok && !REC.denied;
     box.innerHTML = `<div class="card yourturn"><div class="small muted">🎤 Twoja kolej – powiedz to na głos</div><b>${esc(s.you)}</b>
       ${secs ? `<div class="tbar"><i style="animation-duration:${secs}s"></i></div>` : ""}
@@ -29402,6 +29413,7 @@ function viewTalk(id) {
       <p class="small muted">${canSR ? "Powiedz swoją kwestię – telefon sprawdzi, czy brzmi podobnie." : canRec ? "Nagraj się, a potem porównaj z lektorem." : "Powiedz swoją kwestię na głos, a potem sprawdź odpowiedzi."}</p></div>
       <div class="sres"></div></div>`;
     box.scrollIntoView({ block: "end", behavior: "smooth" });
+    aih(s);
     const area = $(".sarea", box), out = $(".sres", box);
     const cancelTimer = () => { if (timer) { clearTimeout(timer); timer = null; } const b = $(".tbar", box); if (b) b.remove(); };
     if (secs) timer = setTimeout(() => { if (my === token && !recNow) reveal(); }, secs * 1000);
@@ -29411,6 +29423,8 @@ function viewTalk(id) {
       cancelTimer();
       const order = s.options.map((o, k) => k).sort((a, b) => (s.options[b].ok ? 1 : 0) - (s.options[a].ok ? 1 : 0));
       area.innerHTML = extra || "";
+      // 💬 Zapytaj: możliwe odpowiedzi są już na ekranie – AI może je omawiać wprost
+      if (window.AIHelp) AIHelp.answered($(".yourturn", box), recScore >= 0.8 ? true : null, "", { how: heardTxt ? `powiedziane na głos; 🎤 rozpoznano „${heardTxt}” (podobieństwo ${Math.round(recScore * 100)}%)` : "kwestia powiedziana na głos albo w myślach, bez sprawdzenia przez aplikację; teraz uczeń widzi możliwe odpowiedzi" });
       out.innerHTML = `<div class="small muted" style="margin-top:10px">Tak można było odpowiedzieć:</div><div class="opts">${optsHTML(s, order, true)}</div>
         <div class="small" style="margin-top:10px"><b>Jak poszło?</b></div>
         <div class="row sgrade"><button class="btn" data-g="0">✗ Jeszcze nie</button><button class="btn" data-g="1">≈ Prawie</button><button class="btn pri" data-g="2">✓ Udało się</button></div>`;
@@ -29436,7 +29450,7 @@ function viewTalk(id) {
             if (v > best) { best = v; heard = a; }
           }
         }
-        recScore = best;
+        recScore = best; heardTxt = heard;
         const msg = best >= 0.8 ? `<div class="fb ok"><div class="h">✓ Brzmi dobrze</div>` : best >= 0.55 ? `<div class="fb soft"><div class="h">≈ Prawie</div>` : `<div class="fb bad"><div class="h">Nie rozpoznano</div>`;
         reveal(`${msg}<div class="small jp">Rozpoznano: ${esc(heard)}</div></div>`);
       } catch (e) {
@@ -29495,8 +29509,11 @@ function viewTalk(id) {
       const choice = await new Promise(res => S.settings.talkSpeak ? speakStep(s, res, my) : chooseStep(s, res));
       if (my !== token) return;
       asked++; prog();
+      const yt = $(".yourturn", box);
       box.innerHTML = "";
-      bubble("Ty", choice.jp, choice.pl, true, choice.say); said.push(["", choice.jp, choice.pl, choice.say]);
+      const mine = bubble("Ty", choice.jp, choice.pl, true, choice.say); said.push(["", choice.jp, choice.pl, choice.say]);
+      // 💬 Zapytaj przechodzi do Twojego dymka (tylko przy ostatniej kwestii) – można dopytać o zdanie, które właśnie padło
+      if (window.AIHelp && yt) { $$(".chat .aih-row").forEach(r => r.remove()); AIHelp.rehome(yt, mine); }
       if (choice.fb) { const n = document.createElement("div"); n.className = "small muted bnote"; n.innerHTML = "💡 " + ruby(esc(choice.fb)); chat.appendChild(n); }
       if (S.settings.autoplay !== false) await say(sayOf(choice, choice.jp), { gender: myG, queue: true });
       await sleep(300);
@@ -29605,6 +29622,9 @@ function viewWriteGuided(id) {
       <div class="wfb"></div>
       <div class="qnav"><button class="btn sm whint" ${s.hint ? "" : "style='display:none'"}>💡 Podpowiedź</button><button class="btn wgive">Pokaż wzór</button><button class="btn pri wchk">Sprawdź</button></div></div>`;
     const inp = $(".winp", stepEl); bindKanaInput(inp);
+    if (window.AIHelp) AIHelp.mount($(".card", stepEl), { t: "type", label: "Napisz zdanie po japońsku", q: "„" + persona(s.pl) + "”", hint: s.hint ? persona(s.hint) : "" }, { src: t.after || "", loose: true, ans: s.model,
+      extra: "Pisanie z prowadzeniem: „" + persona(t.title) + "”, zdanie " + (i + 1) + " z " + t.steps.length + ". Cel zadania: " + persona(t.intro) +
+        "\nSprawdzarka przyjmuje też inne poprawne warianty (słowa oddzielone spacją, warianty przez /, w nawiasie – nieobowiązkowe): " + (Array.isArray(s.ans) ? s.ans : [s.ans]).slice(0, 3).map(p => String(p).replace(/\|/g, "/")).join("  ||  ") + ". Nie nazywaj błędem wariantu, który pasuje do tych wzorów." });   // 💬 Zapytaj
     setTimeout(() => inp.focus({ preventScroll: true }), 60);
     const fb = $(".wfb", stepEl);
     $(".whint", stepEl).onclick = e => { fb.innerHTML = `<div class="fb"><div class="small">💡 ${ruby(esc(persona(s.hint)))}</div></div>`; e.target.remove(); };
@@ -29618,6 +29638,7 @@ function viewWriteGuided(id) {
       $(".wnext", stepEl).onclick = () => { i++; step(); };
       $(".wnext", stepEl).focus({ preventScroll: true });
       if (S.settings.autoplay !== false) say(s.model);
+      if (window.AIHelp) AIHelp.answered($(".card", stepEl), !gave, mine);
     };
     const check = () => {
       const v = finalKana(inp);
@@ -29638,6 +29659,7 @@ function viewWriteGuided(id) {
         <div class="jpline"><span class="wgood">${esc(good)}</span><span class="wbad">${esc(bad) || "&nbsp;…"}</span></div>
         <div class="small">${why}</div>${more}${tries === 1 && s.hint ? `<div class="small" style="margin-top:4px">💡 ${ruby(esc(persona(s.hint)))}</div>` : ""}
         ${tries >= 3 ? `<div class="small muted" style="margin-top:4px">Możesz też stuknąć „Pokaż wzór”.</div>` : ""}</div>`;
+      if (window.AIHelp) AIHelp.tried($(".card", stepEl), v, fb.innerHTML);   // 💬 Zapytaj widzi próbę
       inp.classList.add("bad"); setTimeout(() => inp.classList.remove("bad"), 600);
     };
     inp.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); check(); } });
@@ -29797,7 +29819,7 @@ function aiLearner() {
   return {
     name: me.name || "", jp: me.jp || "",
     since: days < 7 ? "od kilku dni" : days < 56 ? `od ${w} ${plN(w, "tygodnia", "tygodni", "tygodni")}` : `od około ${m} mies.`,
-    level: nx ? nx.L.short + " · " + nx.L.title : "",
+    level: nx ? (String(nx.L.title).indexOf(nx.L.short) === 0 ? nx.L.title : nx.L.short + " · " + nx.L.title) : "",   // bez „Start · Start · …”
     lesson: last ? last.l.title : "",
     kanaDone: !!kanaL && kanaL.lessons.every(l => (S.lessons[l.id] || {}).done),
     n5Started: !!n5 && n5.lessons.some(l => (S.lessons[l.id] || {}).done)
@@ -29848,6 +29870,811 @@ document.addEventListener("click", e => {
   if (b.dataset.aicopy !== undefined) copyText(txt);
   else navigator.share({ text: txt }).catch(() => { });
 });
+
+/* ===================== 💬 Zapytaj: pytanie do AI przy każdym zadaniu =====================
+   Przy każdym zadaniu (lekcje, powtórki, trenery, testy po odpowiedzi, pomyłki na ekranie wyniku, „Moje słabe strony”)
+   przycisk „💬 Zapytaj” otwiera rozmowę z gotowym kontekstem zadania (polecenie, pytanie z czytaniem, odpowiedzi do wyboru,
+   poprawna odpowiedź, odpowiedź ucznia, wyjaśnienia kursu, lekcja i jej gramatyka, poziom ucznia).
+   Kto odpowiada (wybór automatyczny):
+   1) wersja na claude.ai – Claude przez claude.use("sample") (strumieniowo, bez ustawień);
+   2) wersja na telefon (https) – Google Gemini z własnym darmowym kluczem osoby (Google AI Studio), zapytania REST prosto
+      z przeglądarki (generativelanguage.googleapis.com, nagłówek x-goog-api-key, odpowiedź strumieniowa SSE);
+   3) brak klucza, brak internetu albo plik z dysku – „📋 Skopiuj pytanie do czatu” i linki do ChatGPT / Gemini / Claude.
+   Klucz leży w localStorage osobno dla każdej osoby na tym urządzeniu (nauka-japonskiego-ai:<osoba>) – nigdy w S,
+   w kodach postępów, w dzienniku odpowiedzi ani w konsoli. W pliku z dysku (file://) klucza nie zapisujemy (inne pliki
+   HTML z dysku czytają ten sam localStorage), a wcześniej zapisane klucze znikają.
+   Odpowiedź modelu nigdy nie trafia na stronę jako HTML: najpierw całość jest zabezpieczona (esc), potem z bezpiecznego
+   podzbioru powstają akapity, pogrubienia, listy i furigana {漢字|かな}. Rozmowa żyje tylko w pamięci, do zmiany ekranu. */
+(function () {
+  const KEY = p => "nauka-japonskiego-ai:" + (p || "p0");
+  const API = "https://generativelanguage.googleapis.com/v1beta/";
+  const DEF_MODEL = "gemini-flash-latest";   // alias Google na aktualny model „flash”; przy 404 wybieramy model z listy
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
+  const lsDel = k => { try { localStorage.removeItem(k); } catch (e) { } };
+  const curP = () => (typeof PROF !== "undefined" && PROF && PROF.cur) || "p0";
+  const fileMode = () => typeof location !== "undefined" && location.protocol === "file:";
+  const inClaude = () => !!(window.claude && window.claude.use);
+  const H = s => esc(String(s == null ? "" : s)).replace(/'/g, "&#39;");
+  const okKey = k => /^[A-Za-z0-9._-]{20,200}$/.test(k || "");   // dziś zwykle „AIza…” (39 znaków); format może się zmienić
+  const okModel = m => /^[a-z0-9][a-z0-9.\-]{2,60}$/.test(m || "");
+  function load(p) { try { const o = JSON.parse(lsGet(KEY(p || curP())) || "null"); return o && typeof o === "object" ? o : {}; } catch (e) { return {}; } }
+  function save(p, o) { return lsSet(KEY(p || curP()), JSON.stringify(o)); }
+  // plik z dysku: klucze zapisane wcześniej (np. przez wersję z internetu w tej samej przeglądarce – inny origin, więc to rzadkie) znikają
+  function wipeFile() {
+    try {
+      const ks = [];
+      for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.indexOf("nauka-japonskiego-ai:") === 0) ks.push(k); }
+      ks.forEach(lsDel);
+    } catch (e) { }
+  }
+
+  /* ---------- kontekst zadania → zwykły tekst dla modelu ---------- */
+  // znaczniki furigany i <ruby> → 漢字(かな); HTML → tekst
+  function txt(h) {
+    let s = String(h == null ? "" : h);
+    s = s.replace(/\{([^{}|]+)\|([^{}|]+)\}/g, (m, k, r) => k + "(" + r.replace(/^!/, "") + ")");
+    s = s.replace(/<rt>([\s\S]*?)<\/rt>/gi, "($1)").replace(/<rp>[\s\S]*?<\/rp>/gi, "").replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]*>/g, "");
+    s = s.replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+    return s.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  }
+  const cut = (s, n) => (s = String(s || "")).length > n ? s.slice(0, n - 1) + "…" : s;
+  const lvName = L => { const s = txt(L.short), t = txt(L.title); return t.indexOf(s) === 0 ? t : s + " · " + t; };
+  // poziom ucznia: pierwsza nieukończona lekcja ALBO poziom lekcji tego zadania, jeśli jest dalej
+  // (kto zna kanę i od razu robi N5, nie jest opisany jako „dopiero poznaje kanę”)
+  function learner(src) {
+    let u = {};
+    try { if (typeof aiLearner === "function") u = aiLearner(); } catch (e) { }
+    // wczesny etap: kana albo pierwsza część N5 – do japońskich słów dopisujemy też romaji
+    let early = true;
+    try {
+      const all = LV.flatMap(L => L.lessons.map(l => ({ l, L }))), nx = all.find(x => !(S.lessons[x.l.id] || {}).done);
+      let i = nx ? LV.indexOf(nx.L) : LV.length;
+      const sL = src && typeof LESSON_LEVEL !== "undefined" ? LESSON_LEVEL[src] : null, si = sL ? LV.indexOf(sL) : -1;
+      if (si > i || (sL && !nx)) { i = si; u = Object.assign({}, u, { level: lvName(sL) }); }
+      if (si > 0 || all.some(x => LV.indexOf(x.L) > 0 && (S.lessons[x.l.id] || {}).done)) u = Object.assign({}, u, { kanaDone: true });
+      early = i <= 1;
+    } catch (e) { }
+    return Object.assign({ early }, u);
+  }
+  function srcLines(src, loose) {
+    const out = [];
+    try {
+      src = String(src || "");
+      if (src && typeof LESSONS !== "undefined" && LESSONS[src] && loose) {
+        // ćwiczenie tylko stoi po tej lekcji (np. pisanie z prowadzeniem) – jej gramatyka może dotyczyć czego innego
+        const l = LESSONS[src], L = LESSON_LEVEL[src], g = l.grammar || [];
+        out.push(`Ćwiczenie jest w kursie po lekcji „${txt(l.title)}”${L ? ` (poziom ${lvName(L)})` : ""}. Gramatyka tamtej lekcji (może dotyczyć czego innego niż to zadanie): ${g.map(x => txt(x.title)).join("; ") || "–"}.`);
+      } else if (src && typeof LESSONS !== "undefined" && LESSONS[src]) {
+        const l = LESSONS[src], L = LESSON_LEVEL[src];
+        out.push(`Lekcja: „${txt(l.title)}”${L ? ` (poziom ${lvName(L)})` : ""}`);
+        if (l.goal) out.push("Cel lekcji: " + cut(txt(l.goal), 300));
+        const g = l.grammar || [];
+        if (g.length) {
+          out.push("Gramatyka tej lekcji: " + g.map(x => txt(x.title) + (x.pattern ? ` (wzór: ${txt(x.pattern)})` : "")).join("; "));
+          out.push("Jak kurs to wyjaśnia (skrót): " + cut(g.map(x => txt(x.explain || "")).filter(Boolean).join(" "), 900));
+        } else if (l.kind === "kana" || l.chars) out.push("Lekcja dotyczy znaków kana (hiragana/katakana).");
+      } else if (/^exam:/.test(src)) { const L = LV.find(x => x.id === src.slice(5)); if (L) out.push(`Egzamin poziomu ${txt(L.short)} – ${txt(L.title)}`); }
+      else if (/^kit:/.test(src)) { const s = typeof KIT === "function" ? (KIT().sit || {})[src.slice(4)] : null; out.push("Zestaw przetrwania – zwroty na sytuację" + (s && s.title ? `: ${txt(s.title)}` : "")); }
+      else if (/^kanji:/.test(src)) out.push("Trener kanji");
+      else if (/^para:/.test(src)) out.push("Ćwiczenie z par wyrazów łatwych do pomylenia");
+      else if (typeof LIFE_BY !== "undefined" && LIFE_BY[src]) out.push("Moduł „Życie w Japonii”: " + txt(LIFE_BY[src].title));
+      else if (src) out.push({ kana: "Tabela kana", odmiana: "Trener odmiany czasowników", liczby: "Trener: liczby, godziny, daty", slabe: "Moje słabe strony", rev: "Powtórki", powtarzaj: "Trener wymowy: powtarzanie za lektorem (uczeń słyszy nagranie i powtarza na głos)" }[src] || "");
+    } catch (e) { }
+    return out.filter(Boolean);
+  }
+  function itemLines(c) {
+    const it = c.it || {}, out = [];
+    // wyjaśnienie gramatyki z lekcji (bez zadania i bez odpowiedzi)
+    if (it.t === "expl") {
+      out.push("Uczeń czyta wyjaśnienie gramatyki w lekcji i ma do niego pytanie.");
+      out.push("Temat: " + txt(it.q) + (it.pattern ? ` (wzór: ${txt(it.pattern)})` : ""));
+      if (it.ex) out.push("Wyjaśnienie z kursu: " + cut(txt(it.ex), 1200));
+      if (Array.isArray(it.exs) && it.exs.length) out.push("Przykłady z kursu: " + it.exs.map(e => `${txt(e[0])} – „${txt(e[1])}”`).join(" / "));
+      if (c.extra) out.push(txt(c.extra));
+      return out;
+    }
+    const lab = it.label || (typeof TYPE_LABEL !== "undefined" && TYPE_LABEL[it.t]) || "";
+    if (it.sec) out.push("Część ćwiczeń: " + txt(it.sec));
+    if (lab) out.push("Polecenie: " + txt(lab));
+    let q = "";
+    if (it.t === "listen") q = it.lines ? `Słuchanie rozmowy. Pytanie: ${txt(it.q || "")}\nNagranie (uczeń je słyszy, tekst widzi dopiero po odpowiedzi): ${it.lines.map(l => txt(l[1])).join(" / ")}` : "Uczeń słyszy nagranie: " + txt(it.jp);
+    else if (it.t === "order") q = `Ułóż zdanie po japońsku z klocków. Znaczenie: „${txt(it.tr)}”. Klocki: ${(it.words || []).map(txt).join(" | ")}`;
+    else if (it.t === "match") q = "Dopasuj pary: " + (it.pairs || []).map(p => txt(p[0]) + " = " + txt(p[1])).join("; ");
+    else if (it.t === "write") q = `Napisz palcem znak ${it.ch} – „${txt(it.m)}”${it.r ? ` (${txt(it.r)})` : ""}; sprawdzana jest kolejność kresek.`;
+    else q = txt(it.q) || (c.q ? txt(c.q) : "");
+    if (q) out.push("Pytanie: " + q);
+    if (it.tr && it.t !== "order") out.push(`Tłumaczenie zdania: „${txt(it.tr)}”`);
+    if ((it.t === "mc" || it.t === "listen") && Array.isArray(it.opts)) {
+      out.push("Odpowiedzi do wyboru: " + it.opts.map((o, i) => {
+        const inf = it.info && it.info[i], add = inf ? [inf.jp && txt(inf.jp), inf.r && txt(inf.r), inf.m && txt(inf.m)].filter(Boolean).join(", ") : "";
+        return `${i + 1}) ${txt(o)}${add && add !== txt(o) ? ` [${add}]` : ""}`;
+      }).join("; "));
+    }
+    let ans = c.ans ? txt(c.ans) : "";
+    if (!ans) { try { const a = answerOf(it); ans = [a.ans, a.jp].filter(Boolean).map(txt).join(" – ") + (a.tr ? ` („${txt(a.tr)}”)` : ""); } catch (e) { } }
+    if (!ans && Array.isArray(it.a)) ans = txt(it.a[0]);
+    if (ans) out.push("Poprawna odpowiedź: " + ans);
+    // nieudane próby (druga szansa): co uczeń wpisał/wybrał i co pokazał kurs
+    if (c.tries && c.tries.length) out.push("Próby ucznia: " + c.tries.map(t => `„${cut(t.y, 200)}” (źle)${t.fb ? ` – kurs pokazał: ${cut(t.fb, 300)}` : ""}`).join("; "));
+    if (c.note) out.push(txt(c.note));
+    else if (c.answered && c.how) out.push("Odpowiedź ucznia: " + txt(c.how) + (c.ok === true ? " (dobrze)" : c.ok === false ? " (źle)" : ""));
+    else if (c.answered) out.push("Odpowiedź ucznia: " + (c.yours ? txt(c.yours) : c.ok ? "poprawna" : "„Nie wiem” / bez odpowiedzi") + (c.ok === true ? " (dobrze)" : c.ok === false ? " (źle)" : ""));
+    else if (c.tries && c.tries.length) out.push("Uczeń jeszcze nie ma poprawnej odpowiedzi – ma drugą szansę.");
+    else out.push("Uczeń jeszcze nie odpowiedział.");
+    if (it.hint) out.push("Podpowiedź z kursu: " + txt(it.hint));
+    if (it.ex) out.push("Wyjaśnienie z kursu: " + cut(txt(it.ex), 700));
+    if (it.why) out.push("Notki kursu do odpowiedzi: " + cut(Array.isArray(it.why) ? it.why.map((w, i) => w ? `${i + 1}) ${txt(w)}` : "").filter(Boolean).join("; ") : txt(it.why), 700));
+    if (c.extra) out.push(txt(c.extra));
+    return out;
+  }
+  function ctxText(c) {
+    const src = c.src || srcOf(c.it), u = learner(src);
+    return ["KONTEKST Z APLIKACJI (kurs japońskiego dla Polaków):", ...srcLines(src, c.loose), ...itemLines(c),
+      `Uczeń: uczy się ${u.since || "od niedawna"}; teraz w kursie: ${u.level || "początek"}${u.lesson ? `; ostatnio skończona lekcja: „${u.lesson}”` : ""}; ${u.kanaDone ? "zna hiraganę i katakanę" : "dopiero poznaje kanę"}.`
+    ].join("\n");
+  }
+  // lekcja zadania, gdy nie przyszła z ekranu: zeszyt błędów pamięta, skąd było zadanie
+  function srcOf(it) {
+    try {
+      if (it && typeof mistId === "function" && S.mist) {
+        const m = S.mist[mistId(it)]; if (m && m.src) return m.src;
+        // zadanie z imieniem ucznia (personaItem) ma inny podpis niż zapisane w zeszycie – porównujemy też wersję z imieniem
+        const sig = exSig(it), pi = typeof personaItem === "function" ? personaItem : x => x;
+        const f = Object.values(S.mist).find(x => x && x.it && x.src && (exSig(x.it) === sig || exSig(pi(x.it)) === sig));
+        if (f) return f.src;
+      }
+    } catch (e) { }
+    return "";
+  }
+  function sysText(c, forCopy) {
+    const u = learner(c.src || srcOf(c.it));
+    const furi = forCopy ? "każde kanji zapisuj z czytaniem hiraganą w nawiasie, np. 日本(にほん)" : "każde kanji zapisuj z czytaniem w zapisie {kanji|czytanie hiraganą}, np. {日本|にほん}, {食|た}べる";
+    return [
+      "Jesteś cierpliwym nauczycielem japońskiego. Uczysz osobę z Polski, która jest na początku nauki. Zasady:",
+      "1. Odpowiadaj po polsku, krótko (zwykle 3–8 zdań) i krok po kroku.",
+      `2. W japońskich słowach i zdaniach ${furi}.${u.early ? " Dopisz też zapis łacinką (romaji), np. „taberu”." : ""}`,
+      "3. Wyjaśniaj, DLACZEGO tak jest, a nie tylko co jest poprawne. Nawiązuj do tego, czego uczy kurs (lekcja i gramatyka w kontekście poniżej).",
+      "4. Na końcu daj jeden malutki dodatkowy przykład: japońskie zdanie, czytanie i polskie tłumaczenie.",
+      "5. Gdy nie masz pewności, powiedz to wprost. Nie zmyślaj.",
+      "6. Nigdy nie zawstydzaj – pomyłki to normalna część nauki. Mów do ucznia na „Ty” i bez form zależnych od płci (pisz np. „Twoja odpowiedź”, „warto zapamiętać”, „udało się”; unikaj czasowników w czasie przeszłym w 2. osobie).",
+      "7. Rozmawiaj tylko o nauce japońskiego i o tym zadaniu. Na inne tematy uprzejmie wróć do zadania.",
+      "8. Formatowanie: krótkie akapity, **pogrubienie** najważniejszego, listy zaczynane „- ” albo „1. ”. Bez tabel, nagłówków, linków i HTML.",
+      !c.answered && (c.it || {}).t !== "expl" ? (c.tries && c.tries.length
+        ? "9. Uczeń jeszcze nie ma poprawnej odpowiedzi (próby są w kontekście poniżej). Możesz wprost wyjaśnić, co jest nie tak w jego próbie i dlaczego, ale nie podawaj od razu całej poprawnej odpowiedzi – naprowadzaj, chyba że uczeń wprost o nią poprosi."
+        : "9. Uczeń jeszcze nie odpowiedział na to zadanie: naprowadzaj pytaniami i podpowiedziami, nie zdradzaj od razu poprawnej odpowiedzi – chyba że uczeń wprost o nią poprosi.") : ""
+    ].filter(Boolean).join("\n");
+  }
+  function copyPrompt(c, q) {
+    const prev = (conv(c).turns || []).slice(-6).map(t => (t.role === "user" ? "Pytanie: " : "Odpowiedź: ") + cut(t.text, 600)).join("\n");
+    return `${sysText(c, true)}\n\n${ctxText(c)}${prev ? `\n\nWcześniejsza rozmowa o tym zadaniu:\n${prev}` : ""}\n\nMoje pytanie: ${q}`;
+  }
+
+  /* ---------- bezpieczne wyświetlanie odpowiedzi modelu ---------- */
+  function inline(s) {
+    s = H(s);
+    s = s.replace(/\{([^{}|<>&\n]{1,24})\|([^{}|<>&\n]{1,40})\}/g, (m, k, r) => `<ruby>${k}<rt>${r.replace(/^!/, "")}</rt></ruby>`);
+    s = s.replace(/\*\*([^*\n]+?)\*\*/g, "<b>$1</b>").replace(/__([^_\n]+?)__/g, "<b>$1</b>");
+    s = s.replace(/`([^`\n]+?)`/g, "<code>$1</code>");
+    s = s.replace(/(^|[^*\w])\*([^*\n]+?)\*(?![*\w])/g, "$1<i>$2</i>");
+    return s;
+  }
+  function md(src) {
+    const lines = String(src || "").replace(/\r/g, "").split("\n");
+    let out = "", list = null, para = [];
+    const flushP = () => { if (para.length) { out += "<p>" + para.map(inline).join("<br>") + "</p>"; para = []; } };
+    const flushL = () => { if (list) { out += `<${list.t}>` + list.items.map(x => "<li>" + inline(x) + "</li>").join("") + `</${list.t}>`; list = null; } };
+    for (const raw of lines) {
+      const ln = raw.replace(/\s+$/, "");
+      let m;
+      if (!ln.trim()) { flushP(); flushL(); continue; }
+      if ((m = ln.match(/^\s*[-*•]\s+(.*)$/))) { flushP(); if (!list || list.t !== "ul") { flushL(); list = { t: "ul", items: [] }; } list.items.push(m[1]); continue; }
+      if ((m = ln.match(/^\s*\d{1,2}[.)]\s+(.*)$/))) { flushP(); if (!list || list.t !== "ol") { flushL(); list = { t: "ol", items: [] }; } list.items.push(m[1]); continue; }
+      if ((m = ln.match(/^\s*#{1,6}\s+(.*)$/))) { flushP(); flushL(); out += "<p><b>" + inline(m[1].replace(/\*\*/g, "")) + "</b></p>"; continue; }
+      if (list && /^\s{2,}\S/.test(raw)) { list.items[list.items.length - 1] += " " + ln.trim(); continue; }
+      flushL(); para.push(ln.trim());
+    }
+    flushP(); flushL();
+    return out;
+  }
+
+  /* ---------- Gemini (REST, bez biblioteki) ---------- */
+  const MSG = {
+    key: "Klucz Gemini nie działa – Google go nie rozpoznaje. Sprawdź, czy wklejony jest cały, albo utwórz nowy w Google AI Studio i wklej go w Ustawieniach → 💬 Pomoc AI.",
+    referer: "Ten klucz Gemini ma ograniczenie do innych stron internetowych. W Google Cloud Console (Interfejsy API i usługi → Dane logowania → Twój klucz → Ograniczenia aplikacji → Witryny) dodaj adres tej strony: {origin}/* – albo utwórz nowy klucz w Google AI Studio.",
+    perm: "Ten klucz nie ma dostępu do Gemini. Utwórz nowy klucz w Google AI Studio (aistudio.google.com) i wklej go w Ustawieniach → 💬 Pomoc AI.",
+    quota: "Na dziś limit darmowych pytań się skończył. Odnowi się jutro – do tego czasu możesz skopiować pytanie do innego czatu AI.",
+    minute: "Za dużo pytań w krótkim czasie. Odczekaj minutę i zapytaj jeszcze raz.",
+    region: "Google nie udostępnia Gemini w miejscu, z którego się łączysz (albo dla tego konta). Możesz skopiować pytanie do innego czatu AI.",
+    safety: "Gemini nie odpowiedział, bo zadziałał filtr bezpieczeństwa Google. Spróbuj zapytać innymi słowami.",
+    offline: "Brak połączenia z internetem. Możesz skopiować pytanie i zapytać później.",
+    busy: "Gemini jest teraz przeciążony. Spróbuj jeszcze raz za chwilę.",
+    model: "Nie udało się znaleźć modelu Gemini dla tego klucza. Sprawdź nazwę modelu w Ustawieniach → 💬 Pomoc AI.",
+    timeout: "Gemini długo nie odpowiada. Spróbuj jeszcze raz za chwilę.",
+    empty: "Nie przyszła żadna odpowiedź. Spróbuj zapytać inaczej.",
+    cancel: "Zatrzymano.",
+    other: "Nie udało się zapytać Gemini. Spróbuj jeszcze raz."
+  };
+  const msgOf = code => (MSG[code] || MSG.other).replace("{origin}", (typeof location !== "undefined" && location.origin) || "");
+  const aerr = (code, extra) => Object.assign(new Error("aihelp: " + code), { aih: code }, extra || {});
+  async function gErr(r) {
+    let j = null; try { j = await r.json(); } catch (e) { }
+    const e = (Array.isArray(j) ? (j[0] || {}) : (j || {})).error || {};
+    const msg = String(e.message || ""), st = String(e.status || ""), det = JSON.stringify(e.details || []);
+    const s = r.status;
+    if (s === 429) return aerr(/per ?minute|PerMinute/i.test(msg + det) && !/per ?day|PerDay/i.test(msg + det) ? "minute" : "quota");
+    if ((s === 400 && (/API_KEY_INVALID|API key/i.test(msg + det))) || s === 401) return aerr("key");
+    // klucz ograniczony do wybranych stron (Referer): podpowiadamy, co dopisać, zamiast „utwórz nowy klucz”
+    if (/API_KEY_HTTP_REFERRER_BLOCKED|referer|referrer/i.test(msg + det)) return aerr("referer");
+    if (/location is not supported|FAILED_PRECONDITION/i.test(msg + st)) return aerr("region");
+    if (s === 403) return aerr("perm");
+    if (s === 404) return aerr("model");
+    if (s >= 500) return aerr("busy");
+    return aerr("other");
+  }
+  // limit czasu: brak odpowiedzi w T.first ms albo całość dłużej niż T.total ms
+  async function gFetch(url, o, signal, onFirst) {
+    const ctl = new AbortController();
+    let why = "";
+    const stop = w => { if (!why) why = w; try { ctl.abort(); } catch (e) { } };
+    const onAb = () => stop("cancel");
+    if (signal) { if (signal.aborted) throw aerr("cancel"); signal.addEventListener("abort", onAb); }
+    const t1 = setTimeout(() => stop("timeout"), A.T.first), t2 = setTimeout(() => stop("timeout"), A.T.total);
+    const done = () => { clearTimeout(t1); clearTimeout(t2); if (signal) signal.removeEventListener("abort", onAb); };
+    try {
+      const r = await fetch(url, Object.assign({ cache: "no-store", referrerPolicy: "strict-origin", signal: ctl.signal }, o));
+      clearTimeout(t1);
+      if (onFirst) return await onFirst(r, () => clearTimeout(t1));
+      return r;
+    } catch (e) {
+      if (e && e.aih) throw e;
+      if (why) throw aerr(why);
+      throw aerr("offline");   // brak sieci, zablokowane połączenie
+    } finally { done(); }
+  }
+  const hdr = key => ({ "x-goog-api-key": key });
+  async function listModels(key, signal) {
+    const r = await gFetch(API + "models?pageSize=200", { method: "GET", headers: hdr(key) }, signal);
+    if (!r.ok) throw await gErr(r);
+    const j = await r.json().catch(() => ({}));
+    return (j.models || []).filter(m => m && typeof m.name === "string");
+  }
+  // najnowszy stabilny model „flash”, który umie generateContent (bez lite, obrazów, mowy, osadzeń…)
+  function pickModel(models) {
+    const can = models.filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => ({ id: m.name.replace(/^models\//, ""), m }));
+    const ver = id => { const x = id.match(/gemini-(\d+(?:\.\d+)?)/); return x ? +x[1] : 0; };
+    const bad = /(image|tts|audio|live|embed|vision|thinking|learnlm|aqa|8b|computer|robotics|native)/;
+    const score = id => (/flash/.test(id) ? 1000 : 0) - (/lite/.test(id) ? 300 : 0) - (/(preview|exp)/.test(id) ? 100 : 0) - (/latest/.test(id) ? 0 : 1) + ver(id) * 10;
+    const ok = can.filter(x => /^gemini/.test(x.id) && !bad.test(x.id));
+    ok.sort((a, b) => score(b.id) - score(a.id));
+    return ok.length ? ok[0].id : "";
+  }
+  function feedSSE(st, chunk, onText) {
+    st.buf += chunk;
+    const lines = st.buf.split(/\r?\n/); st.buf = lines.pop();
+    lines.forEach(l => eatLine(st, l, onText));
+  }
+  function eatObj(st, j, onText) {
+    if (!j || typeof j !== "object") return;
+    if (j.error) { st.err = j.error; return; }
+    if (j.promptFeedback && j.promptFeedback.blockReason) st.block = String(j.promptFeedback.blockReason);
+    const c = (j.candidates || [])[0];
+    if (!c) return;
+    const add = ((c.content && c.content.parts) || []).filter(p => p && !p.thought && typeof p.text === "string").map(p => p.text).join("");
+    if (add) { st.text += add; onText(st.text); }
+    if (c.finishReason) st.finish = String(c.finishReason);
+  }
+  function eatLine(st, l, onText) {
+    l = l.trim(); if (!/^data:/.test(l)) return;
+    const d = l.slice(5).trim(); if (!d || d === "[DONE]") return;
+    let j; try { j = JSON.parse(d); } catch (e) { return; }
+    eatObj(st, j, onText);
+  }
+  async function geminiAsk(cfg, sys, turns, onText, signal) {
+    const key = cfg.key;
+    const body = JSON.stringify({
+      systemInstruction: { parts: [{ text: sys }] },
+      contents: turns.map(t => ({ role: t.role === "user" ? "user" : "model", parts: [{ text: t.text }] })),
+      generationConfig: { temperature: 0.4 }
+    });
+    const post = model => gFetch(API + "models/" + encodeURIComponent(model) + ":streamGenerateContent?alt=sse",
+      { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, hdr(key)), body }, signal, async r => {
+        if (!r.ok) return { r };
+        const st = { buf: "", text: "", finish: "", block: "", err: null };
+        if (r.body && r.body.getReader && typeof TextDecoder === "function") {
+          const rd = r.body.getReader(), dec = new TextDecoder();
+          for (; ;) { const { value, done } = await rd.read(); if (done) break; feedSSE(st, dec.decode(value, { stream: true }), onText); }
+          feedSSE(st, dec.decode() + "\n", onText);
+        } else {
+          const all = await r.text();
+          if (/^\s*\[/.test(all)) { try { JSON.parse(all).forEach(o => eatObj(st, o, onText)); } catch (e) { } } else feedSSE(st, all + "\n", onText);
+        }
+        return { r, st };
+      });
+    let model = cfg.model || cfg.auto || DEF_MODEL, res = await post(model);
+    if (!res.r.ok && res.r.status === 404) {
+      // model wycofany albo zła nazwa: bierzemy aktualny „flash” z listy modeli tego klucza i pamiętamy go dla tej osoby
+      const m = pickModel(await listModels(key, signal));
+      if (!m || m === model) throw aerr("model");
+      const c = load(cfg.prof); if (c.key === key) { c.auto = m; if (c.model === model) delete c.model; save(cfg.prof, c); }
+      model = m; res = await post(model);
+    }
+    if (!res.r.ok) throw await gErr(res.r);
+    const st = res.st;
+    if (st.err) { if (st.text) return { text: st.text, cut: true }; throw aerr(+st.err.code === 429 ? "quota" : "other"); }
+    if (!st.text) throw aerr(st.block || /SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(st.finish) ? "safety" : "empty");
+    return { text: st.text, cut: /MAX_TOKENS|SAFETY|PROHIBITED|BLOCKLIST|SPII|RECITATION/.test(st.finish), model };
+  }
+  // „Sprawdź klucz”: lista modeli nie zużywa limitu pytań
+  async function checkKey(key) {
+    if (!okKey(key)) return { ok: false, msg: "To nie wygląda na klucz z Google AI Studio (zwykle zaczyna się od „AIza” i ma około 39 znaków)." };
+    try {
+      const ms = await listModels(key);
+      return { ok: true, auto: pickModel(ms), n: ms.length };
+    } catch (e) { return { ok: false, code: e.aih || "other", msg: msgOf(e.aih) }; }
+  }
+
+  /* ---------- Claude (claude.ai) ---------- */
+  const CMSG = {
+    not_granted: "Nie pozwolono na użycie Claude na tej stronie. Możesz skopiować pytanie do czatu.",
+    sampling_disabled: "Claude nie jest dostępny dla tego konta. Możesz skopiować pytanie do czatu.",
+    rate_limited: "Za dużo pytań naraz albo wyczerpany limit Claude. Spróbuj później.",
+    session_expired: "Zaloguj się ponownie do Claude.",
+    refused: "Claude nie odpowie na to pytanie. Spróbuj zapytać inaczej.",
+    cancelled: "Zatrzymano.",
+    empty_completion: "Nie przyszła żadna odpowiedź. Spróbuj zapytać inaczej.",
+    prompt_too_large: "Rozmowa zrobiła się za długa. Zacznij nową rozmowę."
+  };
+  const OFF = { not_granted: 1, sampling_disabled: 1, not_declared: 1, capability_disabled: 1, capability_removed: 1 };
+  let claudeOff = false;
+  function sampleP() {
+    if (!inClaude() || claudeOff) return Promise.resolve(null);
+    if (typeof getSample === "function") return getSample();
+    return A._sp = A._sp || window.claude.use("sample").catch(() => null);
+  }
+  async function claudeAsk(sample, sys, turns, onText, signal) {
+    // brak roli „system”: zasady i kontekst idą w pierwszej wiadomości ucznia
+    const msgs = turns.map((t, i) => ({ role: t.role === "user" ? "user" : "assistant", content: i === 0 ? sys + "\n\n" + t.text : t.text }));
+    try {
+      const r = await sample(msgs, { onText: u => onText(u.text), signal, cache: false });
+      return { text: r.text, cut: !!r.truncated };
+    } catch (e) {
+      const code = e && e.code;
+      if (OFF[code]) claudeOff = true;
+      throw Object.assign(new Error("claude"), { aih: code === "cancelled" ? "cancel" : "claude", msg: CMSG[code] || "Nie udało się zapytać Claude. Spróbuj jeszcze raz.", text: e && e.text, off: !!OFF[code] });
+    }
+  }
+
+  /* ---------- kto odpowiada ---------- */
+  async function provider() {
+    if (inClaude()) {
+      const s = await sampleP();
+      return s ? { kind: "claude", sample: s, name: "Claude" } : { kind: "copy", why: "claude" };
+    }
+    if (fileMode()) return { kind: "copy", why: "file" };
+    const c = load();
+    if (!c.key) return { kind: "copy", why: "nokey" };
+    if (navigator.onLine === false) return { kind: "copy", why: "offline" };
+    return { kind: "gemini", cfg: Object.assign({ prof: curP() }, c), name: "Gemini" };
+  }
+
+  /* ---------- rejestr zadań i rozmów (tylko w pamięci) ---------- */
+  const REG = new Map(); let NID = 0;
+  const CONV = new Map();   // podpis zadania → {turns, view}; czyści się przy zmianie ekranu
+  function reg(c) {
+    const id = "a" + (++NID); REG.set(id, c);
+    if (REG.size > 400) REG.delete(REG.keys().next().value);
+    return id;
+  }
+  function sigOf(c) {
+    if (c.sig) return c.sig;
+    const it = c.it || {};
+    let s = ""; try { s = typeof exSig === "function" ? exSig(it) : ""; } catch (e) { }
+    // exSig nie obejmuje znaku (write), trybu ani polecenia – bez nich wszystkie zadania „napisz znak” miałyby jedną rozmowę
+    return c.sig = [s || "x", txt(it.q || "").slice(0, 40), it.t || "", it.ch || "", it.mode || "", txt(it.m || "").slice(0, 40), txt(it.label || "").slice(0, 40)].join("|");
+  }
+  function conv(c) { const k = sigOf(c); let v = CONV.get(k); if (!v) CONV.set(k, v = { turns: [], view: [] }); return v; }
+  const allowed = c => c.mode !== "test" || c.answered;
+  const askBtn = (id, lab) => `<button type="button" class="btn sm aih-ask" data-aih="${id}" aria-haspopup="dialog">${H(lab || "💬 Zapytaj")}</button>`;
+  // przycisk w karcie zadania; w teście pojawia się dopiero po odpowiedzi
+  // o: mode ("test" – przycisk dopiero po odpowiedzi), src (lekcja), onHint, ans, q, extra, loose (lekcja src tylko „po której” jest ćwiczenie),
+  // answered + note (zadanie bez zgadywania, np. powtarzanie za lektorem – odpowiedź jest na ekranie od początku)
+  function mount(card, it, o) {
+    if (!card || !it) return;
+    o = o || {};
+    const c = { it, card, mode: o.mode === "test" ? "test" : "practice", src: o.src || "", onHint: o.onHint, answered: !!o.answered, ok: null, yours: "", ans: o.ans || "", q: o.q || "", extra: o.extra || "", note: o.note || "", loose: !!o.loose, study: !!o.answered, tries: [] };
+    // nowe zadanie na ekranie: rozmowa o poprzednim (także o pomyłce z ekranu wyniku albo z listy) się zamyka
+    if (cur) close();
+    // test (np. „Spróbuj jeszcze raz”): stara rozmowa o tym zadaniu, często z poprawną odpowiedzią, nie wraca
+    if (c.mode === "test") CONV.delete(sigOf(c));
+    const id = reg(c);
+    card.dataset.aih = id;
+    const old = card.querySelector(":scope > .aih-row"); if (old) old.remove();
+    const row = document.createElement("div"); row.className = "aih-row"; row.innerHTML = askBtn(id);
+    if (!allowed(c)) row.hidden = true;
+    card.appendChild(row);
+    return id;
+  }
+  // o.how – opis odpowiedzi zamiast „Odpowiedź ucznia: …” (np. samoocena przy fiszce, 🎤 rozpoznane)
+  function answered(card, ok, yours, o) {
+    const c = card && REG.get(card.dataset.aih); if (!c) return;
+    c.answered = true; c.ok = ok === undefined || ok === null ? null : !!ok; c.yours = yours || ""; c.how = (o && o.how) || "";
+    const row = card.querySelector(":scope > .aih-row");
+    if (row) { row.hidden = false; card.appendChild(row); }
+    refresh(c);
+  }
+  const SELF = "w myślach albo na głos, potem odsłonięta poprawna odpowiedź i samoocena (aplikacja tej odpowiedzi nie sprawdzała)";
+  // nieudana próba przed ostateczną odpowiedzią (druga szansa): AI widzi, co uczeń wybrał/wpisał i co pokazał kurs
+  function tried(card, yours, fb) {
+    const c = card && REG.get(card.dataset.aih); if (!c || c.answered) return;
+    c.tries.push({ y: txt(yours), fb: txt(fb).replace(/\s+/g, " ") });
+    if (c.tries.length > 5) c.tries.shift();
+    refresh(c);
+  }
+  // zadanie przenosi się w inne miejsce (rozmowa: z karty „Twoja kolej” do Twojego dymka) – rozmowa i okno zostają
+  function rehome(from, to) {
+    const id = from && from.dataset && from.dataset.aih, c = id && REG.get(id); if (!c || !to) return;
+    const row = from.querySelector(":scope > .aih-row");
+    c.card = to; to.dataset.aih = id;
+    if (row) { row.hidden = !allowed(c); to.appendChild(row); }
+  }
+  // okno otwarte przy tym zadaniu: chipy i pusty stan zgodne z tym, czy uczeń już odpowiedział
+  function refresh(c) {
+    if (!P || cur !== c || P.root.hidden) return;
+    if (conv(c).view.length) chips(); else draw();
+  }
+  // przycisk do wklejenia w HTML (pomyłki na ekranie wyniku, „Moje słabe strony”)
+  function btnHTML(it, o) {
+    if (!it) return "";
+    o = o || {};
+    const id = reg({ it, mode: "practice", src: o.src || "", answered: true, ok: o.ok === undefined ? false : o.ok, yours: o.yours || "", ans: "", note: o.note || "" });
+    return `<div class="aih-row">${askBtn(id, o.label)}</div>`;
+  }
+  // zeszyt błędów: lista pomyłek z poprawną odpowiedzią, wyjaśnieniem kursu i „💬 Zapytaj” przy każdej
+  function mistHTML(entries) {
+    try {
+      const list = (entries || []).filter(([, m]) => m && m.it).sort((a, b) => (b[1].n - a[1].n) || (b[1].t - a[1].t)).slice(0, 40);
+      if (!list.length) return "";
+      const row = ([, m]) => {
+        const it = typeof personaItem === "function" ? personaItem(fillExpl(m.it)) : m.it;
+        let a = {}; try { a = answerOf(it) || {}; } catch (e) { }
+        const lab = it.label || (typeof TYPE_LABEL !== "undefined" && TYPE_LABEL[it.t]) || "";
+        return `<div class="card rv"><div class="small muted">${H(lab)}${m.n > 1 ? ` · pomyłki: ${+m.n}` : ""}</div>
+          <div class="rvq">${typeof questionHTML === "function" ? questionHTML(it) : H(txt(it.q))}</div>
+          ${a.ans ? `<div class="rva">✓ Poprawnie: <span class="jpline">${a.ans}</span></div>` : ""}${a.jp ? `<div class="jpline small">${a.jp}</div>` : ""}${a.tr ? `<div class="small">„${H(a.tr)}”</div>` : ""}
+          ${it.ex ? `<div class="fex">📘 ${ruby(it.ex)}</div>` : ""}
+          ${btnHTML(it, { src: m.src, ok: false, note: `Uczeń pomylił się w tym zadaniu${m.n > 1 ? ` (${+m.n} razy)` : ""} – jest w zeszycie błędów. Teraz przegląda pomyłki z wyjaśnieniem.` })}</div>`;
+      };
+      return `<details class="card rvbox aih-mist"><summary><b>📘 Przejrzyj pomyłki z wyjaśnieniem</b> – i zapytaj AI, czego nie rozumiesz</summary>${list.map(row).join("")}</details>`;
+    } catch (e) { return ""; }
+  }
+
+  /* ---------- okno rozmowy ---------- */
+  let P = null, cur = null, busy = null, opener = null;
+  const CHIPS_A = ["Dlaczego ta odpowiedź?", "Wyjaśnij prościej", "Daj podobny przykład", "Jak to przeczytać?"];
+  const CHIPS_Q = ["Naprowadź mnie (bez odpowiedzi)", "Wyjaśnij prościej", "Daj podobny przykład", "Jak to przeczytać?"];
+  const CHIPS_T = ["Dlaczego moja odpowiedź jest zła?", "Naprowadź mnie (bez odpowiedzi)", "Wyjaśnij prościej", "Jak to przeczytać?"];
+  const CHIPS_S = ["Co znaczy każde słowo?", "Wyjaśnij gramatykę", "Jak to przeczytać?", "Daj podobny przykład"];
+  const CHIPS_E = ["Wyjaśnij prościej", "Daj podobny przykład", "Jak to przeczytać?", "Kiedy tego używać?"];
+  const LINKS = [["ChatGPT", "https://chatgpt.com/"], ["Gemini", "https://gemini.google.com/app"], ["Claude", "https://claude.ai/new"]];
+  function panel() {
+    if (P && document.body.contains(P.root)) return P;
+    const back = document.createElement("div"); back.className = "aih-back"; back.hidden = true;
+    const root = document.createElement("section");
+    root.className = "aih-panel"; root.hidden = true;
+    root.setAttribute("role", "dialog"); root.setAttribute("aria-modal", "true"); root.setAttribute("aria-labelledby", "aih-title");
+    root.innerHTML = `<div class="aih-head"><div class="aih-tt"><b id="aih-title" tabindex="-1">💬 Zapytaj o to zadanie</b><span class="aih-prov small muted"></span></div>
+        <button type="button" class="btn sm aih-new" aria-label="Nowa rozmowa" title="Nowa rozmowa">↺<span class="aih-newt"> Nowa</span></button><button type="button" class="btn sm aih-x" aria-label="Zamknij">✕</button></div>
+      <div class="aih-ctx small muted"></div>
+      <div class="aih-log" aria-live="polite"></div>
+      <div class="aih-chips chips"></div>
+      <div class="aih-note small"></div>
+      <form class="aih-form"><label class="aih-lab small muted" for="aih-q">Twoje pytanie</label>
+        <div class="aih-in"><textarea id="aih-q" rows="2" maxlength="1000" lang="pl" placeholder="Np. Dlaczego tu jest は, a nie が?"></textarea><button type="submit" class="btn pri aih-send">Zapytaj</button></div></form>`;
+    document.body.appendChild(back); document.body.appendChild(root);
+    P = { root, back, log: root.querySelector(".aih-log"), chips: root.querySelector(".aih-chips"), note: root.querySelector(".aih-note"), ctx: root.querySelector(".aih-ctx"),
+      prov: root.querySelector(".aih-prov"), title: root.querySelector("#aih-title"), ta: root.querySelector("textarea"), send: root.querySelector(".aih-send"), form: root.querySelector("form"), p: null };
+    back.onclick = close;
+    root.querySelector(".aih-x").onclick = close;
+    root.querySelector(".aih-new").onclick = () => { if (!cur) return; stopBusy(); const v = conv(cur); v.turns = []; v.view = []; P.note.innerHTML = ""; draw(); focusIn(); };
+    P.form.onsubmit = e => { e.preventDefault(); if (busy) { stopBusy(); return; } ask(P.ta.value); };
+    P.ta.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); if (!busy) ask(P.ta.value); }
+    });
+    root.addEventListener("keydown", e => {
+      e.stopPropagation();   // skróty klawiszowe ekranu pod spodem (np. spacja / 1 2 3 w powtórkach) nie działają podczas pisania pytania
+      if (e.key === "Escape") { e.preventDefault(); close(); return; }
+      if (e.key === "Tab" && P.modal) {   // telefon: fokus zostaje w oknie
+        const f = [...root.querySelectorAll("button:not([disabled]),textarea,a[href]")].filter(x => x.offsetParent !== null);
+        if (!f.length) return;
+        if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+      }
+    });
+    return P;
+  }
+  function chips() {
+    const list = !cur ? CHIPS_Q : (cur.it || {}).t === "expl" ? CHIPS_E : cur.study ? CHIPS_S : cur.answered ? CHIPS_A : cur.tries && cur.tries.length ? CHIPS_T : CHIPS_Q;
+    P.chips.innerHTML = list.map(t => `<button type="button" class="chip aih-chip">${H(t)}</button>`).join("");
+    // po pierwszym pytaniu chipy zwijają się do jednego przewijanego rzędu (więcej miejsca na odpowiedź)
+    P.chips.classList.toggle("one", !!(cur && conv(cur).view.length));
+    P.chips.querySelectorAll("button").forEach(b => b.onclick = () => { if (!busy) ask(b.textContent); });
+  }
+  function bubble(v) {
+    if (v.kind === "q") return `<div class="aih-q"><div class="aih-bub">${H(v.text).replace(/\n/g, "<br>")}</div></div>`;
+    if (v.kind === "a") return `<div class="aih-a"><div class="aih-who small muted">${H(v.who || "AI")}</div><div class="aih-bub">${md(v.text)}${v.cut ? `<p class="small muted">(odpowiedź urwana)</p>` : ""}</div></div>`;
+    if (v.kind === "err") return `<div class="aih-err" role="status">${H(v.text)}${v.copy ? ` <button type="button" class="btn sm aih-cpy" data-q="${H(v.copy)}">📋 Skopiuj pytanie do czatu</button>` : ""}</div>`;
+    return `<div class="aih-sys small">${H(v.text)}</div>`;
+  }
+  function draw() {
+    const v = conv(cur).view;
+    // pytanie przed odpowiedzią liczy się jak 💡 (ask → onHint) – mówimy o tym uczciwie, zanim padnie
+    const hintNote = cur && cur.onHint && !cur.answered && !cur.hinted && cur.mode === "practice" ? `<p class="small muted aih-hintnote">Pytanie przed odpowiedzią liczy się jak 💡 podpowiedź – to w porządku, karta wróci trochę szybciej.</p>` : "";
+    P.log.innerHTML = v.length ? v.map(bubble).join("") : `<p class="small muted aih-empty">Zapytaj o cokolwiek ${cur && (cur.it || {}).t === "expl" ? "w tym wyjaśnieniu" : "w tym zadaniu"} – albo stuknij jedno z pytań poniżej.</p>${hintNote}`;
+    P.log.querySelectorAll(".aih-cpy").forEach(b => b.onclick = () => doCopy(b.dataset.q));
+    chips();
+    P.log.scrollTop = P.log.scrollHeight;
+  }
+  function ctxLine() {
+    const it = cur.it || {};
+    let q = it.t === "order" ? it.tr : it.t === "write" ? it.ch + " – " + (it.m || "") : it.t === "listen" && !it.lines ? "🔊 " + txt(it.jp) : (it.q || cur.q || it.tr || "");
+    q = cut(txt(q).replace(/\s+/g, " "), 90);
+    return `${H(it.label || (typeof TYPE_LABEL !== "undefined" && TYPE_LABEL[it.t]) || "Zadanie")}${q ? `: <span class="jp">${H(q)}</span>` : ""}`;
+  }
+  async function setProvider() {
+    P.prov.textContent = inClaude() ? "łączę z Claude…" : "";
+    const p = await provider();
+    if (!cur) return;
+    P.p = p;
+    const copy = p.kind === "copy";
+    P.prov.textContent = p.kind === "claude" ? "odpowiada Claude" : p.kind === "gemini" ? "odpowiada Gemini" : "";
+    if (!busy) sendLabel();
+    const why = {
+      file: "W pliku otwartym z dysku odpowiedzi nie przychodzą tutaj. Napisz pytanie i skopiuj je razem z opisem zadania do dowolnego czatu AI.",
+      nokey: "Napisz pytanie i skopiuj je razem z opisem zadania do dowolnego czatu AI. Chcesz odpowiedzi od razu tutaj? Po ćwiczeniach dodaj darmowy klucz Gemini w Ustawieniach → 💬 Pomoc AI.",
+      offline: "Bez internetu nie zapytam AI. Możesz skopiować pytanie z opisem zadania i zapytać później.",
+      claude: "Claude nie jest teraz dostępny na tej stronie. Możesz skopiować pytanie z opisem zadania do czatu."
+    }[p.why];
+    // bez klucza: od razu link do ustawień (przejście zamyka okno – rozmowa i tak żyje tylko do zmiany ekranu)
+    if (copy) P.note.innerHTML = `<p class="muted" style="margin:4px 0">${H(why || "")}${p.why === "nokey" ? ` <a class="aih-set" href="#/settings/ai">Ustaw w 2 minuty →</a>` : ""}</p>`;
+  }
+  function open(id, from) {
+    const c = REG.get(id); if (!c || !allowed(c)) return;
+    panel();
+    if (cur !== c) stopBusy();
+    cur = c; opener = from || document.activeElement;
+    P.ctx.innerHTML = ctxLine();
+    P.root.querySelector("#aih-title").textContent = (c.it || {}).t === "expl" ? "💬 Zapytaj o tę gramatykę" : "💬 Zapytaj o to zadanie";
+    P.note.innerHTML = "";
+    P.root.hidden = false; P.back.hidden = false;
+    document.body.classList.add("aih-open");
+    layout();
+    draw();
+    if (!busy) sendLabel();
+    setProvider().catch(() => { });
+    setTimeout(focusIn, 30);
+  }
+  // panel z boku tylko na szerokim i wysokim ekranie; telefon w poziomie (niski ekran) dostaje arkusz od dołu
+  const SIDE = "(min-width:760px) and (min-height:500px)";
+  function layout() {
+    if (!P || P.root.hidden) return;
+    P.modal = !(window.matchMedia && matchMedia(SIDE).matches);
+    P.root.setAttribute("aria-modal", P.modal ? "true" : "false");
+    fitVV();
+  }
+  // klawiatura ekranowa (iOS, Android Chrome) zmniejsza tylko widoczną część strony: arkusz siada nad klawiaturą
+  function fitVV() {
+    if (!P || P.root.hidden) return;
+    const vv = window.visualViewport;
+    const kb = vv && P.modal ? Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop)) : 0;
+    P.root.style.bottom = kb > 40 ? kb + "px" : "";
+    P.root.style.maxHeight = kb > 40 ? Math.round(vv.height * 0.96) + "px" : "";
+  }
+  // telefon / dotyk: fokus na tytule okna, nie w polu pytania – inaczej klawiatura zasłania szybkie pytania
+  function focusIn() {
+    if (!P || P.root.hidden) return;
+    const touch = P.modal || (window.matchMedia && matchMedia("(pointer:coarse)").matches);
+    try { (touch ? P.title : P.ta).focus({ preventScroll: true }); } catch (e) { }
+  }
+  function sendLabel() {
+    if (!P) return;
+    const copy = !!(P.p && P.p.kind === "copy");
+    P.form.classList.toggle("copy", copy && !busy);
+    P.send.textContent = busy ? "⏹ Zatrzymaj" : copy ? "📋 Skopiuj pytanie do czatu" : "Zapytaj";
+    P.send.classList.toggle("pri", !busy);
+  }
+  window.addEventListener("resize", layout);
+  if (window.visualViewport) { visualViewport.addEventListener("resize", fitVV); visualViewport.addEventListener("scroll", fitVV); }
+  function close() {
+    if (!P) return;
+    stopBusy();
+    P.root.hidden = true; P.back.hidden = true; P.root.style.bottom = ""; P.root.style.maxHeight = "";
+    document.body.classList.remove("aih-open");
+    const o = opener; cur = null; opener = null;
+    if (o && o.isConnected) { try { o.focus({ preventScroll: true }); } catch (e) { } }
+  }
+  function stopBusy() {
+    if (busy) { try { busy.abort(); } catch (e) { } busy = null; }
+    if (P) { P.log.querySelectorAll(".aih-pend").forEach(n => n.remove()); sendLabel(); }
+  }
+  function share(t) { if (navigator.share) navigator.share({ text: t }).catch(() => { }); }
+  function doCopy(q) {
+    q = String(q || "").trim(); if (!cur) return;
+    const t = copyPrompt(cur, q || "Wyjaśnij mi to zadanie.");
+    if (typeof copyText === "function") copyText(t);
+    P.note.innerHTML = `<p style="margin:4px 0">✓ Skopiowano pytanie z opisem zadania. Otwórz czat i wklej (długie przytrzymanie → Wklej):</p>
+      <div class="row aih-links">${LINKS.map(([n, u]) => `<a class="btn sm" href="${u}" target="_blank" rel="noopener noreferrer">${n} ↗</a>`).join("")}${navigator.share ? `<button type="button" class="btn sm aih-share">📤 Wyślij do aplikacji</button>` : ""}</div>`;
+    const sb = P.note.querySelector(".aih-share"); if (sb) sb.onclick = () => share(t);
+  }
+  async function ask(q) {
+    q = String(q || "").trim().slice(0, 1000);
+    if (!q || !cur || busy) return;
+    const c = cur, v = conv(c);
+    // zajęte od razu (zanim Claude/Gemini będzie gotowy): drugie stuknięcie nie wyśle drugiego pytania równolegle
+    const ctl = busy = new AbortController();
+    const free = () => { if (busy === ctl) busy = null; };
+    if (!c.answered && !c.hinted && c.mode === "practice") { c.hinted = true; try { if (c.onHint) c.onHint(); } catch (e) { } }   // pytanie przed odpowiedzią liczy się jak podpowiedź
+    // od razu widać, że stuknięcie zadziałało (sample() na claude.ai potrafi chwilę się ładować)
+    const pend = document.createElement("div"); pend.className = "aih-pend"; pend.setAttribute("aria-busy", "true");
+    pend.innerHTML = `<div class="aih-q"><div class="aih-bub">${H(q).replace(/\n/g, "<br>")}</div></div><p class="small muted aih-wait">Myślę…</p>`;
+    const emp = P.log.querySelector(".aih-empty"); if (emp) P.log.innerHTML = "";
+    P.log.appendChild(pend); P.log.scrollTop = P.log.scrollHeight;
+    sendLabel();
+    let p;
+    try { p = await provider(); } catch (e) { p = { kind: "copy", why: "" }; }   // za każdym razem od nowa: klucz mógł się zmienić, sieć mogła zniknąć
+    pend.remove();
+    if (cur !== c || ctl.signal.aborted) { free(); if (P && cur === c) { draw(); sendLabel(); } return; }
+    P.p = p;
+    if (p.kind === "copy") { free(); draw(); P.ta.value = q; sendLabel(); doCopy(q); return; }
+    P.ta.value = ""; P.note.innerHTML = "";
+    // tury muszą się przeplatać (uczeń / model): wiszące pytanie bez odpowiedzi wypada
+    while (v.turns.length && v.turns[v.turns.length - 1].role === "user") v.turns.pop();
+    v.turns.push({ role: "user", text: q }); v.view.push({ kind: "q", text: q });
+    const ans = { kind: "a", text: "", who: p.name };
+    draw();
+    const node = document.createElement("div"); node.className = "aih-a"; node.setAttribute("aria-busy", "true");
+    node.innerHTML = `<div class="aih-who small muted">${H(p.name)}</div><div class="aih-bub"><p class="muted aih-wait">Myślę…</p></div>`;
+    P.log.appendChild(node); P.log.scrollTop = P.log.scrollHeight;
+    const bub = node.querySelector(".aih-bub");
+    sendLabel();
+    let shown = "";
+    const onText = t => { if (busy !== ctl) return; shown = t; bub.innerHTML = md(t); P.log.scrollTop = P.log.scrollHeight; };
+    const sys = sysText(c) + "\n\n" + ctxText(c);
+    const turns = v.turns.slice(-12);
+    while (turns.length && turns[0].role !== "user") turns.shift();
+    try {
+      const r = p.kind === "claude" ? await claudeAsk(p.sample, sys, turns, onText, ctl.signal) : await geminiAsk(p.cfg, sys, turns, onText, ctl.signal);
+      ans.text = r.text; ans.cut = r.cut;
+      v.turns.push({ role: "model", text: r.text }); v.view.push(ans);
+    } catch (e) {
+      const code = e && e.aih;
+      // nieudane pytanie wypada z historii (model go nie zobaczy); wraca do pola, żeby łatwo zapytać jeszcze raz
+      if (v.turns.length && v.turns[v.turns.length - 1].role === "user") v.turns.pop();
+      const partial = shown || (e && e.text) || "";
+      if (partial && code !== "cancel") v.view.push({ kind: "a", text: partial, who: p.name, cut: true });
+      const msg = e && e.msg ? e.msg : msgOf(code);
+      v.view.push({ kind: "err", text: msg, copy: /^(quota|minute|region|offline|busy|timeout|perm|referer|key|model|claude)$/.test(code || "") ? q : "" });
+      if (code !== "cancel" && cur === c && !P.ta.value) P.ta.value = q;
+      if (e && e.off) P.p = null;
+    } finally {
+      free();
+      if (cur === c && P) { draw(); sendLabel(); }
+      if (cur === c && P && P.p === null) setProvider().catch(() => { });
+    }
+  }
+  document.addEventListener("click", e => {
+    const b = e.target && e.target.closest && e.target.closest(".aih-ask[data-aih]");
+    if (b) { e.preventDefault(); open(b.dataset.aih, b); }
+  });
+  window.addEventListener("hashchange", () => { close(); CONV.clear(); });
+
+  /* ---------- Ustawienia: 💬 Pomoc AI ---------- */
+  function settingsHTML() {
+    const head = `<div class="card" id="aihcard" style="margin-bottom:14px"><h2 style="margin-top:0">💬 Pomoc AI</h2>`;
+    if (inClaude()) return head + `<p style="margin:0">Tutaj, na claude.ai, na pytania przy zadaniach (przycisk „💬 Zapytaj”) odpowiada Claude. Nic nie trzeba ustawiać.</p></div>`;
+    if (fileMode()) return head + `<p style="margin:0">Przy każdym zadaniu jest przycisk „💬 Zapytaj”. W pliku otwartym z dysku kopiuje on pytanie razem z opisem zadania – wklejasz je do dowolnego czatu AI (ChatGPT, Gemini, Claude).</p>
+      <p class="small muted" style="margin:8px 0 0">Klucza do AI nie da się tu zapisać: inne pliki otwarte z dysku w tej przeglądarce mogłyby go odczytać. Odpowiedzi od razu w aplikacji działają w wersji na telefon (strona kursu) i na claude.ai.</p></div>`;
+    const c = load();
+    return head + `<p style="margin:0">Przy każdym zadaniu możesz stuknąć „💬 Zapytaj” i zadać pytanie. Z darmowym kluczem Google Gemini odpowiedź przychodzi od razu tutaj. Bez klucza pytanie kopiuje się do dowolnego czatu AI.</p>
+      <p class="small" id="aihstat" style="margin:10px 0">${c.key ? "✓ Klucz Gemini jest zapisany na tym urządzeniu dla tej osoby." : "Klucza jeszcze nie ma."}</p>
+      <details${c.key ? "" : " open"}><summary class="small"><b>Jak zdobyć darmowy klucz (2 minuty)</b></summary><ol class="small" style="padding-left:20px;margin:6px 0">
+        <li>Otwórz <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">aistudio.google.com</a> i zaloguj się kontem Google (np. Gmail).</li>
+        <li>Kliknij <b>Get API key</b> („Uzyskaj klucz API”).</li>
+        <li>Kliknij <b>Create API key</b> („Utwórz klucz API”). Jeśli zapyta o projekt, wybierz zaproponowany.</li>
+        <li>Skopiuj klucz (zwykle zaczyna się od „AIza”) i wklej go poniżej.</li>
+        <li>Stuknij <b>Sprawdź i zapisz</b>. Gotowe.</li></ol>
+        <p class="small muted" style="margin:4px 0">Nie trzeba podawać karty płatniczej.</p>
+        <p class="small muted" style="margin:4px 0">Dla bezpieczeństwa (nieobowiązkowo): w Google Cloud Console możesz ograniczyć klucz do tej strony – Ograniczenia aplikacji → Witryny → <span class="jp">${H(location.origin)}/*</span>.</p></details>
+      <p class="small aih-warn">ℹ️ Uczciwie: darmowy plan ma dzienny limit pytań. Google może używać pytań z darmowego planu do ulepszania swoich modeli (mogą je czytać ludzie), więc nie wpisuj niczego prywatnego. Klucz zostaje tylko na tym urządzeniu, osobno dla każdej osoby – nie trafia do kopii postępów ani do synchronizacji.</p>
+      <label class="small" for="aihkey"><b>Klucz Gemini</b></label>
+      <input id="aihkey" class="aih-key" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${c.key ? "zapisany – wklej nowy, żeby zmienić" : "wklej klucz z Google AI Studio"}">
+      <div class="row" style="margin-top:8px"><button type="button" class="btn sm pri" id="aihchk">${c.key ? "Sprawdź klucz" : "Sprawdź i zapisz"}</button>${c.key ? `<button type="button" class="btn sm" id="aihdel">Usuń klucz</button>` : ""}</div>
+      <div class="small" id="aihres" role="status" style="margin-top:6px"></div>
+      <details style="margin-top:8px"><summary class="small">Model (dla zaawansowanych)</summary>
+        <div class="small muted" style="margin:4px 0">Domyślnie: ${H(DEF_MODEL)} (zawsze aktualny model „flash”). Gdy Google wycofa model, nowy wybierze się automatycznie.${c.auto ? ` Teraz używam: ${H(c.auto)}.` : ""}</div>
+        <div class="row"><input id="aihmodel" class="aih-key" style="flex:1;min-width:0" value="${H(c.model || "")}" placeholder="${H(DEF_MODEL)}" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" class="btn sm" id="aihmsave">Zapisz</button></div></details></div>`;
+  }
+  function settingsBind(sub) {
+    const card = document.getElementById("aihcard"); if (!card) return;
+    if (sub === "ai") card.scrollIntoView({ block: "start" });
+    const inp = document.getElementById("aihkey"), res = document.getElementById("aihres"), chk = document.getElementById("aihchk");
+    if (!inp || !chk) return;
+    const p = curP();
+    const say = (t, ok) => { res.textContent = t; res.style.color = ok === false ? "var(--bad)" : ""; };
+    chk.onclick = async () => {
+      const typed = inp.value.replace(/\s+/g, ""), saved = load(p).key, key = typed || saved;
+      if (!key) { say("Najpierw wklej klucz.", false); inp.focus(); return; }
+      chk.disabled = true; say("Sprawdzam klucz…");
+      const r = await checkKey(key);
+      chk.disabled = false;
+      if (!document.body.contains(chk)) return;
+      if (r.ok) {
+        const c = load(p);
+        if (typed) { c.key = typed; delete c.auto; }
+        if (r.auto && !c.auto) c.auto = r.auto;
+        save(p, c); inp.value = "";
+        toast("✓ Klucz działa – możesz pytać przy zadaniach");
+        if (typeof route === "function") { route(); setTimeout(() => { const x = document.getElementById("aihres"); if (x) x.textContent = "✓ Klucz działa."; }, 0); }
+      } else if (r.code === "offline" && typed && okKey(typed)) {
+        const c = load(p); c.key = typed; delete c.auto; save(p, c); inp.value = "";
+        say("Brak internetu – klucz zapisany. Sprawdzi się przy pierwszym pytaniu.");
+      } else say(r.msg, false);
+    };
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); chk.click(); } });
+    const del = document.getElementById("aihdel");
+    if (del) del.onclick = () => { if (!confirm("Usunąć klucz Gemini z tego urządzenia?")) return; forget(p); toast("Klucz usunięty"); if (typeof route === "function") route(); };
+    const ms = document.getElementById("aihmsave"), mi = document.getElementById("aihmodel");
+    if (ms && mi) ms.onclick = () => {
+      const m = mi.value.trim().replace(/^models\//, "");
+      if (m && !okModel(m)) { say("Nazwa modelu może mieć tylko małe litery, cyfry, kropki i myślniki (np. gemini-2.5-flash).", false); return; }
+      const c = load(p); if (m) c.model = m; else delete c.model; save(p, c); say(m ? "Zapisano model: " + m : "Wracam do modelu domyślnego.");
+    };
+  }
+  function forget(p) { lsDel(KEY(p || curP())); }
+
+  /* ---------- wygląd (tylko klasy aih-*) ---------- */
+  const css = `.aih-row{display:flex;justify-content:flex-end;margin-top:10px}.aih-row[hidden]{display:none}
+.aih-ask{font-weight:600}
+.aih-back{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:44}.aih-back[hidden],.aih-panel[hidden]{display:none}
+.aih-panel{position:fixed;z-index:45;background:var(--bg2);color:var(--fg);display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,.18);overflow-y:auto;
+  left:0;right:0;bottom:0;max-height:min(84vh,84dvh);border-radius:18px 18px 0 0;border:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+@media (min-width:760px) and (min-height:500px){.aih-back{display:none}.aih-panel{left:auto;top:0;width:min(420px,42vw);max-height:none;border-radius:0;border-width:0 0 0 1px}
+  body.aih-open main,body.aih-open .topin,body.aih-open footer{margin-right:min(420px,42vw)}}
+.aih-head{display:flex;align-items:center;gap:6px;flex:none}.aih-head .btn{flex:none}
+.aih-tt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}.aih-tt b{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.aih-tt b:focus{outline:none}
+.aih-prov{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.aih-prov:empty{display:none}
+.aih-ctx{margin:6px 0;padding:6px 10px;background:var(--bg3);border-radius:10px;overflow-wrap:anywhere;flex:none}
+.aih-log{flex:1 1 auto;overflow-y:auto;min-height:min(80px,16vh);padding:4px 0;overscroll-behavior:contain}
+.aih-pend .aih-wait{margin:4px 0}.aih-hintnote{margin:6px 0 0}
+.aih-chips,.aih-note,.aih-form{flex:none}
+.aih-chips.one{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.aih-chips.one::-webkit-scrollbar{display:none}.aih-chips.one .aih-chip{flex:none;white-space:nowrap}
+.aih-form.copy .aih-in{flex-direction:column;align-items:stretch}.aih-form.copy .aih-in .btn{max-width:none}
+@media (max-height:500px){.aih-ctx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:4px 0;padding:4px 10px}.aih-panel{padding-top:8px}}
+@media (max-height:340px){.aih-ctx,.aih-chips.one,.aih-hintnote{display:none}.aih-chips{margin:2px 0}}
+.aih-q{display:flex;justify-content:flex-end;margin:8px 0}.aih-q .aih-bub{background:var(--fg);color:var(--bg);border-radius:14px 14px 4px 14px;padding:8px 12px;max-width:88%;overflow-wrap:anywhere}
+.aih-a{margin:8px 0}.aih-a .aih-bub{background:var(--bg3);border-radius:14px 14px 14px 4px;padding:8px 12px;overflow-wrap:anywhere;line-height:1.6}
+.aih-a .aih-bub p{margin:.3em 0}.aih-a .aih-bub ul,.aih-a .aih-bub ol{margin:.3em 0;padding-left:22px}.aih-a .aih-bub code{background:var(--bg2);border-radius:4px;padding:0 4px}
+.aih-a ruby{font-family:var(--jp)}.aih-who{margin-bottom:2px}
+.aih-err{margin:8px 0;padding:8px 12px;border-radius:12px;background:var(--badbg);color:var(--fg)}
+.aih-chips{margin:6px 0 4px}.aih-chip{font-size:13px}
+.aih-note:empty{display:none}.aih-links{margin:4px 0;gap:6px}
+.aih-in{display:flex;gap:8px;align-items:flex-end}.aih-in textarea{flex:1;min-width:0;resize:none;font-size:16px;line-height:1.4;font-family:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg);max-height:120px}
+.aih-in .btn{flex:none;max-width:52%;white-space:normal;text-align:center}
+.aih-lab{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.aih-key{width:100%;max-width:420px;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);margin-top:4px}
+.aih-warn{background:var(--bg3);border-radius:10px;padding:8px 10px}
+.rv .aih-row{margin-top:6px}.aih-row.aih-in-row{margin-top:0}`;
+  try { const st = document.createElement("style"); st.id = "aih-css"; st.textContent = css; document.head.appendChild(st); } catch (e) { }
+
+  const A = window.AIHelp = {
+    T: { first: 45000, total: 120000 }, DEF_MODEL,
+    mount, answered, tried, rehome, SELF, btnHTML, mistHTML, open, close, forget, settingsHTML, settingsBind, checkKey, provider,
+    // dla testów i diagnostyki (bez klucza)
+    _md: md, _ctx: id => { const c = REG.get(id); return c ? sysText(c) + "\n\n" + ctxText(c) : ""; }, _pick: pickModel, fileMode,
+    hasKey: p => !!load(p).key
+  };
+  if (fileMode()) wipeFile();
+})();
 
 /* ===================== mylące pary czasowników ===================== */
 let _PR = null;
@@ -30523,6 +31350,7 @@ function shadowSession(items) {
         <div class="shrec"></div>
       </div></div>`;
     const box = $(".shrec");
+    if (window.AIHelp) AIHelp.mount($(".shcard"), { t: "say", label: x.raw ? "Powtórz słowo za lektorem" : "Powtórz zdanie za lektorem", q: x.jp, tr: x.pl || "" }, { src: "powtarzaj", ans: x.jp, answered: true, note: "Tu nie ma nic do zgadywania: uczeń widzi to zdanie z czytaniem i tłumaczeniem, słucha lektora i powtarza na głos. Możesz od razu omawiać zdanie, słowa, gramatykę i wymowę." });   // 💬 Zapytaj
     // podczas nagrywania i pauzy na powtórzenie przyciski głosu są wyłączone (głos nagrałby się razem z Tobą)
     const lockCtl = on => $$(".shctl button").forEach(b => { b.disabled = on; });
     $(".lis").onclick = () => { token++; audio.pause(); sayIt(x); };
@@ -30866,7 +31694,7 @@ function viewWeak() {
       : weakSay ? `<div class="card"><b>Teraz warto poćwiczyć przede wszystkim wymowę.</b><div style="margin-top:10px"><a class="btn pri" href="#/powtarzaj">🎙 Ćwicz wymowę</a></div></div>` : ready.length ? `<div class="card">🎉 Wszystkie ocenione umiejętności mają co najmniej 90% – świetnie! Rób dalej lekcje i powtórki.</div>`
       : `<div class="card"><p>📊 Za mało danych, żeby coś ocenić. Zrób kilka ćwiczeń (lekcje, trenery, quizy kanji), a tu pojawi się, co idzie najlepiej, a co warto poćwiczyć.</p><p class="small muted">Wyniki zbierają się od tej wersji kursu – wcześniejsze odpowiedzi nie były liczone.</p></div>`}
     ${skills.length ? `<h2>Umiejętności</h2><div class="grid g2">${skills.map(row).join("")}</div>` : ""}
-    ${mist.length ? `<h2>Najczęstsze pomyłki</h2><div class="card">${mist.slice(0, 8).map(([, m]) => `<div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span class="jp" style="min-width:0;overflow-wrap:anywhere">${qprev(m.it)}</span><span class="pill">${m.n}×</span></div>`).join("")}
+    ${mist.length ? `<h2>Najczęstsze pomyłki</h2><div class="card">${mist.slice(0, 8).map(([, m]) => `<div class="row" style="justify-content:space-between;flex-wrap:nowrap;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)"><span class="jp" style="min-width:0;overflow-wrap:anywhere">${qprev(m.it)}</span><span class="row" style="gap:6px;flex-wrap:nowrap">${window.AIHelp ? AIHelp.btnHTML(typeof personaItem === "function" ? personaItem(fillExpl(m.it)) : m.it, { src: m.src, ok: false }).replace('class="aih-row"', 'class="aih-row aih-in-row"') : ""}<span class="pill">${m.n}×</span></span></div>`).join("")}
       <div class="row" style="margin-top:10px"><button class="btn mgo">▶ Popraw ${Math.min(8, mist.length)} ${Math.min(8, mist.length) === 1 ? "pomyłkę" : Math.min(8, mist.length) < 5 ? "pomyłki" : "pomyłek"}</button><a class="btn" href="#/bledy">📝 Cały zeszyt błędów</a></div></div>` : ""}
     ${fix.length ? `<h2>Lekcje do poprawy</h2><p class="small muted">Testy z wynikiem poniżej ${Math.max(75, PASS)}%. Warto zrobić je jeszcze raz.</p><div class="lesson-list">${fix.slice(0, 8).map(x => `<a class="card li" href="#/lesson/${x.l.id}/test"><span class="num">${x.b}%</span><span class="t"><b>${esc(x.l.title)}</b><span class="small muted">${esc(x.L.short)} · lekcja ${x.l._n}</span></span></a>`).join("")}</div>` : ""}`;
   const opts = { mode: "practice", back: "#/slabe", src: "slabe", color: "#c1121f", nextHref: "#/slabe", nextLabel: "Moje słabe strony" };
@@ -30952,6 +31780,7 @@ function bindProfSettings(sub) {
     try { localStorage.removeItem(profStore(p.id)); } catch (e) { }
     if (window.GhSync && GhSync.forget) GhSync.forget(p.id);
     if (window.Konto && Konto.forget) Konto.forget(p.id);     // sesja konta tej osoby też   // token i ustawienia GitHuba tej osoby też znikają z urządzenia
+    if (window.AIHelp) AIHelp.forget(p.id);   // klucz Gemini tej osoby też znika z urządzenia
     profChip(); route();
   });
   $("#padd").onclick = addProfile;
@@ -31733,6 +32562,8 @@ function lifeForm(m, r) {
         : `<input class="tinput" data-f="${i}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${f.fill === "date" ? "np. 1995年3月14日" : f.fill === "name-kata" ? "np. " + esc(kataEx) : f.fill === "address" ? "np. みどり区さくら1-2-3" : ""}" value="${f.fill === "name-kata" ? esc((S.me && S.me.jp) || "") : ""}">`}
       <span class="small ffb" data-fb="${i}"></span></label>`).join("")}</div>
     <div class="row" style="margin-top:12px"><button class="btn pri fchk">Sprawdź</button><a class="btn" href="#/japonia/${m.id}/napisy">Wróć</a></div></div>`;
+  const aiCard = $(".card", app());   // 💬 Zapytaj (src/aihelp.js): formularz jako zadanie
+  if (window.AIHelp) AIHelp.mount(aiCard, { t: "form", label: "Wypełnij japoński formularz", q: String(r.title || "Formularz") }, { src: m.id, extra: "Pola formularza: " + fields.map(f => `${String(f.jp)} (${f.pl || ""})${f.fill === "none" ? " – nie wypełnia się" : f.fill === "choice" ? " – wybór: " + (f.opts || []).map(String).join(" / ") : ""}`).join("; ") });
   $$("input[data-f]").forEach(el => { const f = fields[+el.dataset.f]; if (f.fill === "name-kata") el.addEventListener("input", () => { const v = H2K(romajiToKana(el.value, false)); if (v !== el.value) el.value = v; }); else bindKanaInput(el); });
   $(".fchk").onclick = () => {
     let all = true;
@@ -31749,6 +32580,7 @@ function lifeForm(m, r) {
       if (!ok) all = false;
     });
     noteStat({ skill: "Napisy i formularze", sub: m.id }, all);
+    if (window.AIHelp) AIHelp.answered(aiCard, all, fields.map((f, i) => { const el = $(`[data-f="${i}"]`); return el ? String(f.jp) + ": " + (el.tagName === "SELECT" ? (el.value === "" ? "—" : String((f.opts || [])[+el.value] || "")) : el.value) : ""; }).filter(Boolean).join("; "));
     if (all) { const s = lifeState(m.id); const first = !s.form; s.form = 1; if (first) addXP(5); saveState(); toast(first ? "Formularz wypełniony ✓ +5 pkt" : "Formularz wypełniony ✓"); }
   };
 }
@@ -35075,7 +35907,7 @@ window.REV = (function () {
         cur.firstOk = ok; cur.ms = Date.now() - cur.t0;
         if (!cur.e.again) noteStat(it, ok);
       }, advance, {
-        mode: "practice", review: true,
+        mode: "practice", review: true, src: (S.srs[cur.e.k] || {}).l || "rev",
         onHint: () => { cur.h = 1; },
         onFinal: (ok, x) => {
           const g = gradeOf(S.srs[cur.e.k] || {}, it, { ok, firstOk: cur.firstOk, h: cur.h, ms: cur.ms });
@@ -35141,6 +35973,7 @@ window.REV = (function () {
         <p class="small muted rs-ins">Odpowiedz na głos albo w myślach, potem sprawdź.</p>
         <div class="rs-back"></div>
         <div class="qnav rs-act"><button class="btn pri rs-show">Pokaż odpowiedź</button></div>`;
+      if (window.AIHelp) AIHelp.mount(card, typeof personaItem === "function" ? personaItem(it) : it, { src: (S.srs[cur.e.k] || {}).l || "rev" });
       $(".rs-show", card).onclick = () => {
         if (cur.shown) return; cur.shown = true; cur.ms = Date.now() - cur.t0;
         $(".rs-act", card).remove(); $(".rs-ins", card).remove();
@@ -35149,6 +35982,7 @@ window.REV = (function () {
         animIn(card);
         if (a.say && S.settings.autoplay) say(a.say);
         selfGrade(card, cur, it, "flash");
+        if (window.AIHelp) AIHelp.answered(card, null, "", { how: AIHelp.SELF });   // samoocena, nie „Nie wiem”
       };
     }
     // „Powiedz to po japońsku”: polskie zdanie → na głos albo w myślach → odpowiedź z nagraniem → samoocena (albo 🎤, które ocenia samo)
@@ -35159,6 +35993,7 @@ window.REV = (function () {
         <p class="small muted rs-ins">Powiedz to po japońsku – na głos albo w myślach. Potem sprawdź.</p>
         <div class="try"></div><div class="rs-back"></div>
         <div class="qnav rs-act">${mic ? `<button class="btn rs-mic">🎤 Powiedz</button>` : ""}<button class="btn pri rs-show">Pokaż odpowiedź</button></div>`;
+      if (window.AIHelp) AIHelp.mount(card, { t: "say", label: s.label, q: "„" + s.pl + "”", ex: s.ex }, { src: (S.srs[cur.e.k] || {}).l || "rev", ans: s.jp });
       const reveal = heardOk => {
         cur.shown = true;
         const act = $(".rs-act", card); if (act) act.remove();
@@ -35166,6 +36001,8 @@ window.REV = (function () {
         $(".rs-back", card).innerHTML = `<div class="fb ${heardOk ? "ok" : "soft"}">${heardOk ? `<div class="h">✓ Dobrze!</div>` : ""}<div class="fans"><span class="jpline">${ruby(s.jp)}</span> ${sayBtn(s.speak, { raw: true })}${slowBtn(s.speak)}</div>
           ${pron(s.jp)}${s.ex ? `<div class="fex">${esc(s.ex)}</div>` : ""}</div>`;
         if (S.settings.autoplay) TTS.speak(s.speak);
+        // pod oceną / „Dalej”; 🎤 rozpoznane = dobrze, „Pokaż odpowiedź” = samoocena (nie „Nie wiem”)
+        if (window.AIHelp) setTimeout(() => AIHelp.answered(card, heardOk ? true : null, "", { how: heardOk ? "powiedziane na głos – 🎤 rozpoznało poprawne zdanie" : AIHelp.SELF }), 0);
       };
       $(".rs-show", card).onclick = () => {
         if (cur.shown) return;
@@ -35199,6 +36036,7 @@ window.REV = (function () {
           } else {
             cur.tries++;
             $(".try", card).innerHTML = `<div class="fb soft"><b>🎤 Rozpoznano: <span class="jp">${esc(heard)}</span></b> (${pct}%)<div class="small muted">Jeszcze nie to. Spróbuj jeszcze raz albo pokaż odpowiedź.</div></div>`;
+            if (window.AIHelp) AIHelp.tried(card, heard, `🎤 rozpoznano (podobieństwo ${pct}%) – jeszcze nie to`);
           }
         } catch (err) { toast(srecErrText(err), 4500); }
         finally { if (mb.isConnected) { mb.disabled = false; mb.classList.remove("live"); } }
@@ -35587,6 +36425,7 @@ function addXP(n) {
       ["🔁", "Najpierw powtórki", "Słówka, kanji i zdania wracają wtedy, gdy zaczynają uciekać z pamięci. Zrób je na początku, potem kawałek nowej lekcji. Gdy zaległości jest dużo, plan sam rozkłada je na kilka dni."],
       ["⌨️", "Wpisuj i mów, zamiast klikać", "Odpowiedź wydobyta z pamięci zostaje na dłużej niż wybrana z listy. Słowa wpisuj, zdania mów na głos albo w myślach, zanim zobaczysz wzór."],
       ["📝", "Błędy pomagają", "Pomyłka, po której od razu widzisz poprawną odpowiedź i wyjaśnienie, to zwykła część nauki. W lekcji trafia do zeszytu błędów i wraca, aż ją opanujesz, a w powtórce karta wraca jeszcze w tej samej sesji."],
+      ["💬", "Pytaj, gdy czegoś nie rozumiesz", `Przy każdym zadaniu jest „💬 Zapytaj”: AI widzi to zadanie i odpowiada po polsku, a Ty możesz dopytywać. Pytanie przed odpowiedzią liczy się jak 💡 podpowiedź. Ustawisz to w <a href="#/settings/ai">Ustawieniach → 💬 Pomoc AI</a>.`],
       ["🌙", "Sen pomaga", "Sen po nauce pomaga utrwalić nowe słowa – efekt jest prawdziwy, choć umiarkowany. Krótka powtórka wieczorem to dobry pomysł."],
       ["🔀", "Mieszaj", "Powtórki łączą karty z różnych lekcji. To trudniejsze niż jedna lekcja naraz, ale pomaga odróżniać podobne słowa i formy."],
       ["📅", "Rytm tygodnia, nie seria", `Liczą się dni nauki w tygodniu (Twój cel: ${w}). Przerwa niczego nie kasuje – po kilku dniach przerwy zaczniemy spokojnie, od krótszej powtórki.`],
@@ -35969,7 +36808,7 @@ function viewLesson(id, tab) {
     intro.innerHTML = P
       ? `<b>✍️ Ćwiczenia – nauka krok po kroku</b>
         <ul class="small" style="margin:6px 0 10px;padding-left:20px"><li>${zadan(items.length)} w kolejności od łatwych do trudniejszych: ${[...new Set(items.map(x => (x.sec || "").replace(/^Krok \d+\/\d+: /, "")))].filter(Boolean).join(" → ")}.</li>
-        <li>Przy każdym zadaniu możesz wziąć 💡 podpowiedź albo stuknąć „Nie wiem”.</li><li>Po pomyłce zobaczysz, co znaczy Twoja odpowiedź, i masz drugą szansę. Po każdej odpowiedzi jest wyjaśnienie i czytanie.</li>
+        <li>Przy każdym zadaniu możesz wziąć 💡 podpowiedź, stuknąć „Nie wiem” albo „💬 Zapytaj”, żeby dopytać AI o to, czego nie rozumiesz.</li><li>Po pomyłce zobaczysz, co znaczy Twoja odpowiedź, i masz drugą szansę. Po każdej odpowiedzi jest wyjaśnienie i czytanie.</li>
         <li>Tu nie ma oceny. Lekcję zalicza test.</li></ul>
         ${pr.length ? `<p class="small">🔀 Do tej lekcji pasuje też: ${pr.map(p => `<a href="#/para/${p.id}">${esc(p.title)}</a>`).join(", ")}.</p>` : ""}
         <button class="btn pri start">Zaczynamy ▶</button>`
@@ -36060,7 +36899,7 @@ function learnTheory(l) {
   (l.grammar || []).forEach((g, i) => {
     h += `<div class="card gp"><h3>${i + 1}. ${ruby(esc(g.title))}</h3>${g.pattern ? `<div class="pat">${ruby(esc(g.pattern))}</div>` : ""}
       <div>${ruby(g.explain)}</div>
-      <ul class="ex-list">${(g.examples || []).map(e => exampleLi(e[0], e[1], e[2])).join("")}</ul></div>`;
+      <ul class="ex-list">${(g.examples || []).map(e => exampleLi(e[0], e[1], e[2])).join("")}</ul>${window.AIHelp ? AIHelp.btnHTML({ t: "expl", label: "Wyjaśnienie gramatyki", q: g.title, pattern: g.pattern || "", ex: g.explain || "", exs: (g.examples || []).slice(0, 4) }, { src: l.id, label: "💬 Zapytaj o to" }) : ""}</div>`;   // 💬 Zapytaj (src/aihelp.js)
   });
   if (l.kind === "intro") h += pronTab(l);
   if (l.grammar && l.grammar.length) h += `<p class="small muted">💡 Kliknij 🔊, by usłyszeć zdanie, i 🎤, by sprawdzić swoją wymowę. W Ustawieniach możesz zakryć tłumaczenia, żeby najpierw samodzielnie zgadywać.</p>`;
@@ -36526,6 +37365,7 @@ function viewMistakes() {
   const name = id => id.startsWith("kit:") ? "Zwroty · " + esc((KIT().sit[id.slice(4)] || {}).title || "") : lifeM(id) ? "Życie w Japonii · " + esc(lifeM(id).title) : id.startsWith("kanji:") ? "Wszystkie kanji" : STORY[id] ? "Czytanka · " + esc(STORY[id].title) : id.startsWith("exam:") ? "Egzamin " + esc((LV.find(L => L.id === id.slice(5)) || {}).short || "") : id === "kana" ? "Tabela kana" : id === "odmiana" ? "Odmiana czasowników" : id === "liczby" ? "Liczby, godziny, daty" : id === "slabe" ? "Moje słabe strony" : LESSONS[id] ? esc(LESSON_LEVEL[id].short + " · " + LESSONS[id].title) : "Inne";
   app().innerHTML = crumbs + `<div class="card"><p>Masz <b>${all.length}</b> ${plN(all.length, "ćwiczenie", "ćwiczenia", "ćwiczeń")} do poprawy. Każde zniknie po dwóch dobrych odpowiedziach. Pomyłki to normalna część nauki, a powtarzanie ich to najszybsza droga do postępu.</p>
     <div class="row"><button class="btn pri go">▶ Popraw ${Math.min(all.length, 12)} ${plN(Math.min(all.length, 12), "ćwiczenie", "ćwiczenia", "ćwiczeń")}</button></div></div>
+    ${window.AIHelp ? AIHelp.mistHTML(all) : ""}
     <h2>Skąd są pomyłki</h2><div class="card">${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([id, n]) => `<div class="row" style="justify-content:space-between;padding:4px 0"><span>${link(id) ? `<a href="${link(id)}">${name(id)}</a>` : name(id)}</span><span class="pill">${n}</span></div>`).join("")}</div>`;
   const make = () => all.slice().sort((a, b) => (b[1].n - a[1].n) || (a[1].t - b[1].t)).slice(0, 12).map(([k, m]) => m.it);
   $(".go").onclick = () => runQuiz(app(), shuffle(make()), { mode: "practice", back: "#/bledy", onFinish: () => { S.mistDone = today(); saveState(); }, nextHref: "#/", nextLabel: "Start" });
@@ -36600,6 +37440,7 @@ function viewSettings(sub) {
   ${transferHTML()}
   ${typeof memSettingsHTML === "function" ? memSettingsHTML() : ""}
   ${typeof flowSettingsHTML === "function" ? flowSettingsHTML() : ""}
+  ${window.AIHelp ? AIHelp.settingsHTML() : ""}
   <div class="card grid" style="gap:14px">
     ${voiceCardHTML()}
     ${window.PWA_MODE ? `<p class="small" style="margin:0">${navigator.serviceWorker && navigator.serviceWorker.controller ? "✓ Kurs jest zapisany w telefonie i działa bez internetu." : "⏳ Zapisuję kurs w telefonie… zostaw go chwilę otwartego z internetem."}</p>` : ""}
@@ -36643,6 +37484,7 @@ function viewSettings(sub) {
   if (typeof memSettingsBind === "function") memSettingsBind();
   if (typeof flowSettingsBind === "function") flowSettingsBind();
   bindProfSettings(sub);
+  if (window.AIHelp) AIHelp.settingsBind(sub);   // 💬 Pomoc AI (src/aihelp.js)
   $("#rst").onclick = async () => {
     if (!confirm(PROF.list.length > 1 ? `Na pewno usunąć wszystkie postępy osoby „${curProf().name || "Ja"}”? Kopia zostanie w Kopiach awaryjnych.` : "Na pewno usunąć wszystkie postępy? Kopia zostanie w Kopiach awaryjnych.")) return;
     try { if (window.MEM_LOG) await MEM_LOG.snapshot("przed wyzerowaniem"); } catch (e) { }   // da się przywrócić w Ustawieniach → Kopie awaryjne
