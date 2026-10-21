@@ -118,6 +118,9 @@ table.voc td.a{white-space:nowrap;text-align:right;width:80px}
 .qhead .prog{flex:1;margin:0;height:10px}
 .qcard{padding:20px}
 .qtype{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--fg2);margin-bottom:6px}
+.qsub{margin:-2px 0 8px;line-height:1.35}
+u.kqw{text-decoration:underline 3px var(--accent);text-underline-offset:5px}
+.kqbar select{font-size:13px;max-width:100%}
 .qq{font-size:20px;line-height:2;font-family:var(--jp)}
 .qq.bigjp{font-size:34px;text-align:center}
 .qtr{color:var(--fg2);margin-top:2px}
@@ -645,6 +648,8 @@ const TTS = {
     return new Promise(res => {
       if (!this.ok) { noVoiceWarn(); return res(); }
       if (!o.queue) speechSynthesis.cancel();
+      if (HAS_KANJI.test(SPK.text(text, { kana: 1 }))) this.noReading(text);
+      text = SPK.text(text);   // znane czytanie, nie zgadywanie syntezatora (patrz SPK niżej); w zdaniu bezpieczne słowa zostają w kanji
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "ja-JP";
       const v = this.pickVoice(o.gender);
@@ -664,7 +669,10 @@ const TTS = {
       if (!this.voices.length) noVoiceWarn();
     });
   },
-  stop() { if (this.ok) speechSynthesis.cancel(); }
+  stop() { if (this.ok) speechSynthesis.cancel(); },
+  // kontrola dla twórców: tekst z kanji, którego czytania kurs nie zna (syntezator zgaduje); podgląd w konsoli: TTS.miss
+  miss: [],
+  noReading(t) { if (this.miss.length < 200 && !this.miss.includes(t)) { this.miss.push(t); try { console.debug("[mowa] kanji bez znanego czytania:", t); } catch (e) { } } }
 };
 let warnedVoice = false;
 function noVoiceWarn() {
@@ -672,9 +680,176 @@ function noVoiceWarn() {
   if (!TTS.ok) toast("Ta przeglądarka nie obsługuje syntezy mowy. Użyj Chrome, Edge lub Safari.", 5000);
   else if (TTS.ready && !TTS.voices.length) toast("Nie znaleziono japońskiego głosu – zajrzyj do Ustawień.", 5000);
 }
-// tekst do przeczytania: zdanie z kanji (lepsza intonacja), pojedyncze słowo – czytanie w kana
-function sayText(s) { return String(s).replace(RUBY_RE, (m, k, r) => r[0] === "!" ? r.slice(1) : k).replace(/[＿_]{2,}/g, "…"); }
-function say(s, o) { return TTS.speak(sayText(s), o); }
+/* ===================== mowa: co dokładnie czyta syntezator ===================== */
+// Syntezator sam zgaduje czytanie kanji i często się myli (先 → „sensei”, 一人 → „ichinin”). Dlatego do głosu
+// zawsze idzie czytanie, które znamy: furigana {漢字|かな} → kana, słowo bez znacznika → kana ze słownika kursu
+// (słówka, CTX, przykłady kanji), pojedynczy znak → jego najważniejsze czytania (先 → „せん、さき”).
+// Partykuły: syntezator czytający samą kanę może przeczytać は/へ jak „ha/he”, więc tam, gdzie wiadomo, że to partykuła
+// (osobny wyraz w zdaniach CTX, po słowie z furiganą, po katakanie, po これ/それ…), w tekście dla głosu stoi わ/え.
+// W zdaniu słowa, których czytania syntezator nie pomyli (standardowe czytanie, bez liczebników i pułapek), zostają w kanji –
+// głos potrzebuje kanji do akcentu i granic słów (keepKanji niżej). Samo słowo albo sam znak – zawsze kana.
+// Tekst na ekranie się nie zmienia. Kanji, którego czytania nie znamy, zostaje (syntezator zgadnie) i trafia do TTS.miss.
+const SPK = (function () {
+  let dict = null, maxLen = 1;
+  const KJ = /[一-鿿々〆]/, KATA = /[ァ-ヺー]/;
+  const norm = r => K2H(String(r || "")).replace(/[()（）～〜\-.・\s]/g, "");
+  function put(d, w, r) {
+    w = String(w || "").trim(); r = String(r || "").trim();
+    if (!w || !r || !KJ.test(w) || KJ.test(r) || /[{}|\s]/.test(w) || d.has(w)) return;
+    d.set(w, r.replace(/^!/, "")); if (w.length > maxLen) maxLen = w.length;
+  }
+  // słownik słów z kanji → czytanie (pierwsze wystąpienie wygrywa: najpierw słówka lekcji)
+  function build() {
+    const d = new Map(); let full = true;
+    try { ALL_VOCAB.forEach(({ v }) => put(d, v[0], v[1])); } catch (e) { full = false; }
+    Object.keys(window.CTX_V || {}).forEach(k => { const [w, r] = k.split("|"); put(d, w, r); });
+    Object.values(window.CTX_K || {}).forEach(e => (e && e.words || []).forEach(x => { put(d, plain(x[0]), reading(x[0])); }));
+    try { ALL_KANJI.forEach(({ k }) => (k[4] || []).forEach(e => { put(d, plain(e), reading(e)); })); } catch (e) { full = false; }
+    if (full) dict = d;
+    return d;
+  }
+  const D = () => dict || build();
+  // najważniejsze czytania znaku: CTX main, potem najczęstsze z CTX_M, na końcu pierwsze on i kun z lekcji albo z bazy kanji
+  function kanji(c) {
+    const e = (window.CTX_K || {})[c];
+    let rs = e && Array.isArray(e.main) && e.main.length ? e.main.slice(0, 3) : null;
+    const m = (window.CTX_M || {})[c];   // najczęstsze czytania z prawdziwych słów (content/ctx_main.js)
+    if (!rs && m && Array.isArray(m[0]) && m[0].length) rs = m[0].slice(0, 2);
+    if (!rs) {
+      let on = "", kun = "";
+      try { const h = ALL_KANJI.find(x => x.k[0] === c); if (h) { on = h.k[1]; kun = h.k[2]; } } catch (e) { }
+      if (!on && !kun) { const r = ((window.KANJIDB || {}).rows || []).find(x => x[0] === c); if (r) { on = r[5]; kun = r[6]; } }
+      const first = s => String(s || "").split("・").map(x => x.trim()).filter(Boolean)[0] || "";
+      rs = [first(on), first(kun)].filter(Boolean);
+    }
+    const out = [];
+    rs.map(norm).forEach(r => { if (r && !out.includes(r)) out.push(r); });
+    return out.join("、");
+  }
+  // は/へ po słowie: partykuła (też では/には/とは/からは/までは/より は/へは), chyba że to końcówka kansai 来はる
+  // albo は zaczyna słowo pisane kaną (はらはら, はず, はっきり…; はち tylko po katakanie: „ゼロはちゼロ” to numer)
+  const PART = /^(?:(で|に|と|から|まで|より|へ)?(は)|(へ))(?![ぁぃぅぇぉゃゅょゎっー])/;
+  const HAW = ["はらはら", "はっきり", "はじめ", "はじま", "はず", "はさみ", "はりねずみ"];
+  function haWord(t, p, kata) {
+    return HAW.concat(kata ? ["はち"] : []).some(w => t.startsWith(w, p) && !/[ぁぃぅぇぉゃゅょゎっー]/.test(t[p + w.length] || ""));
+  }
+  function particle(t, i, word) {
+    const m = PART.exec(t.slice(i, i + 4)); if (!m) return null;
+    const nx = t[i + m[0].length] || "";
+    if (m[2] && !m[1] && word && word.length === 1 && KJ.test(word) && /[っるらりれろ]/.test(nx)) return null;
+    if (m[2] && haWord(t, i + (m[1] || "").length, !word && KATA.test(t[i - 1] || ""))) return null;
+    if (m[3] && nx === "ん") return null;
+    return { len: m[0].length, sp: m[2] ? (m[1] || "") + "わ" : "え" };
+  }
+  // Zdanie (więcej niż jedno słowo): słowo z furiganą zostaje w kanji, gdy czytanie jest standardowe i syntezator go nie pomyli –
+  // kanji niesie informację o akcencie i granicach słów (箸 i 橋 to „はし”, ale brzmią inaczej). Na kanę zamieniamy:
+  // liczebniki i liczniki, furiganę z „!”, czytania inne niż w słowniku kursu, znane pułapki (今日, 大人, 上手…),
+  // pojedyncze znaki o kilku czytaniach (何, 方, 日…, czasowniki z kilkoma kun pasującymi do okurigany: 行き, 入り, 開く).
+  const NUM = /[〇一二三四五六七八九十百千万億兆何幾半数]/;
+  const RISKY = new Set(["今日", "明日", "昨日", "今朝", "今年", "今月", "今週", "大人", "上手", "下手", "人気", "生物", "色紙", "風車", "大家", "心中", "市場", "工場", "見物", "最中", "日本", "一日", "仮名", "目下", "上方", "下手", "寒気", "分別", "初日"]);
+  const POLY = new Set([..."先何方後上下日月金人中間生今主外前分風家角辺頭市年時本気物者店会入出行来"]);
+  const ROW = { う: "わいうえおっ", く: "かきくけこいっ", ぐ: "がぎぐげごい", す: "さしすせそ", つ: "たちつてとっ", ぬ: "なにぬねのん", ぶ: "ばびぶべぼん", む: "まみむめもん", る: "らりるれろっまなたてよずさ", い: "いくかけさそす" };
+  const kunCache = {};
+  function kunOf(c) {
+    if (kunCache[c]) return kunCache[c];
+    const all = [];
+    const add = s => String(s || "").split("・").map(x => x.trim()).filter(x => x && !/[～〜ァ-ヺ]/.test(x)).forEach(x => { if (!all.includes(x)) all.push(x); });
+    try { ALL_KANJI.forEach(({ k }) => { if (k[0] === c) add(k[2]); }); } catch (e) { }
+    const r = ((window.KANJIDB || {}).rows || []).find(x => x[0] === c); if (r) add(r[6]);
+    const e = (window.CTX_K || {})[c]; if (e && Array.isArray(e.main)) add(e.main.join("・"));
+    return kunCache[c] = all;
+  }
+  // kun „na wierzchu” (CTX_K main albo najczęstsze z CTX_M), znormalizowane
+  function mainKun(c) {
+    const e = (window.CTX_K || {})[c], m = (window.CTX_M || {})[c];
+    return (e && Array.isArray(e.main) && e.main.length ? e.main : m && Array.isArray(m[0]) ? m[0] : []).filter(x => !/[ァ-ヺ]/.test(x)).map(norm);
+  }
+  // czy kun z okuriganą pasuje do kany po znaku (ostatnia sylaba okurigany się odmienia)
+  function fits(k, rest) {
+    const m = /\(([^)]+)\)/.exec(k); if (!m) return false;
+    const oku = K2H(m[1]), need = oku.slice(0, -1), last = oku.slice(-1);
+    if (!rest.startsWith(need)) return false;
+    const nx = rest[need.length] || "";
+    return !!nx && (ROW[last] || last).includes(nx);
+  }
+  function keepKanji(w, r, rest, d) {
+    if (!w || NUM.test(w) || RISKY.has(w)) return false;
+    const nk = [...w].filter(x => KJ.test(x)).length;
+    if (nk >= 2) return d.has(w) && norm(d.get(w)) === norm(r);
+    if (nk !== 1 || w.length !== 1 || POLY.has(w)) return false;
+    rest = (/^[ぁ-ゖ]*/.exec(rest) || [""])[0];
+    const vb = kunOf(w).filter(k => fits(k, rest));
+    if (vb.length) return vb.length === 1 && norm(vb[0].replace(/\(.*$/, "")) === norm(r);   // czasownik/przymiotnik: jedno pasujące kun
+    const mk = mainKun(w);
+    return mk.length === 1 && mk[0] === norm(r) && (!d.has(w) || norm(d.get(w)) === norm(r));
+  }
+  // jedno słowo: jedna furigana (+ okurigana) albo sam ciąg kanji bez kany (先月) – wtedy całość kaną
+  const ONEWORD = /^[\s。、？！?!「」『』…]*(?:\{[^{}|]+\|[^{}|]+\}[ぁ-ゖ]{0,6}|[一-鿿々〆]+)[\s。、？！?!「」『』…]*$/;
+  const DEM = /^(これ|それ|あれ|どれ|ここ|そこ|あそこ|どこ|こちら|そちら|あちら|どちら|わたし|あなた)(?=[はへ])/;
+  // o.kana: wszystko kaną (walidator tools/check_speech.js: czy każde czytanie jest znane)
+  function text(s, o) {
+    o = o || {};
+    let t = String(s == null ? "" : s).replace(/[＿_]{2,}/g, "…");
+    // zdania CTX: słowa oddzielone spacją, samodzielne は/へ to partykuły; spacje do głosu znikają (bez pauz między słowami)
+    if (/ /.test(t)) t = t.split(/( +)/).map(tok => { const m = tok.match(/^([「『（(“"]*)([はへ])([。、？！?!」』）)”"…,.]*)$/); return m ? m[1] + (m[2] === "は" ? "わ" : "え") + m[3] : tok; }).join("")
+      .replace(/ +/g, (sp, i, all) => /[A-Za-z0-9]/.test(all[i - 1] || "") && /[A-Za-z0-9]/.test(all[i + sp.length] || "") ? " " : "");
+    const core = t.replace(/[\s。、？！?!「」『』（）()…・.,]/g, "");
+    if (core.length === 1 && KJ.test(core)) { const r = kanji(core); if (r) return r; }   // sam znak: jego czytania, nie słowo
+    const d = D(), out = [], multi = !o.kana && !ONEWORD.test(t);
+    let i = 0, word = null;
+    while (i < t.length) {
+      const c = t[i];
+      if (c === "{") {
+        const m = /^\{([^{}|]+)\|([^{}|]+)\}/.exec(t.slice(i, i + 80));
+        if (m) {
+          const r = m[2].replace(/^!/, ""), keep = multi && m[2][0] !== "!" && keepKanji(m[1], r, t.slice(i + m[0].length, i + m[0].length + 8), d);
+          out.push(keep ? m[1] : r); i += m[0].length; word = m[1]; continue;
+        }
+      }
+      if (word || (out.length && KATA.test(t[i - 1] || ""))) {
+        const p = particle(t, i, word);
+        if (p) { out.push(p.sp); i += p.len; word = null; continue; }
+      }
+      if (KJ.test(c)) {
+        const hit = seg(t, i, d);
+        if (hit) {
+          const w = t.substr(i, hit.len);   // całe słowo ze słownika w zdaniu – te same zasady co przy furiganie (drugie przejście sayText → TTS.speak)
+          const keep = multi && hit.w === w && keepKanji(w, hit.r, "", d);
+          out.push(keep ? w : hit.r); i += hit.len; word = hit.w; continue;
+        }
+        let j = i; while (j < t.length && KJ.test(t[j])) j++;
+        out.push(t.slice(i, j)); i = j; word = null; continue;   // nieznane: zostaje kanji
+      }
+      if (!word && /[぀-ゟ]/.test(c) && !/[぀-ゟ]/.test(t[i - 1] || "")) {
+        const m = DEM.exec(t.slice(i, i + 4));
+        if (m) { out.push(m[1]); i += m[1].length; word = m[1]; continue; }
+      }
+      out.push(c); i++; word = null;
+    }
+    return out.join("");
+  }
+  // ciąg kanji od pozycji i: całe słowa ze słownika (z okurigana); złożenie dzielimy tylko na słowa z co najmniej
+  // dwoma kanji (日本人 nie zamieni się w にほん+ひと), a pojedynczy znak w zdaniu zostaje syntezatorowi (何 = なに/なん)
+  function seg(t, i, d, inner) {
+    let j = i; while (j < t.length && KJ.test(t[j])) j++;
+    const run = j - i;
+    for (let n = Math.min(maxLen, t.length - i); n >= 1; n--) {
+      const w = t.substr(i, n); if (!d.has(w)) continue;
+      let k = 0; while (k < w.length && KJ.test(w[k])) k++;
+      if (k < 2 && (k === w.length || inner)) continue;
+      if (k < run) {
+        const rest = seg(t, i + k, d, true); if (!rest) continue;
+        return { r: d.get(w) + rest.r, len: k + rest.len, w: rest.w };
+      }
+      return { r: d.get(w), len: n, w };
+    }
+    return null;
+  }
+  return { text, kanji, dict: D, reset() { dict = null; for (const k in kunCache) delete kunCache[k]; } };
+})();
+// tekst do przeczytania syntezatorem (zawsze to, co wyżej – TTS.speak robi to sam, więc każde wywołanie jest bezpieczne)
+function sayText(s) { return SPK.text(s); }
+function say(s, o) { return TTS.speak(s, o); }
 
 /* ===================== mowa: rozpoznawanie ===================== */
 const SRec = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -807,12 +982,11 @@ async function speakSyllables(s, btn) {
   TTS.stop();
   btn && btn.classList.add("live");
   if (/(こんにち|こんばん)は$/.test(reading(s))) m[m.length - 1] = "わ";
-  if (/(こんにち|こんばん)は$/.test(reading(s))) m[m.length - 1] = "わ";
   for (const x of m) { await TTS.speak(x === "を" ? "お" : x, { queue: true, rate: 0.7 }); await sleep(250); }
   await sleep(300);
-  await TTS.speak(reading(s), { queue: true, slow: true });
+  await TTS.speak(s, { queue: true, slow: true });
   await sleep(400);
-  await TTS.speak(reading(s), { queue: true });
+  await TTS.speak(s, { queue: true });
   btn && btn.classList.remove("live");
 }
 function slowBtn(text) { SAY.push({ text, o: { slow: true } }); return `<button class="ib" title="Wolno" data-say="${SAY.length - 1}">🐢</button>`; }
@@ -8951,16 +9125,16 @@ LEVELS.push({
     ["迷惑","めいわく","kłopot, uciążliwość"]
   ],
   kanji: [
-    ["盗","トウ","ぬす・む","kraść",["{盗|ぬす}む","{盗難|とうなん}"]],
-    ["犯","ハン","おか・す","przestępstwo, popełnić",["{犯人|はんにん}","{犯罪|はんざい}"]],
+    ["盗","トウ","ぬす(む)","kraść",["{盗|ぬす}む","{盗難|とうなん}"]],
+    ["犯","ハン","おか(す)","przestępstwo, popełnić",["{犯人|はんにん}","{犯罪|はんざい}"]],
     ["件","ケン","","sprawa, przypadek",["{事件|じけん}","{条件|じょうけん}","{用件|ようけん}"]],
-    ["捕","ホ","と・らえる・つか・まえる","łapać, chwytać",["{逮捕|たいほ}","{捕|つか}まえる"]],
-    ["調","チョウ","しら・べる","badać, ton",["{調査|ちょうさ}","{調|しら}べる","{調子|ちょうし}"]],
-    ["選","セン","えら・ぶ","wybierać",["{選|えら}ぶ","{選手|せんしゅ}","{選挙|せんきょ}"]],
-    ["招","ショウ","まね・く","zapraszać",["{招待|しょうたい}","{招|まね}く"]],
-    ["建","ケン・コン","た・てる","budować",["{建|た}てる","{建物|たてもの}","{建築|けんちく}"]],
+    ["捕","ホ","と(らえる)・つか(まえる)","łapać, chwytać",["{逮捕|たいほ}","{捕|つか}まえる"]],
+    ["調","チョウ","しら(べる)","badać, ton",["{調査|ちょうさ}","{調|しら}べる","{調子|ちょうし}"]],
+    ["選","セン","えら(ぶ)","wybierać",["{選|えら}ぶ","{選手|せんしゅ}","{選挙|せんきょ}"]],
+    ["招","ショウ","まね(く)","zapraszać",["{招待|しょうたい}","{招|まね}く"]],
+    ["建","ケン・コン","た(てる)","budować",["{建|た}てる","{建物|たてもの}","{建築|けんちく}"]],
     ["訳","ヤク","わけ","tłumaczenie, powód",["{翻訳|ほんやく}","{通訳|つうやく}","{言|い}い{訳|わけ}"]],
-    ["表","ヒョウ","おもて・あらわ・す","powierzchnia, wyrażać",["{発表|はっぴょう}","{表|おもて}","{表|あらわ}す"]]
+    ["表","ヒョウ","おもて・あらわ(す)","powierzchnia, wyrażać",["{発表|はっぴょう}","{表|おもて}","{表|あらわ}す"]]
   ],
   grammar: [
     { title: "Tworzenie strony biernej",
@@ -9077,16 +9251,16 @@ LEVELS.push({
     ["歓迎会","かんげいかい","przyjęcie powitalne"]
   ],
   kanji: [
-    ["残","ザン","のこ・る","pozostawać, reszta",["{残業|ざんぎょう}","{残|のこ}る","{残念|ざんねん}"]],
+    ["残","ザン","のこ(る)","pozostawać, reszta",["{残業|ざんぎょう}","{残|のこ}る","{残念|ざんねん}"]],
     ["業","ギョウ・ゴウ","わざ","praca, branża",["{授業|じゅぎょう}","{作業|さぎょう}","{卒業|そつぎょう}"]],
     ["命","メイ・ミョウ","いのち","życie, rozkaz",["{命令|めいれい}","{命|いのち}","{一生懸命|いっしょうけんめい}"]],
     ["令","レイ","","rozkaz, polecenie",["{命令|めいれい}","{令和|れいわ}"]],
-    ["喜","キ","よろこ・ぶ","radość",["{喜|よろこ}ぶ","{喜劇|きげき}"]],
-    ["驚","キョウ","おどろ・く","zaskoczenie",["{驚|おどろ}く","{驚異|きょうい}"]],
-    ["怒","ド","いか・る・おこ・る","gniew",["{怒|おこ}る","{怒|いか}り"]],
-    ["笑","ショウ","わら・う・え・む","śmiech, uśmiech",["{笑|わら}う","{笑顔|えがお}"]],
-    ["泣","キュウ","な・く","płakać",["{泣|な}く","{泣|な}き{声|ごえ}"]],
-    ["担","タン","かつ・ぐ・にな・う","nieść, odpowiadać za",["{担当|たんとう}","{負担|ふたん}"]]
+    ["喜","キ","よろこ(ぶ)","radość",["{喜|よろこ}ぶ","{喜劇|きげき}"]],
+    ["驚","キョウ","おどろ(く)","zaskoczenie",["{驚|おどろ}く","{驚異|きょうい}"]],
+    ["怒","ド","いか(る)・おこ(る)","gniew",["{怒|おこ}る","{怒|いか}り"]],
+    ["笑","ショウ","わら(う)・え(む)","śmiech, uśmiech",["{笑|わら}う","{笑顔|えがお}"]],
+    ["泣","キュウ","な(く)","płakać",["{泣|な}く","{泣|な}き{声|ごえ}"]],
+    ["担","タン","かつ(ぐ)・にな(う)","nieść, odpowiadać za",["{担当|たんとう}","{負担|ふたん}"]]
   ],
   grammar: [
     { title: "Tworzenie kauzatywu",
@@ -9200,16 +9374,16 @@ LEVELS.push({
     ["見学する","けんがくする","oglądać na miejscu (zwiedzać)"]
   ],
   kanji: [
-    ["契","ケイ","ちぎ・る","umowa, przysięga",["{契約|けいやく}","{契約書|けいやくしょ}"]],
+    ["契","ケイ","ちぎ(る)","umowa, przysięga",["{契約|けいやく}","{契約書|けいやくしょ}"]],
     ["約","ヤク","","obietnica, około",["{約束|やくそく}","{予約|よやく}","{約|やく}{十分|じゅっぷん}"]],
     ["賃","チン","","opłata, wynagrodzenie",["{家賃|やちん}","{運賃|うんちん}","{賃金|ちんぎん}"]],
-    ["押","オウ","お・す","naciskać, pchać",["{押|お}す","{押|お}し{入|い}れ"]],
-    ["曲","キョク","ま・がる・ま・げる","zginać, skręcać; utwór",["{曲|ま}がる","{曲|きょく}","{作曲|さっきょく}"]],
+    ["押","オウ","お(す)","naciskać, pchać",["{押|お}す","{押|お}し{入|い}れ"]],
+    ["曲","キョク","ま(がる)・ま(げる)","zginać, skręcać; utwór",["{曲|ま}がる","{曲|きょく}","{作曲|さっきょく}"]],
     ["信","シン","","wiara, zaufanie, sygnał",["{信号|しんごう}","{信|しん}じる","{自信|じしん}"]],
     ["号","ゴウ","","numer, sygnał",["{信号|しんごう}","{番号|ばんごう}","{記号|きごう}"]],
-    ["遅","チ","おく・れる・おそ・い","późny, spóźniać się",["{遅|おく}れる","{遅|おそ}い","{遅刻|ちこく}"]],
+    ["遅","チ","おく(れる)・おそ(い)","późny, spóźniać się",["{遅|おく}れる","{遅|おそ}い","{遅刻|ちこく}"]],
     ["準","ジュン","","norma, przygotowanie",["{準備|じゅんび}","{基準|きじゅん}"]],
-    ["備","ビ","そな・える","przygotować, wyposażyć",["{準備|じゅんび}","{備|そな}える","{設備|せつび}"]]
+    ["備","ビ","そな(える)","przygotować, wyposażyć",["{準備|じゅんび}","{備|そな}える","{設備|せつび}"]]
   ],
   grammar: [
     { title: "～ば – warunek (i ～ばよかった)",
@@ -9332,17 +9506,17 @@ LEVELS.push({
     ["御社","おんしゃ","państwa firma (grzecznie, w mowie)"]
   ],
   kanji: [
-    ["召","ショウ","め・す","wzywać; (keigo) jeść, nosić",["{召|め}し{上|あ}がる","{召集|しょうしゅう}"]],
+    ["召","ショウ","め(す)","wzywać; (keigo) jeść, nosić",["{召|め}し{上|あ}がる","{召集|しょうしゅう}"]],
     ["覧","ラン","","oglądać",["ご{覧|らん}になる","{一覧|いちらん}","{展覧会|てんらんかい}"]],
-    ["申","シン","もう・す","mówić (skromnie)",["{申|もう}す","{申|もう}し{込|こ}む","{申請|しんせい}"]],
-    ["拝","ハイ","おが・む","kłaniać się, (keigo) z szacunkiem",["{拝見|はいけん}","{拝|おが}む"]],
-    ["伺","シ","うかが・う","pytać, odwiedzać (skromnie)",["{伺|うかが}う","お{伺|うかが}いします"]],
-    ["参","サン","まい・る","iść (skromnie), uczestniczyć",["{参|まい}る","{参加|さんか}","{参考|さんこう}"]],
-    ["承","ショウ","うけたまわ・る","przyjmować, zgadzać się",["{承知|しょうち}","{承|うけたまわ}る"]],
+    ["申","シン","もう(す)","mówić (skromnie)",["{申|もう}す","{申|もう}し{込|こ}む","{申請|しんせい}"]],
+    ["拝","ハイ","おが(む)","kłaniać się, (keigo) z szacunkiem",["{拝見|はいけん}","{拝|おが}む"]],
+    ["伺","シ","うかが(う)","pytać, odwiedzać (skromnie)",["{伺|うかが}う","お{伺|うかが}いします"]],
+    ["参","サン","まい(る)","iść (skromnie), uczestniczyć",["{参|まい}る","{参加|さんか}","{参考|さんこう}"]],
+    ["承","ショウ","うけたまわ(る)","przyjmować, zgadzać się",["{承知|しょうち}","{承|うけたまわ}る"]],
     ["様","ヨウ","さま","pan/pani, sposób",["お{客様|きゃくさま}","{様子|ようす}","{田中様|たなかさま}"]],
     ["席","セキ","","miejsce, siedzenie",["{席|せき}","{出席|しゅっせき}","{欠席|けっせき}"]],
-    ["伝","デン","つた・える","przekazywać",["{伝言|でんごん}","{伝|つた}える","{手伝|てつだ}う"]],
-    ["恐","キョウ","おそ・れる・おそ・ろしい","bać się, strach",["{恐|おそ}れ{入|い}ります","{恐|おそ}ろしい","{恐怖|きょうふ}"]]
+    ["伝","デン","つた(える)","przekazywać",["{伝言|でんごん}","{伝|つた}える","{手伝|てつだ}う"]],
+    ["恐","キョウ","おそ(れる)・おそ(ろしい)","bać się, strach",["{恐|おそ}れ{入|い}ります","{恐|おそ}ろしい","{恐怖|きょうふ}"]]
   ],
   grammar: [
     { title: "尊敬語 – specjalne czasowniki wywyższające",
@@ -9467,17 +9641,17 @@ LEVELS.push({
     ["様子を見る","ようすをみる","obserwować (jak się rozwinie)"]
   ],
   kanji: [
-    ["健","ケン","すこ・やか","zdrowy",["{健康|けんこう}","{保健|ほけん}"]],
+    ["健","ケン","すこ(やか)","zdrowy",["{健康|けんこう}","{保健|ほけん}"]],
     ["康","コウ","","spokój, zdrowie",["{健康|けんこう}","{健康診断|けんこうしんだん}"]],
-    ["太","タイ・タ","ふと・る・ふと・い","gruby, tyć",["{太|ふと}る","{太|ふと}い","{太陽|たいよう}"]],
-    ["熱","ネツ","あつ・い","gorąco, gorączka",["{熱|ねつ}","{熱|あつ}い","{熱心|ねっしん}"]],
-    ["診","シン","み・る","badać (pacjenta)",["{診察|しんさつ}","{診断|しんだん}","{診|み}る"]],
+    ["太","タイ・タ","ふと(る)・ふと(い)","gruby, tyć",["{太|ふと}る","{太|ふと}い","{太陽|たいよう}"]],
+    ["熱","ネツ","あつ(い)","gorąco, gorączka",["{熱|ねつ}","{熱|あつ}い","{熱心|ねっしん}"]],
+    ["診","シン","み(る)","badać (pacjenta)",["{診察|しんさつ}","{診断|しんだん}","{診|み}る"]],
     ["察","サツ","","obserwować, domyślać się",["{診察|しんさつ}","{警察|けいさつ}","{観察|かんさつ}"]],
     ["検","ケン","","sprawdzać, badać",["{検査|けんさ}","{点検|てんけん}"]],
-    ["眠","ミン","ねむ・る・ねむ・い","spać, senny",["{睡眠|すいみん}","{眠|ねむ}る","{眠|ねむ}い"]],
-    ["慣","カン","な・れる","przyzwyczaić się",["{習慣|しゅうかん}","{慣|な}れる"]],
-    ["続","ゾク","つづ・く・つづ・ける","trwać, kontynuować",["{続|つづ}ける","{続|つづ}く","{連続|れんぞく}"]],
-    ["治","ジ・チ","なお・る・なお・す・おさ・める","leczyć, rządzić",["{治|なお}る","{政治|せいじ}","{治療|ちりょう}"]]
+    ["眠","ミン","ねむ(る)・ねむ(い)","spać, senny",["{睡眠|すいみん}","{眠|ねむ}る","{眠|ねむ}い"]],
+    ["慣","カン","な(れる)","przyzwyczaić się",["{習慣|しゅうかん}","{慣|な}れる"]],
+    ["続","ゾク","つづ(く)・つづ(ける)","trwać, kontynuować",["{続|つづ}ける","{続|つづ}く","{連続|れんぞく}"]],
+    ["治","ジ・チ","なお(る)・なお(す)・おさ(める)","leczyć, rządzić",["{治|なお}る","{政治|せいじ}","{治療|ちりょう}"]]
   ],
   grammar: [
     { title: "～ように – żeby (cel poza naszą kontrolą)",
@@ -9600,17 +9774,17 @@ LEVELS.push({
     ["謝る","あやまる","przepraszać"]
   ],
   kanji: [
-    ["報","ホウ","むく・いる","wiadomość, odpłata",["{情報|じょうほう}","{報道|ほうどう}","{予報|よほう}"]],
-    ["震","シン","ふる・える","drżeć, trząść się",["{地震|じしん}","{震|ふる}える"]],
+    ["報","ホウ","むく(いる)","wiadomość, odpłata",["{情報|じょうほう}","{報道|ほうどう}","{予報|よほう}"]],
+    ["震","シン","ふる(える)","drżeć, trząść się",["{地震|じしん}","{震|ふる}える"]],
     ["害","ガイ","","szkoda",["{被害|ひがい}","{公害|こうがい}","{害|がい}"]],
     ["予","ヨ","","z góry, wcześniej",["{予想|よそう}","{予定|よてい}","{予約|よやく}"]],
     ["想","ソウ・ソ","","myśl, wyobrażenie",["{予想|よそう}","{感想|かんそう}","{理想|りそう}"]],
-    ["確","カク","たし・か・たし・かめる","pewny, sprawdzać",["{確|たし}か","{確|たし}かめる","{確認|かくにん}"]],
+    ["確","カク","たし(か)・たし(かめる)","pewny, sprawdzać",["{確|たし}か","{確|たし}かめる","{確認|かくにん}"]],
     ["原","ゲン","はら","pole, źródło",["{原因|げんいん}","{原料|げんりょう}","{野原|のはら}"]],
-    ["因","イン","よ・る","przyczyna",["{原因|げんいん}","{要因|よういん}"]],
-    ["責","セキ","せ・める","odpowiedzialność, obwiniać",["{責任|せきにん}","{責|せ}める"]],
-    ["任","ニン","まか・せる","powierzać, obowiązek",["{責任|せきにん}","{任|まか}せる","{担任|たんにん}"]],
-    ["守","シュ・ス","まも・る","chronić, przestrzegać",["{守|まも}る","{留守|るす}","{保守|ほしゅ}"]]
+    ["因","イン","よ(る)","przyczyna",["{原因|げんいん}","{要因|よういん}"]],
+    ["責","セキ","せ(める)","odpowiedzialność, obwiniać",["{責任|せきにん}","{責|せ}める"]],
+    ["任","ニン","まか(せる)","powierzać, obowiązek",["{責任|せきにん}","{任|まか}せる","{担任|たんにん}"]],
+    ["守","シュ・ス","まも(る)","chronić, przestrzegać",["{守|まも}る","{留守|るす}","{保守|ほしゅ}"]]
   ],
   grammar: [
     { title: "～そうだ (podobno) – informacja z drugiej ręki",
@@ -9735,14 +9909,14 @@ LEVELS.push({
   ],
   kanji: [
     ["到","トウ","","dotrzeć",["{到着|とうちゃく}","{到達|とうたつ}"]],
-    ["着","チャク","き・る・つ・く","przybyć; ubierać",["{到着|とうちゃく}","{着|つ}く","{着|き}る"]],
+    ["着","チャク","き(る)・つ(く)","przybyć; ubierać",["{到着|とうちゃく}","{着|つ}く","{着|き}る"]],
     ["港","コウ","みなと","port",["{空港|くうこう}","{港|みなと}"]],
     ["景","ケイ","","widok",["{景色|けしき}","{風景|ふうけい}","{夜景|やけい}"]],
     ["観","カン","","oglądać, pogląd",["{観光|かんこう}","{観客|かんきゃく}"]],
-    ["泊","ハク","と・まる・と・める","nocować",["{泊|と}まる","{一泊|いっぱく}","{宿泊|しゅくはく}"]],
+    ["泊","ハク","と(まる)・と(める)","nocować",["{泊|と}まる","{一泊|いっぱく}","{宿泊|しゅくはく}"]],
     ["往","オウ","","iść tam",["{往復|おうふく}","{往来|おうらい}"]],
     ["復","フク","","powrót, powtarzać",["{往復|おうふく}","{復習|ふくしゅう}","{回復|かいふく}"]],
-    ["若","ジャク","わか・い","młody",["{若|わか}い","{若者|わかもの}"]],
+    ["若","ジャク","わか(い)","młody",["{若|わか}い","{若者|わかもの}"]],
     ["暇","カ","ひま","wolny czas",["{暇|ひま}","{休暇|きゅうか}"]]
   ],
   grammar: [
@@ -9867,15 +10041,15 @@ LEVELS.push({
     ["お皿","おさら","talerz"]
   ],
   kanji: [
-    ["壊","カイ","こわ・す・こわ・れる","psuć, burzyć",["{壊|こわ}す","{壊|こわ}れる","{破壊|はかい}"]],
-    ["割","カツ","わ・る・わ・れる","dzielić, rozbijać",["{割|わ}る","{割|わ}れる","{割引|わりびき}"]],
-    ["閉","ヘイ","し・める・し・まる・と・じる","zamykać",["{閉|し}める","{閉|し}まる","{閉店|へいてん}"]],
-    ["消","ショウ","き・える・け・す","gasić, znikać",["{消|け}す","{消|き}える","{消防|しょうぼう}"]],
-    ["落","ラク","お・ちる・お・とす","spadać",["{落|お}ちる","{落|お}とす","{落語|らくご}"]],
-    ["汚","オ","よご・す・きたな・い","brud",["{汚|よご}れる","{汚|きたな}い","{汚染|おせん}"]],
-    ["決","ケツ","き・める・き・まる","decydować",["{決|き}める","{決|き}まる","{決定|けってい}"]],
-    ["並","ヘイ","なら・ぶ・なら・べる・なみ","rząd, przeciętny",["{並|なら}ぶ","{並|なら}べる","{並木|なみき}"]],
-    ["飾","ショク","かざ・る","ozdabiać",["{飾|かざ}る","{装飾|そうしょく}"]],
+    ["壊","カイ","こわ(す)・こわ(れる)","psuć, burzyć",["{壊|こわ}す","{壊|こわ}れる","{破壊|はかい}"]],
+    ["割","カツ","わ(る)・わ(れる)","dzielić, rozbijać",["{割|わ}る","{割|わ}れる","{割引|わりびき}"]],
+    ["閉","ヘイ","し(める)・し(まる)・と(じる)","zamykać",["{閉|し}める","{閉|し}まる","{閉店|へいてん}"]],
+    ["消","ショウ","き(える)・け(す)","gasić, znikać",["{消|け}す","{消|き}える","{消防|しょうぼう}"]],
+    ["落","ラク","お(ちる)・お(とす)","spadać",["{落|お}ちる","{落|お}とす","{落語|らくご}"]],
+    ["汚","オ","よご(す)・きたな(い)","brud",["{汚|よご}れる","{汚|きたな}い","{汚染|おせん}"]],
+    ["決","ケツ","き(める)・き(まる)","decydować",["{決|き}める","{決|き}まる","{決定|けってい}"]],
+    ["並","ヘイ","なら(ぶ)・なら(べる)・なみ","rząd, przeciętny",["{並|なら}ぶ","{並|なら}べる","{並木|なみき}"]],
+    ["飾","ショク","かざ(る)","ozdabiać",["{飾|かざ}る","{装飾|そうしょく}"]],
     ["禁","キン","","zakaz",["{禁煙|きんえん}","{禁止|きんし}"]]
   ],
   grammar: [
@@ -10004,15 +10178,15 @@ LEVELS.push({
   kanji: [
     ["環","カン","","pierścień, otoczenie",["{環境|かんきょう}","{循環|じゅんかん}"]],
     ["境","キョウ・ケイ","さかい","granica",["{環境|かんきょう}","{国境|こっきょう}","{境|さかい}"]],
-    ["減","ゲン","へ・る・へ・らす","zmniejszać się",["{減|へ}る","{減|へ}らす","{減少|げんしょう}"]],
-    ["増","ゾウ","ふ・える・ふ・やす","zwiększać się",["{増|ふ}える","{増|ふ}やす","{増加|ぞうか}"]],
-    ["努","ド","つと・める","starać się",["{努力|どりょく}","{努|つと}める"]],
-    ["成","セイ","な・る","stawać się, osiągać",["{成功|せいこう}","{成績|せいせき}","{成長|せいちょう}"]],
+    ["減","ゲン","へ(る)・へ(らす)","zmniejszać się",["{減|へ}る","{減|へ}らす","{減少|げんしょう}"]],
+    ["増","ゾウ","ふ(える)・ふ(やす)","zwiększać się",["{増|ふ}える","{増|ふ}やす","{増加|ぞうか}"]],
+    ["努","ド","つと(める)","starać się",["{努力|どりょく}","{努|つと}める"]],
+    ["成","セイ","な(る)","stawać się, osiągać",["{成功|せいこう}","{成績|せいせき}","{成長|せいちょう}"]],
     ["功","コウ","","zasługa, sukces",["{成功|せいこう}","{功績|こうせき}"]],
-    ["失","シツ","うしな・う","tracić",["{失敗|しっぱい}","{失|うしな}う","{失礼|しつれい}"]],
-    ["敗","ハイ","やぶ・れる","porażka",["{失敗|しっぱい}","{勝敗|しょうはい}","{敗|やぶ}れる"]],
+    ["失","シツ","うしな(う)","tracić",["{失敗|しっぱい}","{失|うしな}う","{失礼|しつれい}"]],
+    ["敗","ハイ","やぶ(れる)","porażka",["{失敗|しっぱい}","{勝敗|しょうはい}","{敗|やぶ}れる"]],
     ["影","エイ","かげ","cień, wpływ",["{影響|えいきょう}","{影|かげ}"]],
-    ["響","キョウ","ひび・く","rozbrzmiewać, oddziaływać",["{影響|えいきょう}","{響|ひび}く"]]
+    ["響","キョウ","ひび(く)","rozbrzmiewać, oddziaływać",["{影響|えいきょう}","{響|ひび}く"]]
   ],
   grammar: [
     { title: "～ても – nawet jeśli / chociaż",
@@ -10152,13 +10326,13 @@ LEVELS.push({
     ["景","ケイ","","widok, scena; koniunktura",["{景気|けいき}","{風景|ふうけい}","{景色|けしき}"]],
     ["価","カ","あたい","cena, wartość",["{物価|ぶっか}","{価格|かかく}","{評価|ひょうか}"]],
     ["輸","ユ","","przewóz, transport",["{輸入|ゆにゅう}","{輸出|ゆしゅつ}","{運輸|うんゆ}"]],
-    ["契","ケイ","ちぎ・る","przyrzeczenie, umowa",["{契約|けいやく}","{契約書|けいやくしょ}"]],
+    ["契","ケイ","ちぎ(る)","przyrzeczenie, umowa",["{契約|けいやく}","{契約書|けいやくしょ}"]],
     ["約","ヤク","","umowa; około",["{約束|やくそく}","{予約|よやく}","{約|やく}{三割|さんわり}"]],
-    ["責","セキ","せ・める","obwiniać; obowiązek",["{責任|せきにん}","{責|せ}める","{責任者|せきにんしゃ}"]],
-    ["任","ニン","まか・せる","powierzać, urząd",["{任|まか}せる","{担任|たんにん}","{責任|せきにん}"]],
-    ["断","ダン","ことわ・る・た・つ","odmawiać; przecinać; decydować",["{断|ことわ}る","{判断|はんだん}","{油断|ゆだん}"]],
-    ["締","テイ","し・める","zaciskać, zamykać",["{締|し}め{切|き}り","{締|し}める","{取締役|とりしまりやく}"]],
-    ["納","ノウ・ナッ・トウ","おさ・める","wpłacać, dostarczać; przyjmować",["{納得|なっとく}","{納品|のうひん}","{税金|ぜいきん}を{納|おさ}める"]],
+    ["責","セキ","せ(める)","obwiniać; obowiązek",["{責任|せきにん}","{責|せ}める","{責任者|せきにんしゃ}"]],
+    ["任","ニン","まか(せる)","powierzać, urząd",["{任|まか}せる","{担任|たんにん}","{責任|せきにん}"]],
+    ["断","ダン","ことわ(る)・た(つ)","odmawiać; przecinać; decydować",["{断|ことわ}る","{判断|はんだん}","{油断|ゆだん}"]],
+    ["締","テイ","し(める)","zaciskać, zamykać",["{締|し}め{切|き}り","{締|し}める","{取締役|とりしまりやく}"]],
+    ["納","ノウ・ナッ・トウ","おさ(める)","wpłacać, dostarczać; przyjmować",["{納得|なっとく}","{納品|のうひん}","{税金|ぜいきん}を{納|おさ}める"]],
     ["訳","ヤク","わけ","powód, sens; tłumaczenie",["{言|い}い{訳|わけ}","{通訳|つうやく}","{翻訳|ほんやく}"]]
   ],
   grammar: [
@@ -10281,14 +10455,14 @@ LEVELS.push({
     ["環","カン","","pierścień, otoczenie",["{環境|かんきょう}","{循環|じゅんかん}"]],
     ["境","キョウ・ケイ","さかい","granica",["{環境|かんきょう}","{国境|こっきょう}","{境|さかい}"]],
     ["排","ハイ","","wypierać, usuwać",["{排出|はいしゅつ}","{排気|はいき}ガス"]],
-    ["削","サク","けず・る","skrobać, ciąć",["{削減|さくげん}","{削|けず}る","{削除|さくじょ}"]],
-    ["減","ゲン","へ・る・へ・らす","zmniejszać się",["{減|へ}る","{削減|さくげん}","{減少|げんしょう}"]],
+    ["削","サク","けず(る)","skrobać, ciąć",["{削減|さくげん}","{削|けず}る","{削除|さくじょ}"]],
+    ["減","ゲン","へ(る)・へ(らす)","zmniejszać się",["{減|へ}る","{削減|さくげん}","{減少|げんしょう}"]],
     ["策","サク","","plan, środek",["{対策|たいさく}","{政策|せいさく}","{方策|ほうさく}"]],
     ["源","ゲン","みなもと","źródło",["{資源|しげん}","{電源|でんげん}","{源|みなもと}"]],
-    ["汚","オ","よご・れる・きたな・い","brud",["{汚染|おせん}","{汚|よご}れる","{汚|きたな}い"]],
+    ["汚","オ","よご(れる)・きたな(い)","brud",["{汚染|おせん}","{汚|よご}れる","{汚|きたな}い"]],
     ["規","キ","","norma, reguła",["{規制|きせい}","{規則|きそく}","{規模|きぼ}"]],
-    ["努","ド","つと・める","starać się",["{努力|どりょく}","{努|つと}める"]],
-    ["善","ゼン","よ・い","dobro",["{改善|かいぜん}","{最善|さいぜん}"]]
+    ["努","ド","つと(める)","starać się",["{努力|どりょく}","{努|つと}める"]],
+    ["善","ゼン","よ(い)","dobro",["{改善|かいぜん}","{最善|さいぜん}"]]
   ],
   grammar: [
     { title: "～ものの – co prawda…, ale",
@@ -10416,13 +10590,13 @@ LEVELS.push({
     ["労","ロウ","","praca, trud",["{労働|ろうどう}","{苦労|くろう}","{労働力|ろうどうりょく}"]],
     ["術","ジュツ","","sztuka, technika",["{技術|ぎじゅつ}","{手術|しゅじゅつ}","{芸術|げいじゅつ}"]],
     ["普","フ","","powszechny",["{普及|ふきゅう}","{普通|ふつう}","{普段|ふだん}"]],
-    ["及","キュウ","およ・ぶ","sięgać, dorównywać",["{普及|ふきゅう}","{及|およ}ぶ","{影響|えいきょう}を{及|およ}ぼす"]],
+    ["及","キュウ","およ(ぶ)","sięgać, dorównywać",["{普及|ふきゅう}","{及|およ}ぶ","{影響|えいきょう}を{及|およ}ぼす"]],
     ["需","ジュ","","popyt, potrzeba",["{需要|じゅよう}","{必需品|ひつじゅひん}"]],
     ["給","キュウ","","zaopatrywać",["{供給|きょうきゅう}","{給料|きゅうりょう}","{月給|げっきゅう}"]],
-    ["伴","ハン・バン","ともな・う","towarzyszyć",["{伴|ともな}う","{同伴|どうはん}"]],
+    ["伴","ハン・バン","ともな(う)","towarzyszyć",["{伴|ともな}う","{同伴|どうはん}"]],
     ["拡","カク","","rozszerzać",["{拡大|かくだい}","{拡張|かくちょう}"]],
-    ["縮","シュク","ちぢ・む・ちぢ・める","kurczyć się",["{縮小|しゅくしょう}","{縮|ちぢ}む","{短縮|たんしゅく}"]],
-    ["刻","コク","きざ・む","rzeźbić; chwila",["{深刻|しんこく}","{時刻|じこく}","{刻|きざ}む"]]
+    ["縮","シュク","ちぢ(む)・ちぢ(める)","kurczyć się",["{縮小|しゅくしょう}","{縮|ちぢ}む","{短縮|たんしゅく}"]],
+    ["刻","コク","きざ(む)","rzeźbić; chwila",["{深刻|しんこく}","{時刻|じこく}","{刻|きざ}む"]]
   ],
   grammar: [
     { title: "～につれて – w miarę jak",
@@ -10557,8 +10731,8 @@ LEVELS.push({
     ["税","ゼイ","","podatek",["{税金|ぜいきん}","{増税|ぞうぜい}","{消費税|しょうひぜい}"]],
     ["制","セイ","","system, kontrola",["{制度|せいど}","{規制|きせい}","{制限|せいげん}"]],
     ["権","ケン・ゴン","","prawo, władza",["{権利|けんり}","{人権|じんけん}","{政権|せいけん}"]],
-    ["催","サイ","もよお・す","organizować",["{開催|かいさい}","{主催|しゅさい}","{催|もよお}し"]],
-    ["響","キョウ","ひび・く","dźwięczeć, rozbrzmiewać",["{影響|えいきょう}","{響|ひび}く"]],
+    ["催","サイ","もよお(す)","organizować",["{開催|かいさい}","{主催|しゅさい}","{催|もよお}し"]],
+    ["響","キョウ","ひび(く)","dźwięczeć, rozbrzmiewać",["{影響|えいきょう}","{響|ひび}く"]],
     ["圏","ケン","","sfera, obszar",["{首都圏|しゅとけん}","{圏外|けんがい}"]]
   ],
   grammar: [
@@ -10688,15 +10862,15 @@ LEVELS.push({
     ["製","セイ","","wytwarzać",["{製品|せいひん}","{製造|せいぞう}","{日本製|にほんせい}"]],
     ["能","ノウ","","zdolność",["{性能|せいのう}","{機能|きのう}","{可能|かのう}"]],
     ["故","コ","ゆえ","przyczyna; zmarły",["{故障|こしょう}","{事故|じこ}"]],
-    ["障","ショウ","さわ・る","przeszkoda",["{故障|こしょう}","{障害|しょうがい}","{支障|ししょう}"]],
+    ["障","ショウ","さわ(る)","przeszkoda",["{故障|こしょう}","{障害|しょうがい}","{支障|ししょう}"]],
     ["証","ショウ","","dowód, poświadczenie",["{保証|ほしょう}","{証明|しょうめい}","{証拠|しょうこ}"]],
     ["判","ハン・バン","","osąd, pieczęć",["{評判|ひょうばん}","{判断|はんだん}","{裁判|さいばん}"]],
     ["益","エキ・ヤク","","korzyść",["{利益|りえき}","{有益|ゆうえき}"]],
-    ["損","ソン","そこ・なう","strata",["{損害|そんがい}","{損|そん}をする","{損失|そんしつ}"]],
-    ["競","キョウ・ケイ","きそ・う","rywalizować",["{競争|きょうそう}","{競馬|けいば}","{競|きそ}う"]],
-    ["導","ドウ","みちび・く","prowadzić",["{導入|どうにゅう}","{指導|しどう}","{導|みちび}く"]],
-    ["操","ソウ","あやつ・る","obsługiwać, manipulować",["{操作|そうさ}","{体操|たいそう}","{操|あやつ}る"]],
-    ["謝","シャ","あやま・る","dziękować; przepraszać",["{感謝|かんしゃ}","{謝罪|しゃざい}","{謝|あやま}る"]]
+    ["損","ソン","そこ(なう)","strata",["{損害|そんがい}","{損|そん}をする","{損失|そんしつ}"]],
+    ["競","キョウ・ケイ","きそ(う)","rywalizować",["{競争|きょうそう}","{競馬|けいば}","{競|きそ}う"]],
+    ["導","ドウ","みちび(く)","prowadzić",["{導入|どうにゅう}","{指導|しどう}","{導|みちび}く"]],
+    ["操","ソウ","あやつ(る)","obsługiwać, manipulować",["{操作|そうさ}","{体操|たいそう}","{操|あやつ}る"]],
+    ["謝","シャ","あやま(る)","dziękować; przepraszać",["{感謝|かんしゃ}","{謝罪|しゃざい}","{謝|あやま}る"]]
   ],
   grammar: [
     { title: "～うえに – a do tego, w dodatku",
@@ -10823,17 +10997,17 @@ LEVELS.push({
     ["役割","やくわり","rola, zadanie"]
   ],
   kanji: [
-    ["得","トク","え・る・う・る","zyskać, móc",["{得意|とくい}","{得|え}る","{納得|なっとく}"]],
-    ["接","セツ","つ・ぐ","stykać się",["{面接|めんせつ}","{直接|ちょくせつ}","{接客|せっきゃく}"]],
-    ["募","ボ","つの・る","zbierać, rekrutować",["{応募|おうぼ}","{募集|ぼしゅう}","{募|つの}る"]],
-    ["履","リ","は・く","zakładać (obuwie); przebieg",["{履歴書|りれきしょ}","{履|は}く"]],
-    ["採","サイ","と・る","zbierać, przyjmować",["{採用|さいよう}","{採|と}る"]],
+    ["得","トク","え(る)・う(る)","zyskać, móc",["{得意|とくい}","{得|え}る","{納得|なっとく}"]],
+    ["接","セツ","つ(ぐ)","stykać się",["{面接|めんせつ}","{直接|ちょくせつ}","{接客|せっきゃく}"]],
+    ["募","ボ","つの(る)","zbierać, rekrutować",["{応募|おうぼ}","{募集|ぼしゅう}","{募|つの}る"]],
+    ["履","リ","は(く)","zakładać (obuwie); przebieg",["{履歴書|りれきしょ}","{履|は}く"]],
+    ["採","サイ","と(る)","zbierać, przyjmować",["{採用|さいよう}","{採|と}る"]],
     ["職","ショク","","zawód, posada",["{退職|たいしょく}","{転職|てんしょく}","{職場|しょくば}"]],
-    ["与","ヨ","あた・える","dawać",["{給与|きゅうよ}","{与|あた}える","{関与|かんよ}"]],
-    ["覚","カク","おぼ・える・さ・める","pamiętać; budzić się",["{覚悟|かくご}","{覚|おぼ}える","{感覚|かんかく}"]],
+    ["与","ヨ","あた(える)","dawać",["{給与|きゅうよ}","{与|あた}える","{関与|かんよ}"]],
+    ["覚","カク","おぼ(える)・さ(める)","pamiętać; budzić się",["{覚悟|かくご}","{覚|おぼ}える","{感覚|かんかく}"]],
     ["針","シン","はり","igła, kierunek",["{方針|ほうしん}","{針|はり}"]],
-    ["慎","シン","つつし・む","ostrożność",["{慎重|しんちょう}","{慎|つつし}む"]],
-    ["割","カツ","わ・る・わり","dzielić; proporcja",["{役割|やくわり}","{割合|わりあい}","{割|わ}る"]]
+    ["慎","シン","つつし(む)","ostrożność",["{慎重|しんちょう}","{慎|つつし}む"]],
+    ["割","カツ","わ(る)・わり","dzielić; proporcja",["{役割|やくわり}","{割合|わりあい}","{割|わ}る"]]
   ],
   grammar: [
     { title: "～ざるを得ない – nie mam wyjścia, muszę",
@@ -10960,16 +11134,16 @@ LEVELS.push({
   ],
   kanji: [
     ["輩","ハイ","","kolega, pokolenie",["{先輩|せんぱい}","{後輩|こうはい}"]],
-    ["雇","コ","やと・う","zatrudniać",["{雇用|こよう}","{雇|やと}う"]],
+    ["雇","コ","やと(う)","zatrudniać",["{雇用|こよう}","{雇|やと}う"]],
     ["序","ジョ","","kolejność, wstęp",["{年功序列|ねんこうじょれつ}","{順序|じゅんじょ}","{秩序|ちつじょ}"]],
     ["暇","カ","ひま","wolny czas",["{休暇|きゅうか}","{暇|ひま}"]],
     ["儀","ギ","","ceremonia, etykieta",["{礼儀|れいぎ}","{儀式|ぎしき}"]],
     ["識","シキ","","wiedza, rozpoznanie",["{常識|じょうしき}","{意識|いしき}","{知識|ちしき}"]],
-    ["慣","カン","な・れる","przyzwyczajenie",["{習慣|しゅうかん}","{慣|な}れる"]],
-    ["悩","ノウ","なや・む","martwić się",["{悩|なや}み","{悩|なや}む","{苦悩|くのう}"]],
-    ["驚","キョウ","おどろ・く","zdziwienie",["{驚|おどろ}く","{驚異|きょうい}"]],
-    ["懐","カイ","なつ・かしい・ふところ","tęsknota; zanadrze",["{懐|なつ}かしい","{懐|ふところ}"]],
-    ["焦","ショウ","あせ・る・こ・げる","niecierpliwość; przypalać",["{焦|あせ}る","{焦点|しょうてん}","{焦|こ}げる"]]
+    ["慣","カン","な(れる)","przyzwyczajenie",["{習慣|しゅうかん}","{慣|な}れる"]],
+    ["悩","ノウ","なや(む)","martwić się",["{悩|なや}み","{悩|なや}む","{苦悩|くのう}"]],
+    ["驚","キョウ","おどろ(く)","zdziwienie",["{驚|おどろ}く","{驚異|きょうい}"]],
+    ["懐","カイ","なつ(かしい)・ふところ","tęsknota; zanadrze",["{懐|なつ}かしい","{懐|ふところ}"]],
+    ["焦","ショウ","あせ(る)・こ(げる)","niecierpliwość; przypalać",["{焦|あせ}る","{焦点|しょうてん}","{焦|こ}げる"]]
   ],
   grammar: [
     { title: "～ものだ – tak już jest / tak się powinno",
@@ -11097,17 +11271,17 @@ LEVELS.push({
     ["恐縮","きょうしゅく","zakłopotanie, wdzięczność (bardzo uprzejmie)"]
   ],
   kanji: [
-    ["添","テン","そ・える","dodawać, załączać",["{添付|てんぷ}","{添|そ}える"]],
-    ["請","セイ・シン","こ・う・う・ける","prosić, żądać",["{請求書|せいきゅうしょ}","{申請|しんせい}"]],
-    ["積","セキ","つ・む・つ・もる","gromadzić",["{見積|みつ}もり","{積極的|せっきょくてき}","{面積|めんせき}"]],
+    ["添","テン","そ(える)","dodawać, załączać",["{添付|てんぷ}","{添|そ}える"]],
+    ["請","セイ・シン","こ(う)・う(ける)","prosić, żądać",["{請求書|せいきゅうしょ}","{申請|しんせい}"]],
+    ["積","セキ","つ(む)・つ(もる)","gromadzić",["{見積|みつ}もり","{積極的|せっきょくてき}","{面積|めんせき}"]],
     ["程","テイ","ほど","stopień, zakres",["{日程|にってい}","{程度|ていど}","{過程|かてい}"]],
     ["検","ケン","","sprawdzać",["{検討|けんとう}","{検査|けんさ}","{点検|てんけん}"]],
-    ["討","トウ","う・つ","atakować; dyskutować",["{検討|けんとう}","{討論|とうろん}"]],
-    ["承","ショウ","うけたまわ・る","przyjmować, słyszeć (pokornie)",["{承知|しょうち}","{承|うけたまわ}る","{了承|りょうしょう}"]],
+    ["討","トウ","う(つ)","atakować; dyskutować",["{検討|けんとう}","{討論|とうろん}"]],
+    ["承","ショウ","うけたまわ(る)","przyjmować, słyszeć (pokornie)",["{承知|しょうち}","{承|うけたまわ}る","{了承|りょうしょう}"]],
     ["弊","ヘイ","","zły; nasz (skromnie)",["{弊社|へいしゃ}","{疲弊|ひへい}"]],
-    ["貴","キ","とうと・い・たっと・い","szlachetny; Państwa",["{貴社|きしゃ}","{貴重|きちょう}"]],
+    ["貴","キ","とうと(い)・たっと(い)","szlachetny; Państwa",["{貴社|きしゃ}","{貴重|きちょう}"]],
     ["績","セキ","","osiągnięcie",["{業績|ぎょうせき}","{成績|せいせき}","{実績|じっせき}"]],
-    ["恐","キョウ","おそ・れる・おそ・ろしい","strach; uniżoność",["{恐|おそ}れ{入|い}ります","{恐縮|きょうしゅく}","{恐|おそ}ろしい"]],
+    ["恐","キョウ","おそ(れる)・おそ(ろしい)","strach; uniżoność",["{恐|おそ}れ{入|い}ります","{恐縮|きょうしゅく}","{恐|おそ}ろしい"]],
     ["況","キョウ","","stan, sytuacja",["{状況|じょうきょう}","{不況|ふきょう}"]]
   ],
   grammar: [
@@ -11231,14 +11405,14 @@ __N1_LESSONS.push({
     ["手を抜く","てをぬく","iść na skróty, robić byle jak"]
   ],
   kanji: [
-    ["限","ゲン","かぎる","granica, ograniczać",["{限界|げんかい}","{期限|きげん}","{限|かぎ}りに"]],
-    ["営","エイ","いとなむ","prowadzić (działalność)",["{営業|えいぎょう}","{経営|けいえい}","{営|いとな}む"]],
+    ["限","ゲン","かぎ(る)","granica, ograniczać",["{限界|げんかい}","{期限|きげん}","{限|かぎ}りに"]],
+    ["営","エイ","いとな(む)","prowadzić (działalność)",["{営業|えいぎょう}","{経営|けいえい}","{営|いとな}む"]],
     ["舗","ホ","","sklep",["{老舗|しにせ}","{店舗|てんぽ}","{舗装|ほそう}"]],
-    ["退","タイ","しりぞく","wycofać się, odejść",["{引退|いんたい}","{退職|たいしょく}","{退|しりぞ}く"]],
-    ["瞬","シュン","またたく","mrugnięcie, chwila",["{一瞬|いっしゅん}","{瞬間|しゅんかん}","{瞬|またた}く"]],
+    ["退","タイ","しりぞ(く)","wycofać się, odejść",["{引退|いんたい}","{退職|たいしょく}","{退|しりぞ}く"]],
+    ["瞬","シュン","またた(く)","mrugnięcie, chwila",["{一瞬|いっしゅん}","{瞬間|しゅんかん}","{瞬|またた}く"]],
     ["誠","セイ","まこと","szczerość",["{誠意|せいい}","{誠実|せいじつ}","{誠|まこと}に"]],
-    ["募","ボ","つのる","zbierać, rekrutować",["{応募|おうぼ}","{募集|ぼしゅう}","{募|つの}る"]],
-    ["顧","コ","かえりみる","oglądać się wstecz, troszczyć się",["{愛顧|あいこ}","{顧客|こきゃく}","{顧|かえり}みる"]]
+    ["募","ボ","つの(る)","zbierać, rekrutować",["{応募|おうぼ}","{募集|ぼしゅう}","{募|つの}る"]],
+    ["顧","コ","かえり(みる)","oglądać się wstecz, troszczyć się",["{愛顧|あいこ}","{顧客|こきゃく}","{顧|かえり}みる"]]
   ],
   grammar: [
     { title: "～をもって / ～をもちまして – z dniem; za pomocą",
@@ -11370,11 +11544,11 @@ __N1_LESSONS.push({
     ["裏を取る","うらをとる","zweryfikować informację (dziennikarsko)"]
   ],
   kanji: [
-    ["救","キュウ","すくう","ratować",["{救助|きゅうじょ}","{救急車|きゅうきゅうしゃ}","{救|すく}う"]],
-    ["捜","ソウ","さがす","szukać, prowadzić dochodzenie",["{捜査|そうさ}","{捜索|そうさく}","{捜|さが}す"]],
-    ["暴","ボウ・バク","あばれる・あばく","gwałtowny; ujawnić",["{暴言|ぼうげん}","{暴力|ぼうりょく}","{暴露|ばくろ}"]],
+    ["救","キュウ","すく(う)","ratować",["{救助|きゅうじょ}","{救急車|きゅうきゅうしゃ}","{救|すく}う"]],
+    ["捜","ソウ","さが(す)","szukać, prowadzić dochodzenie",["{捜査|そうさ}","{捜索|そうさく}","{捜|さが}す"]],
+    ["暴","ボウ・バク","あば(れる)・あば(く)","gwałtowny; ujawnić",["{暴言|ぼうげん}","{暴力|ぼうりょく}","{暴露|ばくろ}"]],
     ["嵐","ラン","あらし","burza",["{嵐|あらし}","{砂嵐|すなあらし}","{嵐|あらし}の{夜|よる}"]],
-    ["漏","ロウ","もれる・もらす","przeciekać",["{漏|も}らす","{漏電|ろうでん}","{雨漏|あまも}り"]],
+    ["漏","ロウ","も(れる)・も(らす)","przeciekać",["{漏|も}らす","{漏電|ろうでん}","{雨漏|あまも}り"]],
     ["憶","オク","","pamięć, domysł",["{憶測|おくそく}","{記憶|きおく}","{記憶力|きおくりょく}"]],
     ["漁","ギョ・リョウ","","rybołówstwo",["{漁船|ぎょせん}","{漁業|ぎょぎょう}","{漁師|りょうし}"]],
     ["芝","","しば","trawa, darń",["{芝生|しばふ}","{芝居|しばい}","{芝|しば}"]]
@@ -11509,11 +11683,11 @@ __N1_LESSONS.push({
     ["泥","デイ","どろ","błoto",["{泥|どろ}まみれ","{泥棒|どろぼう}","{泥水|どろみず}"]],
     ["汗","カン","あせ","pot",["{汗|あせ}まみれ","{発汗|はっかん}","{冷|ひ}や{汗|あせ}"]],
     ["謎","メイ","なぞ","zagadka",["{謎|なぞ}めく","{謎解|なぞと}き","{謎|なぞ}の{人物|じんぶつ}"]],
-    ["傷","ショウ","きず・いたむ","rana, uszkodzenie",["{傷|きず}だらけ","{負傷|ふしょう}","{傷口|きずぐち}"]],
-    ["極","キョク・ゴク","きわめる・きわまる・きわみ","szczyt, skrajność",["{極|きわ}まる","{極端|きょくたん}","{極楽|ごくらく}"]],
+    ["傷","ショウ","きず・いた(む)","rana, uszkodzenie",["{傷|きず}だらけ","{負傷|ふしょう}","{傷口|きずぐち}"]],
+    ["極","キョク・ゴク","きわ(める)・きわ(まる)・きわ(み)","szczyt, skrajność",["{極|きわ}まる","{極端|きょくたん}","{極楽|ごくらく}"]],
     ["贅","ゼイ","","nadmiar, zbytek",["{贅沢|ぜいたく}","{贅肉|ぜいにく}","{贅沢品|ぜいたくひん}"]],
-    ["恨","コン","うらむ","uraza, żal",["{痛恨|つうこん}","{恨|うら}み","{遺恨|いこん}"]],
-    ["軽","ケイ","かるい","lekki",["{軽視|けいし}","{軽率|けいそつ}","{気軽|きがる}"]]
+    ["恨","コン","うら(む)","uraza, żal",["{痛恨|つうこん}","{恨|うら}み","{遺恨|いこん}"]],
+    ["軽","ケイ","かる(い)","lekki",["{軽視|けいし}","{軽率|けいそつ}","{気軽|きがる}"]]
   ],
   grammar: [
     { title: "～ずくめ – wszystko jednego rodzaju",
@@ -11645,10 +11819,10 @@ __N1_LESSONS.push({
     ["承知","しょうち","zrozumienie, przyjęcie do wiadomości"]
   ],
   kanji: [
-    ["譲","ジョウ","ゆずる","ustępować",["{譲歩|じょうほ}","{譲|ゆず}る","{親譲|おやゆず}り"]],
+    ["譲","ジョウ","ゆず(る)","ustępować",["{譲歩|じょうほ}","{譲|ゆず}る","{親譲|おやゆず}り"]],
     ["妥","ダ","","kompromis, stosowność",["{妥協|だきょう}","{妥当|だとう}","{妥結|だけつ}"]],
     ["頑","ガン","","uparty",["{頑固|がんこ}","{頑張|がんば}る","{頑丈|がんじょう}"]],
-    ["悔","カイ","くやむ・くいる・くやしい","żałować",["{後悔|こうかい}","{悔|く}やしい","{悔|く}いが{残|のこ}る"]],
+    ["悔","カイ","く(やむ)・く(いる)・くや(しい)","żałować",["{後悔|こうかい}","{悔|く}やしい","{悔|く}いが{残|のこ}る"]],
     ["璧","ヘキ","","klejnot, doskonałość",["{完璧|かんぺき}","{双璧|そうへき}","{完璧主義|かんぺきしゅぎ}"]],
     ["槍","ソウ","やり","włócznia",["{槍|やり}","{竹槍|たけやり}","{槍投|やりな}げ"]],
     ["籍","セキ","","rejestr, przynależność",["{国籍|こくせき}","{戸籍|こせき}","{書籍|しょせき}"]],
@@ -11781,14 +11955,14 @@ __N1_LESSONS.push({
     ["活躍","かつやく","aktywne działanie, sukcesy"]
   ],
   kanji: [
-    ["頼","ライ","たのむ・たよる","prosić; polegać",["{信頼|しんらい}","{依頼|いらい}","{頼|たよ}る"]],
+    ["頼","ライ","たの(む)・たよ(る)","prosić; polegać",["{信頼|しんらい}","{依頼|いらい}","{頼|たよ}る"]],
     ["拠","キョ・コ","","podstawa, oparcie",["{根拠|こんきょ}","{証拠|しょうこ}","{拠点|きょてん}"]],
-    ["堪","カン","たえる","znosić, wytrzymywać",["{堪|た}える","{堪能|たんのう}","{見|み}るに{堪|た}えない"]],
-    ["鑑","カン","かんがみる","wzór, ocena",["{鑑賞|かんしょう}","{図鑑|ずかん}","{鑑定|かんてい}"]],
+    ["堪","カン","た(える)","znosić, wytrzymywać",["{堪|た}える","{堪能|たんのう}","{見|み}るに{堪|た}えない"]],
+    ["鑑","カン","かんが(みる)","wzór, ocena",["{鑑賞|かんしょう}","{図鑑|ずかん}","{鑑定|かんてい}"]],
     ["涯","ガイ","","kres, granica",["{生涯|しょうがい}","{天涯|てんがい}","{生涯学習|しょうがいがくしゅう}"]],
-    ["惨","サン・ザン","みじめ","okrutny, tragiczny",["{惨状|さんじょう}","{悲惨|ひさん}","{惨|みじ}め"]],
+    ["惨","サン・ザン","みじ(め)","okrutny, tragiczny",["{惨状|さんじょう}","{悲惨|ひさん}","{惨|みじ}め"]],
     ["審","シン","","badać, oceniać",["{審査員|しんさいん}","{審判|しんぱん}","{不審|ふしん}"]],
-    ["侮","ブ","あなどる","pogarda, lekceważenie",["{侮|あなど}る","{侮辱|ぶじょく}","{軽侮|けいぶ}"]]
+    ["侮","ブ","あなど(る)","pogarda, lekceważenie",["{侮|あなど}る","{侮辱|ぶじょく}","{軽侮|けいぶ}"]]
   ],
   grammar: [
     { title: "～に足る / ～に足りない – godny; niewart",
@@ -11917,14 +12091,14 @@ __N1_LESSONS.push({
     ["領収書","りょうしゅうしょ","pokwitowanie, rachunek"]
   ],
   kanji: [
-    ["如","ジョ・ニョ","ごとし","jak, niczym",["{如|ごと}く","{突如|とつじょ}","{如実|にょじつ}"]],
+    ["如","ジョ・ニョ","ごと(し)","jak, niczym",["{如|ごと}く","{突如|とつじょ}","{如実|にょじつ}"]],
     ["錯","サク","","pomieszanie, błąd",["{試行錯誤|しこうさくご}","{錯覚|さっかく}","{交錯|こうさく}"]],
-    ["誤","ゴ","あやまる","błąd",["{誤解|ごかい}","{誤字|ごじ}","{誤|あやま}り"]],
+    ["誤","ゴ","あやま(る)","błąd",["{誤解|ごかい}","{誤字|ごじ}","{誤|あやま}り"]],
     ["猿","エン","さる","małpa",["{猿|さる}","{類人猿|るいじんえん}","{犬猿|けんえん}の{仲|なか}"]],
     ["塵","ジン","ちり","pył",["{塵|ちり}","{粉塵|ふんじん}","{塵|ちり}も{積|つ}もれば"]],
     ["諺","ゲン","ことわざ","przysłowie",["{諺|ことわざ}","{俚諺|りげん}","{古|ふる}い{諺|ことわざ}"]],
-    ["励","レイ","はげむ・はげます","zachęcać, przykładać się",["{励|はげ}む","{激励|げきれい}","{奨励|しょうれい}"]],
-    ["疑","ギ","うたがう","wątpić",["{半信半疑|はんしんはんぎ}","{疑問|ぎもん}","{疑|うたが}う"]],
+    ["励","レイ","はげ(む)・はげ(ます)","zachęcać, przykładać się",["{励|はげ}む","{激励|げきれい}","{奨励|しょうれい}"]],
+    ["疑","ギ","うたが(う)","wątpić",["{半信半疑|はんしんはんぎ}","{疑問|ぎもん}","{疑|うたが}う"]],
     ["鳥","チョウ","とり","ptak",["{一石二鳥|いっせきにちょう}","{白鳥|はくちょう}","{焼|や}き{鳥|とり}"]]
   ],
   grammar: [
@@ -12061,10 +12235,10 @@ __PRO_LESSONS.push({
     ["助かる","たすかる","być wybawionym, „ratujesz mi życie”"]
   ],
   kanji: [
-    ["忘","ボウ","わすれる","zapominać",["{忘|わす}れちゃった","{忘年会|ぼうねんかい}","{忘|わす}れ{物|もの}"]],
-    ["寝","シン","ねる","spać",["{寝坊|ねぼう}","{寝|ね}ちゃう","{寝室|しんしつ}"]],
+    ["忘","ボウ","わす(れる)","zapominać",["{忘|わす}れちゃった","{忘年会|ぼうねんかい}","{忘|わす}れ{物|もの}"]],
+    ["寝","シン","ね(る)","spać",["{寝坊|ねぼう}","{寝|ね}ちゃう","{寝室|しんしつ}"]],
     ["宿","シュク","やど","nocleg",["{宿題|しゅくだい}","{宿泊|しゅくはく}","{雨宿|あまやど}り"]],
-    ["締","テイ","しめる・しまる","zaciskać, zamykać",["{締|し}め{切|き}り","{締|し}める","{取締役|とりしまりやく}"]],
+    ["締","テイ","し(める)・し(まる)","zaciskać, zamykać",["{締|し}め{切|き}り","{締|し}める","{取締役|とりしまりやく}"]],
     ["輩","ハイ","","towarzysz, pokolenie",["{先輩|せんぱい}","{後輩|こうはい}","{同輩|どうはい}"]],
     ["俺","","おれ","ja (męskie)",["{俺|おれ}","{俺|おれ}たち","{俺|おれ}{様|さま}"]]
   ],
@@ -12196,9 +12370,9 @@ __PRO_LESSONS.push({
   kanji: [
     ["雨","ウ","あめ","deszcz",["{大雨|おおあめ}","{雨音|あまおと}","{梅雨|つゆ}"]],
     ["腹","フク","はら","brzuch",["お{腹|なか}","{空腹|くうふく}","{腹|はら}が{立|た}つ"]],
-    ["眠","ミン","ねむる・ねむい","spać, senny",["{眠|ねむ}る","{睡眠|すいみん}","{居眠|いねむ}り"]],
-    ["磨","マ","みがく","polerować",["{磨|みが}く","{歯磨|はみが}き","{研磨|けんま}"]],
-    ["笑","ショウ","わらう・えむ","śmiać się",["{笑顔|えがお}","{笑|わら}う","{微笑|ほほえ}む"]],
+    ["眠","ミン","ねむ(る)・ねむ(い)","spać, senny",["{眠|ねむ}る","{睡眠|すいみん}","{居眠|いねむ}り"]],
+    ["磨","マ","みが(く)","polerować",["{磨|みが}く","{歯磨|はみが}き","{研磨|けんま}"]],
+    ["笑","ショウ","わら(う)・え(む)","śmiać się",["{笑顔|えがお}","{笑|わら}う","{微笑|ほほえ}む"]],
     ["胸","キョウ","むね","pierś, serce",["{胸|むね}","{度胸|どきょう}","{胸|むね}がどきどきする"]]
   ],
   grammar: [
@@ -12324,13 +12498,13 @@ __PRO_LESSONS.push({
     ["承知","しょうち","przyjęcie do wiadomości"]
   ],
   kanji: [
-    ["恐","キョウ","おそれる・おそろしい","bać się; z szacunkiem",["{恐|おそ}れ{入|い}ります","{恐縮|きょうしゅく}","{恐怖|きょうふ}"]],
-    ["承","ショウ","うけたまわる","przyjmować",["{承知|しょうち}","{承|うけたまわ}る","{了承|りょうしょう}"]],
+    ["恐","キョウ","おそ(れる)・おそ(ろしい)","bać się; z szacunkiem",["{恐|おそ}れ{入|い}ります","{恐縮|きょうしゅく}","{恐怖|きょうふ}"]],
+    ["承","ショウ","うけたまわ(る)","przyjmować",["{承知|しょうち}","{承|うけたまわ}る","{了承|りょうしょう}"]],
     ["弊","ヘイ","","skromny (o swoim); szkoda",["{弊社|へいしゃ}","{疲弊|ひへい}","{弊害|へいがい}"]],
-    ["添","テン","そえる・そう","dołączać",["{添付|てんぷ}","ご{期待|きたい}に{添|そ}う","{添|そ}える"]],
-    ["拝","ハイ","おがむ","kłaniać się; skromnie",["{拝見|はいけん}","{拝啓|はいけい}","{拝|おが}む"]],
+    ["添","テン","そ(える)・そ(う)","dołączać",["{添付|てんぷ}","ご{期待|きたい}に{添|そ}う","{添|そ}える"]],
+    ["拝","ハイ","おが(む)","kłaniać się; skromnie",["{拝見|はいけん}","{拝啓|はいけい}","{拝|おが}む"]],
     ["査","サ","","badać",["ご{査収|さしゅう}","{調査|ちょうさ}","{検査|けんさ}"]],
-    ["致","チ","いたす","czynić (skromnie)",["{致|いた}します","{一致|いっち}","{致命的|ちめいてき}"]]
+    ["致","チ","いた(す)","czynić (skromnie)",["{致|いた}します","{一致|いっち}","{致命的|ちめいてき}"]]
   ],
   grammar: [
     { title: "クッション言葉 – „poduszki” przed prośbą i złą wiadomością",
@@ -12468,7 +12642,7 @@ __PRO_LESSONS.push({
     ["阪","ハン","さか","zbocze (Osaka)",["{大阪|おおさか}","{京阪|けいはん}","{阪神|はんしん}"]],
     ["弁","ベン","","mowa, dialekt; bentō",["{関西弁|かんさいべん}","{弁当|べんとう}","{弁護士|べんごし}"]],
     ["府","フ","","prefektura miejska, urząd",["{大阪府|おおさかふ}","{京都府|きょうとふ}","{政府|せいふ}"]],
-    ["違","イ","ちがう","różnić się",["{違|ちが}う","{間違|まちが}い","{違反|いはん}"]],
+    ["違","イ","ちが(う)","różnić się",["{違|ちが}う","{間違|まちが}い","{違反|いはん}"]],
     ["漫","マン","","swobodny, komiczny",["{漫才|まんざい}","{漫画|まんが}","{散漫|さんまん}"]]
   ],
   grammar: [
@@ -12598,10 +12772,10 @@ __PRO_LESSONS.push({
     ["拡","カク","","rozszerzać",["{拡散|かくさん}","{拡大|かくだい}","{拡張|かくちょう}"]],
     ["稿","コウ","","rękopis, tekst",["{投稿|とうこう}","{原稿|げんこう}","{寄稿|きこう}"]],
     ["逮","タイ","","schwytać",["{逮捕|たいほ}","{逮捕状|たいほじょう}","{逮捕者|たいほしゃ}"]],
-    ["捕","ホ","とらえる・つかまる","łapać",["{逮捕|たいほ}","{捕|つか}まる","{捕獲|ほかく}"]],
+    ["捕","ホ","と(らえる)・つか(まる)","łapać",["{逮捕|たいほ}","{捕|つか}まる","{捕獲|ほかく}"]],
     ["判","ハン・バン","","osąd",["{判明|はんめい}","{判断|はんだん}","{評判|ひょうばん}"]],
-    ["撃","ゲキ","うつ","uderzać, strzelać",["{電撃|でんげき}","{攻撃|こうげき}","{衝撃|しょうげき}"]],
-    ["推","スイ","おす","popierać, wnioskować",["{推|お}し","{推薦|すいせん}","{推測|すいそく}"]]
+    ["撃","ゲキ","う(つ)","uderzać, strzelać",["{電撃|でんげき}","{攻撃|こうげき}","{衝撃|しょうげき}"]],
+    ["推","スイ","お(す)","popierać, wnioskować",["{推|お}し","{推薦|すいせん}","{推測|すいそく}"]]
   ],
   grammar: [
     { title: "Nowe czasowniki i przymiotniki: ～る i ～い",
@@ -25982,6 +26156,2152 @@ Object.assign(EXPL, {
   },
 });
 
+// Wygenerowane przez tools/kread.js (node tools/kread.js --write) – nie edytuj ręcznie.
+// Najczęstsze czytania kanji z prawdziwych słów kursu: CTX_M[znak] = [main (0 = jest ręczne main w CTX_K), najczęstsze on, najczęstsze kun].
+// Heurystyka opisana w tools/kread.js; czyta to src/ctx.js (CTX.readings, CTX.top) i głos (SPK w src/core.js).
+window.CTX_M = {
+"一":[0,"イチ","ひと(つ)"],
+"七":[0,"シチ","なな"],
+"万":[0,"マン",""],
+"三":[0,"サン","みっ(つ)"],
+"上":[0,"ジョウ","うえ"],
+"下":[0,"カ","した"],
+"中":[0,"チュウ","なか"],
+"九":[0,"キュウ","ここの(つ)"],
+"二":[0,"ニ","ふた(つ)"],
+"五":[0,"ゴ","いつ(つ)"],
+"人":[0,"ジン","ひと"],
+"今":[0,"コン","いま"],
+"休":[0,"キュウ","やす(む)"],
+"会":[0,"カイ","あ(う)"],
+"何":[0,"","なに"],
+"先":[0,"セン","さき"],
+"入":[0,"ニュウ","はい(る)"],
+"八":[0,"ハチ","やっ(つ)"],
+"六":[0,"ロク","むっ(つ)"],
+"円":[0,"エン","まる(い)"],
+"出":[0,"シュツ","で(る)"],
+"分":[0,"フン","わ(かる)"],
+"前":[0,"ゼン","まえ"],
+"北":[0,"ホク","きた"],
+"十":[0,"ジュウ","とお"],
+"千":[0,"セン",""],
+"午":[0,"ゴ",""],
+"半":[0,"ハン",""],
+"南":[0,"ナン","みなみ"],
+"友":[0,"ユウ","とも"],
+"口":[0,"コウ","くち"],
+"古":[0,"コ","ふる(い)"],
+"右":[0,"ユウ","みぎ"],
+"名":[0,"メイ","な"],
+"四":[0,"シ","よん"],
+"国":[0,"コク","くに"],
+"土":[0,"ド","つち"],
+"外":[0,"ガイ","そと"],
+"多":[0,"タ","おお(い)"],
+"大":[0,"ダイ","おお(きい)"],
+"天":[0,"テン",""],
+"女":[0,"ジョ","おんな"],
+"子":[0,"シ","こ"],
+"学":[0,"ガク",""],
+"安":[0,"アン","やす(い)"],
+"小":[0,"ショウ","ちい(さい)"],
+"少":[0,"ショウ","すこ(し)"],
+"山":[0,"サン","やま"],
+"川":[0,"","かわ"],
+"左":[0,"サ","ひだり"],
+"年":[0,"ネン","とし"],
+"店":[0,"テン","みせ"],
+"後":[0,"ゴ","あと"],
+"手":[0,"シュ","て"],
+"新":[0,"シン","あたら(しい)"],
+"日":[0,"ニチ","ひ"],
+"時":[0,"ジ","とき"],
+"書":[0,"ショ","か(く)"],
+"月":[0,"ゲツ","つき"],
+"木":[0,"モク","き"],
+"本":[0,"ホン","もと"],
+"来":[0,"ライ","く(る)"],
+"東":[0,"トウ","ひがし"],
+"校":[0,"コウ",""],
+"母":[0,"ボ","はは"],
+"毎":[0,"マイ",""],
+"気":[0,"キ",""],
+"水":[0,"スイ","みず"],
+"火":[0,"カ","ひ"],
+"父":[0,"フ","ちち"],
+"生":[0,"セイ","う(まれる)"],
+"男":[0,"ダン","おとこ"],
+"白":[0,"ハク","しろ(い)"],
+"百":[0,"ヒャク",""],
+"目":[0,"モク","め"],
+"社":[0,"シャ",""],
+"空":[0,"クウ","そら"],
+"立":[0,"リツ","た(つ)"],
+"耳":[0,"ジ","みみ"],
+"聞":[0,"ブン","き(く)"],
+"花":[0,"カ","はな"],
+"行":[0,"コウ","い(く)"],
+"西":[0,"サイ","にし"],
+"見":[0,"ケン","み(る)"],
+"言":[0,"ゲン","い(う)"],
+"話":[0,"ワ","はな(す)"],
+"語":[0,"ゴ",""],
+"読":[0,"ドク","よ(む)"],
+"買":[0,"","か(う)"],
+"足":[0,"ソク","あし"],
+"車":[0,"シャ","くるま"],
+"週":[0,"シュウ",""],
+"道":[0,"ドウ","みち"],
+"金":[0,"キン","かね"],
+"長":[0,"チョウ","なが(い)"],
+"間":[0,"カン","あいだ"],
+"雨":[0,"","あめ"],
+"電":[0,"デン",""],
+"食":[0,"ショク","た(べる)"],
+"飲":[0,"イン","の(む)"],
+"駅":[0,"エキ",""],
+"高":[0,"コウ","たか(い)"],
+"魚":[0,"ギョ","さかな"],
+"不":[0,"フ",""],
+"世":[0,"セ","よ"],
+"主":[0,"シュ","おも"],
+"乗":[0,"ジョウ","の(る)"],
+"事":[0,"ジ","こと"],
+"京":[0,"キョウ",""],
+"仕":[0,"シ",""],
+"代":[0,"ダイ","か(わる)"],
+"以":[0,"イ",""],
+"低":[0,"テイ","ひく(い)"],
+"住":[0,"ジュウ","す(む)"],
+"体":[0,"タイ","からだ"],
+"作":[0,"サク","つく(る)"],
+"使":[0,"シ","つか(う)"],
+"便":[0,"ベン",""],
+"借":[0,"シャク","か(りる)"],
+"働":[0,"ドウ","はたら(く)"],
+"元":[0,"ゲン","もと"],
+"兄":[0,"キョウ","あに"],
+"光":[0,"コウ","ひかり"],
+"公":[0,"コウ",""],
+"写":[0,"シャ","うつ(す)"],
+"冬":[0,"トウ","ふゆ"],
+"切":[0,"セツ","き(る)"],
+"別":[0,"ベツ","わか(れる)"],
+"力":[0,"リョク","ちから"],
+"勉":[0,"ベン",""],
+"動":[0,"ドウ","うご(く)"],
+"区":[0,"ク",""],
+"医":[0,"イ",""],
+"去":[0,"キョ","さ(る)"],
+"可":[0,"カ",""],
+"台":[0,"ダイ",""],
+"合":[0,"ゴウ","あ(う)"],
+"同":[0,"ドウ","おな(じ)"],
+"味":[0,"ミ","あじ"],
+"品":[0,"ヒン","しな"],
+"員":[0,"イン",""],
+"問":[0,"モン","と(う)"],
+"回":[0,"カイ","まわ(る)"],
+"図":[0,"ズ",""],
+"地":[0,"チ",""],
+"堂":[0,"ドウ",""],
+"場":[0,"ジョウ","ば"],
+"声":[0,"セイ","こえ"],
+"売":[0,"バイ","う(る)"],
+"夏":[0,"カ","なつ"],
+"夕":[0,"","ゆう"],
+"夜":[0,"ヤ","よる"],
+"太":[0,"タイ","ふと(る)"],
+"好":[0,"コウ","す(く)"],
+"妹":[0,"マイ","いもうと"],
+"姉":[0,"シ","あね"],
+"始":[0,"シ","はじ(める)"],
+"字":[0,"ジ",""],
+"室":[0,"シツ",""],
+"家":[0,"カ","いえ"],
+"寒":[0,"カン","さむ(い)"],
+"屋":[0,"オク","や"],
+"工":[0,"コウ",""],
+"市":[0,"シ","いち"],
+"帰":[0,"キ","かえ(る)"],
+"広":[0,"コウ","ひろ(い)"],
+"度":[0,"ド",""],
+"建":[0,"ケン","た(てる)"],
+"引":[0,"イン","ひ(く)"],
+"弟":[0,"ダイ","おとうと"],
+"弱":[0,"ジャク","よわ(い)"],
+"強":[0,"キョウ","つよ(い)"],
+"待":[0,"タイ","ま(つ)"],
+"心":[0,"シン","こころ"],
+"思":[0,"シ","おも(う)"],
+"急":[0,"キュウ","いそ(ぐ)"],
+"悪":[0,"アク","わる(い)"],
+"意":[0,"イ",""],
+"所":[0,"ショ","ところ"],
+"持":[0,"","も(つ)"],
+"教":[0,"キョウ","おし(える)"],
+"文":[0,"ブン",""],
+"料":[0,"リョウ",""],
+"方":[0,"ホウ","かた"],
+"旅":[0,"リョ","たび"],
+"族":[0,"ゾク",""],
+"早":[0,"ソウ","はや(い)"],
+"明":[0,"メイ","あか(るい)"],
+"映":[0,"エイ","うつ(る)"],
+"春":[0,"シュン","はる"],
+"昼":[0,"チュウ","ひる"],
+"暑":[0,"ショ","あつ(い)"],
+"暗":[0,"アン","くら(い)"],
+"曜":[0,"ヨウ",""],
+"有":[0,"ユウ",""],
+"服":[0,"フク",""],
+"朝":[0,"チョウ","あさ"],
+"村":[0,"ソン","むら"],
+"林":[0,"リン","はやし"],
+"森":[0,"シン","もり"],
+"業":[0,"ギョウ",""],
+"楽":[0,"ガク","たの(しい)"],
+"歌":[0,"カ","うた"],
+"止":[0,"シ","と(まる)"],
+"正":[0,"ショウ","ただ(しい)"],
+"歩":[0,"ホ","ある(く)"],
+"死":[0,"シ","し(ぬ)"],
+"民":[0,"ミン",""],
+"池":[0,"チ","いけ"],
+"注":[0,"チュウ",""],
+"洋":[0,"ヨウ",""],
+"洗":[0,"セン","あら(う)"],
+"海":[0,"カイ","うみ"],
+"漢":[0,"カン",""],
+"無":[0,"ム",""],
+"牛":[0,"ギュウ","うし"],
+"物":[0,"ブツ","もの"],
+"特":[0,"トク",""],
+"犬":[0,"ケン","いぬ"],
+"理":[0,"リ",""],
+"産":[0,"サン","う(む)"],
+"用":[0,"ヨウ",""],
+"田":[0,"デン","た"],
+"町":[0,"チョウ","まち"],
+"画":[0,"ガ",""],
+"界":[0,"カイ",""],
+"病":[0,"ビョウ",""],
+"発":[0,"ハツ",""],
+"的":[0,"テキ","まと"],
+"県":[0,"ケン",""],
+"真":[0,"シン","ま"],
+"着":[0,"チャク","き(る)"],
+"知":[0,"チ","し(る)"],
+"短":[0,"タン","みじか(い)"],
+"研":[0,"ケン",""],
+"私":[0,"シ","わたし"],
+"秋":[0,"シュウ","あき"],
+"究":[0,"キュウ",""],
+"答":[0,"トウ","こた(える)"],
+"紙":[0,"シ","かみ"],
+"終":[0,"シュウ","お(わる)"],
+"習":[0,"シュウ","なら(う)"],
+"考":[0,"コウ","かんが(える)"],
+"者":[0,"シャ","もの"],
+"肉":[0,"ニク",""],
+"自":[0,"ジ",""],
+"色":[0,"","いろ"],
+"英":[0,"エイ",""],
+"茶":[0,"チャ",""],
+"菜":[0,"サイ","な"],
+"薬":[0,"ヤク","くすり"],
+"親":[0,"シン","おや"],
+"計":[0,"ケイ",""],
+"試":[0,"シ","ため(す)"],
+"説":[0,"セツ",""],
+"貸":[0,"タイ","か(す)"],
+"質":[0,"シツ",""],
+"赤":[0,"セキ","あか(い)"],
+"走":[0,"ソウ","はし(る)"],
+"起":[0,"キ","お(きる)"],
+"身":[0,"シン","み"],
+"転":[0,"テン","ころ(ぶ)"],
+"軽":[0,"ケイ","かるい"],
+"近":[0,"キン","ちか(い)"],
+"送":[0,"ソウ","おく(る)"],
+"通":[0,"ツウ","かよ(う)"],
+"進":[0,"シン","すす(む)"],
+"運":[0,"ウン","はこ(ぶ)"],
+"遠":[0,"エン","とお(い)"],
+"都":[0,"ト",""],
+"重":[0,"ジュウ","おも(い)"],
+"野":[0,"ヤ","の"],
+"銀":[0,"ギン",""],
+"門":[0,"モン",""],
+"開":[0,"カイ","あ(ける)"],
+"院":[0,"イン",""],
+"集":[0,"シュウ","あつ(める)"],
+"青":[0,"セイ","あお(い)"],
+"音":[0,"オン","おと"],
+"頭":[0,"ズ","あたま"],
+"題":[0,"ダイ",""],
+"顔":[0,"ガン","かお"],
+"風":[0,"フウ","かぜ"],
+"飯":[0,"ハン",""],
+"館":[0,"カン",""],
+"首":[0,"シュ","くび"],
+"験":[0,"ケン",""],
+"鳥":[0,"チョウ","とり"],
+"黒":[0,"コク","くろ(い)"],
+"丁":[["チョウ","テイ"],"チョウ",""],
+"与":[["ヨ","あた(える)"],"ヨ","あた(える)"],
+"両":[0,"リョウ",""],
+"丸":[["まる(い)"],"","まる(い)"],
+"予":[["ヨ"],"ヨ",""],
+"争":[["ソウ","あらそ(う)"],"ソウ","あらそ(う)"],
+"互":[["ゴ"],"",""],
+"亡":[["な(い)"],"",""],
+"交":[["コウ"],"コウ",""],
+"他":[["ほか"],"","ほか"],
+"付":[["つ(け)","つ(ける)"],"フ","つ(け)"],
+"令":[["レイ"],"レイ",""],
+"仲":[["なか"],"","なか"],
+"件":[["ケン"],"ケン",""],
+"任":[["ニン"],"ニン","まか(せる)"],
+"伝":[["デン","つた(える)"],"デン","つた(える)"],
+"似":[["に(る)"],"","に(る)"],
+"位":[["イ"],"",""],
+"余":[["ヨ"],"",""],
+"例":[["レイ"],"レイ",""],
+"供":[0,"キョウ","とも"],
+"係":[["ケイ","かかり"],"ケイ","かかり"],
+"信":[["シン"],"シン",""],
+"俺":[["おれ"],"","おれ"],
+"倉":[["ソウ"],"",""],
+"倍":[["バイ"],"",""],
+"倒":[["トウ"],"",""],
+"候":[["コウ"],"",""],
+"値":[["ね","チ"],"チ","ね"],
+"偉":[["えら(い)"],"",""],
+"停":[["テイ"],"",""],
+"健":[["ケン"],"ケン",""],
+"側":[["がわ"],"","がわ"],
+"偶":[["グウ"],"",""],
+"備":[["ビ","そな(える)"],"ビ","そな(える)"],
+"億":[["オク"],"",""],
+"優":[["ユウ"],"ユウ","やさ(しい)"],
+"兆":[["チョウ"],"",""],
+"児":[["ジ"],"",""],
+"全":[0,"ゼン",""],
+"共":[["キョウ","とも"],"キョウ","とも"],
+"兵":[["ヘイ"],"",""],
+"具":[["グ"],"グ",""],
+"典":[["テン"],"",""],
+"内":[["ナイ"],"ナイ",""],
+"冷":[["ひ(やす)","レイ"],"レイ","ひ(やす)"],
+"処":[["ショ"],"ショ",""],
+"刀":[["トウ"],"",""],
+"列":[["レツ"],"レツ",""],
+"初":[["ショ"],"ショ","はじ(めて)"],
+"判":[["ハン","バン"],"ハン",""],
+"利":[["リ"],"リ","き(く)"],
+"到":[["トウ"],"トウ",""],
+"制":[["セイ"],"セイ",""],
+"刷":[["サツ"],"",""],
+"刻":[["コク"],"コク","きざ(む)"],
+"副":[["フク"],"",""],
+"割":[["わり","わ(る)"],"","わり"],
+"功":[["コウ"],"コウ",""],
+"加":[["カ"],"カ",""],
+"助":[["ジョ","たす(ける)"],"ジョ","たす(ける)"],
+"努":[["ド","つと(める)"],"ド","つと(める)"],
+"労":[["ロウ"],"ロウ",""],
+"勇":[["ユウ"],"ユウ",""],
+"務":[["ム"],"ム",""],
+"勝":[["ショウ"],"ショウ","か(つ)"],
+"勤":[["キン"],"キン","つと(める)"],
+"包":[["ホウ"],"ホウ",""],
+"化":[["カ"],"カ",""],
+"卒":[0,"ソツ",""],
+"協":[["キョウ"],"キョウ",""],
+"単":[["タン"],"タン",""],
+"博":[["ハク"],"",""],
+"印":[["イン"],"イン",""],
+"危":[["キ","あぶ(ない)"],"キ","あぶ(ない)"],
+"原":[["ゲン","はら"],"ゲン","はら"],
+"参":[["サン","まい(る)"],"サン","まい(る)"],
+"反":[["ハン"],"ハン",""],
+"収":[["シュウ"],"シュウ",""],
+"取":[["と(る)"],"シュ","と(る)"],
+"受":[["う(ける)","ジュ"],"ジュ","う(ける)"],
+"史":[["シ"],"シ",""],
+"号":[["ゴウ"],"ゴウ",""],
+"司":[["シ"],"シ",""],
+"各":[["カク"],"",""],
+"向":[["む(く)"],"","む(く)"],
+"君":[["クン"],"",""],
+"否":[["ヒ"],"ヒ",""],
+"吸":[["す(う)"],"","す(う)"],
+"吹":[["ふ(く)"],"","ふ(く)"],
+"告":[["コク"],"コク",""],
+"周":[["シュウ"],"シュウ",""],
+"呼":[["よ(ぶ)"],"","よ(ぶ)"],
+"命":[["メイ"],"メイ","いのち"],
+"和":[["ワ"],"ワ",""],
+"唱":[["ショウ"],"",""],
+"商":[["ショウ"],"ショウ",""],
+"喜":[["キ","よろこ(ぶ)"],"キ","よろこ(ぶ)"],
+"器":[["キ"],"キ",""],
+"因":[["イン"],"イン",""],
+"困":[["こま(る)"],"","こま(る)"],
+"囲":[["イ"],"イ",""],
+"固":[["コ"],"コ",""],
+"園":[["エン"],"エン",""],
+"在":[["ザイ"],"ザイ",""],
+"坂":[["さか"],"",""],
+"型":[["ケイ"],"",""],
+"報":[["ホウ"],"ホウ",""],
+"塩":[["しお"],"","しお"],
+"増":[["ゾウ","ふ(える)"],"ゾウ","ふ(える)"],
+"士":[["シ"],"シ",""],
+"変":[["ヘン"],"ヘン","か(わる)"],
+"夢":[["ム","ゆめ"],"ム","ゆめ"],
+"夫":[["フウ","ブ"],"フウ","おっと"],
+"央":[["オウ"],"",""],
+"失":[["シツ"],"シツ","うしな(う)"],
+"妻":[["つま"],"","つま"],
+"委":[["イ"],"イ",""],
+"娘":[["むすめ"],"","むすめ"],
+"婚":[0,"コン",""],
+"婦":[["フ"],"フ",""],
+"存":[["ソン","ゾン"],"ソン",""],
+"季":[["キ"],"キ",""],
+"孫":[["まご"],"","まご"],
+"宅":[["タク"],"タク",""],
+"守":[["ス","まも(る)"],"ス","まも(る)"],
+"完":[["カン"],"カン",""],
+"官":[["カン"],"カン",""],
+"定":[["テイ"],"テイ",""],
+"実":[["ジツ"],"ジツ",""],
+"客":[["キャク"],"キャク",""],
+"宮":[["キュウ"],"",""],
+"害":[["ガイ"],"ガイ",""],
+"容":[["ヨウ"],"ヨウ",""],
+"宿":[0,"シュク","やど"],
+"寄":[["キ","よ(る)"],"キ","よ(る)"],
+"富":[["フ"],"フ",""],
+"寝":[["シン","ね(る)"],"シン","ね(る)"],
+"察":[["サツ"],"サツ",""],
+"寺":[0,"ジ","てら"],
+"対":[0,"タイ",""],
+"局":[["キョク"],"キョク",""],
+"居":[["～い"],"",""],
+"岡":[["コウ"],"",""],
+"岩":[["ガン"],"",""],
+"岸":[["ガン"],"ガン",""],
+"島":[["しま","トウ"],"トウ","しま"],
+"州":[["シュウ"],"シュウ",""],
+"巣":[["ソウ"],"",""],
+"差":[["サ"],"サ",""],
+"希":[["キ"],"",""],
+"師":[["シ"],"シ",""],
+"席":[["セキ"],"セキ",""],
+"帯":[["タイ"],"タイ",""],
+"帳":[["チョウ"],"チョウ",""],
+"常":[["ジョウ"],"ジョウ",""],
+"平":[["ヘイ"],"ヘイ",""],
+"幸":[["コウ","さいわ(い)"],"コウ","さいわ(い)"],
+"幾":[["キ"],"",""],
+"底":[["テイ"],"",""],
+"府":[["フ"],"フ",""],
+"座":[["ザ","すわ(る)"],"ザ","すわ(る)"],
+"庫":[["コ"],"コ",""],
+"庭":[["テイ"],"",""],
+"康":[["コウ"],"コウ",""],
+"式":[["シキ"],"シキ",""],
+"弓":[["キュウ"],"",""],
+"当":[0,"トウ","あ(たる)"],
+"形":[["ギョウ"],"",""],
+"役":[["ヤク"],"ヤク",""],
+"彼":[["かれ","かの"],"","かれ"],
+"径":[["ケイ"],"",""],
+"徒":[["ト"],"ト",""],
+"得":[["トク","え(る)"],"トク","え(る)"],
+"御":[["おん～"],"",""],
+"必":[["ヒツ"],"ヒツ","かなら(ず)"],
+"忘":[["わす(れる)","ボウ"],"ボウ","わす(れる)"],
+"忙":[["いそが(しい)"],"","いそが(しい)"],
+"念":[["ネン"],"ネン",""],
+"怒":[["いか(る)","おこ(る)"],"","いか(る)"],
+"怖":[["フ"],"フ",""],
+"性":[["セイ"],"セイ",""],
+"恐":[["キョウ","おそ(れる)"],"キョウ","おそ(れる)"],
+"恥":[["は(ずかしい)"],"","は(ずかしい)"],
+"息":[["いき"],"","いき"],
+"悲":[["ヒ"],"ヒ","かな(しい)"],
+"情":[["ジョウ"],"ジョウ",""],
+"想":[["ソウ"],"ソウ",""],
+"愛":[["アイ"],"アイ",""],
+"感":[["カン"],"カン",""],
+"慣":[["カン","な(れる)"],"カン","な(れる)"],
+"成":[["セイ"],"セイ",""],
+"戦":[["たたか(う)"],"","たたか(う)"],
+"戸":[["コ"],"コ",""],
+"戻":[["もど(す)"],"","もど(す)"],
+"才":[["サイ"],"サイ",""],
+"打":[["う(つ)"],"","う(つ)"],
+"払":[["はら(う)"],"","はら(う)"],
+"投":[["トウ","な(げる)"],"トウ","な(げる)"],
+"折":[["お(る)"],"","お(る)"],
+"抜":[["ぬ(く)","ぬ(ける)"],"","ぬ(く)"],
+"抱":[["かか(える)"],"","かか(える)"],
+"押":[["お(す)"],"","お(す)"],
+"招":[["まね(く)","ショウ"],"ショウ","まね(く)"],
+"拾":[["ひろ(う)"],"","ひろ(う)"],
+"指":[["シ","ゆび"],"シ","ゆび"],
+"挙":[["キョ"],"キョ",""],
+"捕":[["ホ"],"ホ","つか(まえる)"],
+"掛":[["か(ける)"],"","か(ける)"],
+"探":[["さが(す)"],"","さが(す)"],
+"支":[["シ"],"シ","ささ(える)"],
+"改":[["カイ"],"カイ",""],
+"放":[["ホウ"],"ホウ",""],
+"政":[["セイ"],"セイ",""],
+"救":[["キュウ","すく(う)"],"キュウ","すく(う)"],
+"敗":[["ハイ","やぶ(れる)"],"ハイ","やぶ(れる)"],
+"散":[["サン"],"サン",""],
+"数":[["スウ"],"スウ","かぞ(える)"],
+"整":[["セイ"],"セイ",""],
+"断":[["ダン"],"ダン","ことわ(る)"],
+"旗":[["キ"],"",""],
+"易":[["やさ(しい)"],"",""],
+"昔":[["むかし"],"","むかし"],
+"星":[["ほし"],"","ほし"],
+"昨":[["サク"],"",""],
+"昭":[["ショウ"],"",""],
+"晩":[["バン"],"バン",""],
+"景":[["ケイ"],"ケイ",""],
+"晴":[["は(れる)"],"","は(れる)"],
+"暮":[["ボ"],"",""],
+"曲":[["キョク","ま(がる)"],"キョク","ま(がる)"],
+"更":[["コウ"],"コウ",""],
+"最":[0,"サイ",""],
+"望":[["ボウ"],"ボウ",""],
+"期":[["キ"],"キ",""],
+"未":[["ミ"],"ミ",""],
+"末":[["マツ"],"マツ",""],
+"札":[["サツ"],"サツ",""],
+"材":[["ザイ"],"ザイ",""],
+"束":[["ソク","たば"],"ソク","たば"],
+"杯":[["ハイ"],"ハイ",""],
+"松":[["まつ"],"",""],
+"板":[["バン"],"バン",""],
+"果":[["カ"],"カ",""],
+"柱":[["チュウ"],"",""],
+"栄":[["エイ"],"エイ",""],
+"根":[["ね"],"コン","ね"],
+"格":[["カク"],"カク",""],
+"案":[["アン"],"アン",""],
+"梅":[["うめ"],"","うめ"],
+"械":[["カイ"],"カイ",""],
+"植":[["ショク","う(える)"],"ショク","う(える)"],
+"極":[["キョク"],"キョク","きわ(まる)"],
+"構":[["コウ","かま(う)"],"コウ","かま(う)"],
+"様":[["さま"],"ヨウ","さま"],
+"標":[["ヒョウ"],"ヒョウ",""],
+"権":[["ケン"],"ケン",""],
+"横":[["よこ"],"",""],
+"橋":[["キョウ"],"",""],
+"機":[["キ"],"キ",""],
+"欠":[["ケツ","か(く)"],"ケツ","か(く)"],
+"次":[0,"ジ","つぎ"],
+"欲":[["ほ(しい)"],"","ほ(しい)"],
+"歯":[["は"],"","は"],
+"歳":[0,"サイ",""],
+"歴":[["レキ"],"レキ",""],
+"残":[["ザン","のこ(る)"],"ザン","のこ(る)"],
+"段":[["ダン"],"ダン",""],
+"殺":[["サツ"],"",""],
+"毒":[["ドク"],"",""],
+"毛":[["け"],"","け"],
+"氏":[["シ"],"",""],
+"氷":[["ヒョウ"],"",""],
+"求":[["キュウ"],"キュウ",""],
+"決":[["ケツ","き(める)"],"ケツ","き(める)"],
+"汽":[["キ"],"",""],
+"油":[["ユ","あぶら"],"ユ","あぶら"],
+"治":[["ジ","チ"],"ジ","なお(る)"],
+"法":[["ホウ"],"ホウ",""],
+"波":[["ハ"],"",""],
+"泣":[["な(く)"],"","な(く)"],
+"泳":[["およ(ぐ)"],"","およ(ぐ)"],
+"活":[0,"カツ",""],
+"流":[["リュウ"],"リュウ",""],
+"浅":[["セン"],"",""],
+"浮":[["う(く)"],"",""],
+"浴":[["あ(びる)"],"","あ(びる)"],
+"消":[["ショウ"],"ショウ","き(える)"],
+"深":[["シン"],"シン",""],
+"清":[["セイ"],"",""],
+"済":[["サイ"],"サイ",""],
+"渡":[["ト","わた(る)"],"ト","わた(る)"],
+"温":[["オン"],"オン","あたた(かい)"],
+"港":[0,"コウ","みなと"],
+"湖":[["みずうみ"],"","みずうみ"],
+"湯":[["ゆ"],"","ゆ"],
+"満":[["マン"],"マン",""],
+"漁":[["ギョ","リョウ"],"ギョ",""],
+"演":[["エン"],"エン",""],
+"灯":[["トウ"],"",""],
+"炭":[["タン"],"タン",""],
+"点":[["テン"],"テン",""],
+"然":[["ゼン"],"ゼン",""],
+"焼":[["や(く)"],"","や(く)"],
+"煙":[["エン"],"エン",""],
+"照":[["て(れる)"],"",""],
+"熱":[["ネツ","あつ(い)"],"ネツ","あつ(い)"],
+"牧":[["ボク"],"",""],
+"犯":[["ハン"],"ハン",""],
+"状":[["ジョウ"],"ジョウ",""],
+"猫":[["ねこ"],"","ねこ"],
+"玉":[["たま"],"","たま"],
+"王":[["オウ"],"オウ",""],
+"現":[["ゲン"],"ゲン",""],
+"球":[["キュウ"],"キュウ",""],
+"由":[["ユウ","ユ"],"ユウ",""],
+"申":[["もう(す)"],"シン","もう(す)"],
+"畑":[["はたけ"],"","はたけ"],
+"留":[0,"リュウ",""],
+"番":[["バン"],"バン",""],
+"疑":[["ギ"],"ギ","うたが(う)"],
+"疲":[["つか(れる)","ヒ"],"ヒ","つか(れる)"],
+"痛":[0,"ツウ","いた(い)"],
+"登":[["ト","のぼ(る)"],"ト","のぼ(る)"],
+"皆":[["みな"],"","みな"],
+"皮":[["ヒ"],"ヒ",""],
+"皿":[["さら"],"","さら"],
+"盗":[["トウ","ぬす(む)"],"トウ","ぬす(む)"],
+"直":[["チョク","なお(す)"],"チョク","なお(す)"],
+"相":[["ソウ","ショウ"],"ソウ",""],
+"省":[["セイ"],"セイ",""],
+"眠":[["ミン","ねむ(る)"],"ミン","ねむ(る)"],
+"矢":[["や"],"","や"],
+"石":[["セキ","いし"],"セキ","いし"],
+"破":[["ハ","やぶ(る)"],"ハ","やぶ(る)"],
+"確":[["カク","たし(か)"],"カク","たし(か)"],
+"示":[["ジ"],"ジ",""],
+"礼":[["レイ"],"レイ",""],
+"祖":[["ソ"],"ソ",""],
+"祝":[["シュク"],"",""],
+"神":[0,"ジン","かみ"],
+"票":[["ヒョウ"],"",""],
+"祭":[["まつ(る)","サイ"],"サイ","まつ(る)"],
+"福":[["フク"],"",""],
+"科":[["カ"],"カ",""],
+"秒":[["ビョウ"],"",""],
+"程":[["テイ"],"テイ",""],
+"種":[["シュ"],"",""],
+"積":[["セキ","つ(もる)"],"セキ","つ(もる)"],
+"突":[["トツ","つ(く)"],"トツ","つ(く)"],
+"窓":[["まど"],"","まど"],
+"章":[["ショウ"],"",""],
+"童":[["ドウ"],"",""],
+"競":[["キョウ","ケイ"],"キョウ","きそ(う)"],
+"竹":[["チク","たけ"],"チク","たけ"],
+"笑":[0,"ショウ","わら(う)"],
+"笛":[["テキ"],"",""],
+"第":[["ダイ"],"ダイ",""],
+"筆":[["ヒツ"],"ヒツ","ふで"],
+"等":[["トウ"],"",""],
+"算":[["サン"],"サン",""],
+"管":[["カン"],"カン",""],
+"箱":[["はこ"],"","はこ"],
+"節":[["セツ"],"セツ",""],
+"米":[["ベイ"],"ベイ","こめ"],
+"粉":[["フン","こ"],"フン","こ"],
+"精":[["セイ"],"セイ",""],
+"糸":[["シ"],"",""],
+"紀":[["キ"],"",""],
+"約":[["ヤク"],"ヤク",""],
+"級":[["キュウ"],"",""],
+"細":[["ほそ(い)"],"","ほそ(い)"],
+"組":[["く(む)","くみ"],"","く(む)"],
+"経":[["ケイ"],"ケイ",""],
+"結":[0,"ケツ","むす(ぶ)"],
+"給":[["キュウ"],"キュウ",""],
+"絵":[["エ"],"エ",""],
+"絶":[0,"ゼツ","た(える)"],
+"続":[0,"ゾク","つづ(く)"],
+"緑":[["リョク"],"リョク",""],
+"緒":[["ショ"],"ショ",""],
+"線":[["セン"],"セン",""],
+"練":[["レン"],"レン",""],
+"罪":[["ザイ"],"ザイ",""],
+"置":[["お(く)"],"","お(く)"],
+"羊":[["ヨウ"],"",""],
+"美":[["ビ","ミ"],"ビ",""],
+"羽":[["ウ"],"",""],
+"老":[["ロウ"],"",""],
+"職":[["ショク"],"ショク",""],
+"育":[["イク","そだ(てる)"],"イク","そだ(てる)"],
+"胃":[["イ"],"",""],
+"背":[["せ"],"","せ"],
+"能":[["ノウ"],"ノウ",""],
+"脈":[["ミャク"],"ミャク",""],
+"腸":[["チョウ"],"",""],
+"腹":[["フク","はら"],"フク","はら"],
+"臣":[["シン"],"",""],
+"舞":[["ブ"],"ブ",""],
+"航":[["コウ"],"コウ",""],
+"船":[["セン"],"セン",""],
+"良":[["よ(い)"],"","よ(い)"],
+"芸":[["ゲイ"],"ゲイ",""],
+"芽":[["ガ"],"",""],
+"若":[["わか(い)","わか～"],"","わか(い)"],
+"苦":[["ク"],"ク","くる(しい)"],
+"草":[["くさ"],"","くさ"],
+"荷":[["に"],"","に"],
+"落":[["お(ちる)","ラク"],"ラク","お(ちる)"],
+"葉":[["は"],"ヨウ","は"],
+"虫":[["むし"],"","むし"],
+"血":[["ち"],"","ち"],
+"術":[["ジュツ"],"ジュツ",""],
+"街":[["ガイ"],"ガイ",""],
+"衣":[["イ"],"",""],
+"表":[0,"ヒョウ","おもて"],
+"要":[["ヨウ"],"ヨウ","い(る)"],
+"規":[["キ"],"キ",""],
+"覚":[["カク"],"カク","おぼ(える)"],
+"観":[["カン"],"カン",""],
+"角":[["カク"],"カク",""],
+"解":[["カイ"],"カイ","と(く)"],
+"訓":[["クン"],"",""],
+"記":[["キ"],"キ",""],
+"訪":[["ホウ","たず(ねる)"],"ホウ","たず(ねる)"],
+"許":[["キョ","ゆる(す)"],"キョ","ゆる(す)"],
+"詩":[["シ"],"",""],
+"認":[["ニン"],"ニン",""],
+"誤":[["ゴ"],"ゴ","あやま(る)"],
+"誰":[["だれ"],"","だれ"],
+"課":[["カ"],"カ",""],
+"調":[["チョウ"],"チョウ","しら(べる)"],
+"談":[["ダン"],"ダン",""],
+"論":[["ロン"],"ロン",""],
+"識":[["シキ"],"シキ",""],
+"警":[["ケイ"],"ケイ",""],
+"議":[["ギ"],"ギ",""],
+"谷":[["コク"],"",""],
+"豆":[["トウ"],"トウ",""],
+"象":[["ショウ","ゾウ"],"ショウ",""],
+"貝":[["バイ"],"",""],
+"負":[["フ","ま(ける)"],"フ","ま(ける)"],
+"財":[["サイ"],"サイ",""],
+"貧":[["ビン"],"",""],
+"貨":[["カ"],"カ",""],
+"責":[["セキ","せ(める)"],"セキ","せ(める)"],
+"貯":[["チョ","た(める)"],"チョ","た(める)"],
+"費":[["ヒ"],"ヒ",""],
+"資":[["シ"],"シ",""],
+"賛":[["サン"],"サン",""],
+"賞":[["ショウ"],"ショウ",""],
+"越":[["こ(す)"],"","こ(す)"],
+"路":[["ロ"],"",""],
+"軍":[["グン"],"",""],
+"輪":[["わ"],"","わ"],
+"辞":[["ジ","や(める)"],"ジ","や(める)"],
+"農":[["ノウ"],"ノウ",""],
+"辺":[["ヘン"],"",""],
+"込":[["こ(み)"],"","こ(み)"],
+"迎":[["むか(える)","ゲイ"],"ゲイ","むか(える)"],
+"返":[["ヘン","かえ(す)"],"ヘン","かえ(す)"],
+"迷":[["まよ(う)","メイ"],"メイ","まよ(う)"],
+"追":[["お(う)"],"","お(う)"],
+"退":[["タイ"],"タイ","しりぞ(く)"],
+"逃":[["に(げる)"],"","に(げる)"],
+"途":[["ト"],"ト",""],
+"速":[["ソク","はや(い)"],"ソク","はや(い)"],
+"連":[0,"レン","つ(れる)"],
+"遅":[["おく(れる)","おそ(い)"],"チ","おく(れる)"],
+"遊":[["あそ(ぶ)","あそ(ばす)"],"","あそ(ぶ)"],
+"過":[["カ"],"カ","す(ぎる)"],
+"達":[["タツ"],"タツ",""],
+"違":[["ちが(う)","イ"],"イ","ちが(う)"],
+"適":[["テキ"],"テキ",""],
+"選":[["セン","えら(ぶ)"],"セン","えら(ぶ)"],
+"郡":[["グン"],"",""],
+"部":[0,"ブ",""],
+"配":[["ハイ"],"ハイ",""],
+"酒":[["さけ","さか～"],"","さけ"],
+"里":[["リ"],"",""],
+"量":[["リョウ"],"リョウ",""],
+"鉄":[["テツ"],"テツ",""],
+"録":[["ロク"],"",""],
+"鏡":[["キョウ"],"",""],
+"閉":[["ヘイ","し(める)"],"ヘイ","し(める)"],
+"関":[["カン"],"カン","かか(わる)"],
+"降":[["コウ","お(りる)"],"コウ","お(りる)"],
+"限":[["ゲン"],"ゲン","かぎ(る)"],
+"除":[["ジ"],"ジ",""],
+"陸":[["リク"],"",""],
+"険":[["ケン"],"ケン",""],
+"陽":[["ヨウ"],"ヨウ",""],
+"隊":[["タイ"],"",""],
+"階":[["カイ"],"カイ",""],
+"際":[["サイ"],"サイ",""],
+"雑":[["ザツ"],"ザツ",""],
+"難":[["ナン","むずか(しい)"],"ナン","むずか(しい)"],
+"雪":[0,"","ゆき"],
+"雲":[["くも"],"","くも"],
+"静":[["しず(か)"],"","しず(か)"],
+"非":[["ヒ"],"",""],
+"面":[["メン"],"メン","おも"],
+"靴":[["くつ"],"","くつ"],
+"頂":[["チョウ"],"チョウ",""],
+"順":[["ジュン"],"ジュン",""],
+"頼":[["ライ","たの(む)"],"ライ","たの(む)"],
+"願":[["ねが(う)"],"","ねが(う)"],
+"類":[["ルイ"],"ルイ",""],
+"飛":[["ヒ","と(ぶ)"],"ヒ","と(ぶ)"],
+"養":[["ヨウ"],"ヨウ",""],
+"馬":[["バ"],"バ",""],
+"髪":[["かみ"],"","かみ"],
+"鳴":[["な(らす)"],"","な(らす)"],
+"麦":[["むぎ"],"","むぎ"],
+"黄":[["き"],"","き"],
+"鼻":[["ビ","はな"],"ビ","はな"],
+"丈":[["ジョウ"],"ジョウ",""],
+"並":[["なら(ぶ)","なら(べる)"],"","なら(ぶ)"],
+"久":[["ひさ(しい)"],"",""],
+"乱":[["ラン"],"",""],
+"乳":[["ニュウ"],"ニュウ",""],
+"乾":[["カン"],"カン",""],
+"了":[["リョウ"],"リョウ",""],
+"介":[["カイ"],"カイ",""],
+"仏":[["ブツ"],"",""],
+"仮":[["カ"],"",""],
+"伸":[["の(びる)"],"",""],
+"伺":[["うかが(う)"],"","うかが(う)"],
+"依":[["イ"],"イ",""],
+"価":[["カ"],"カ",""],
+"保":[["ホ"],"ホ",""],
+"修":[["シュウ"],"シュウ",""],
+"個":[["コ"],"コ",""],
+"傾":[["ケイ"],"",""],
+"像":[["ゾウ"],"",""],
+"党":[["トウ"],"",""],
+"冊":[["サツ"],"サツ",""],
+"再":[["サイ"],"サイ",""],
+"凍":[["トウ"],"",""],
+"刊":[["カン"],"",""],
+"券":[["ケン"],"ケン",""],
+"刺":[["シ"],"シ",""],
+"則":[["ソク"],"ソク",""],
+"劇":[["ゲキ"],"ゲキ",""],
+"効":[["コウ"],"コウ",""],
+"募":[["ボ","つの(る)"],"ボ","つの(る)"],
+"勢":[["セイ"],"",""],
+"匹":[["ひき"],"","ひき"],
+"占":[["セン"],"",""],
+"卵":[["たまご"],"","たまご"],
+"厚":[["コウ"],"",""],
+"双":[["ソウ"],"ソウ",""],
+"叫":[["キョウ"],"",""],
+"召":[["め(す)","ショウ"],"ショウ","め(す)"],
+"含":[["ガン"],"",""],
+"咲":[["さ(く)"],"","さ(く)"],
+"善":[["ゼン"],"ゼン",""],
+"喫":[["キツ"],"キツ",""],
+"営":[["エイ"],"エイ","いとな(む)"],
+"団":[["ダン"],"ダン",""],
+"圧":[["アツ"],"",""],
+"均":[["キン"],"",""],
+"坊":[["ボウ"],"ボウ",""],
+"埋":[["マイ"],"",""],
+"城":[["ジョウ"],"",""],
+"域":[["イキ"],"イキ",""],
+"基":[["キ"],"キ","もと"],
+"塔":[["トウ"],"",""],
+"塗":[["ぬ(る)"],"","ぬ(る)"],
+"境":[["キョウ"],"キョウ","さかい"],
+"壁":[["かべ"],"","かべ"],
+"奥":[["おく"],"","おく"],
+"姓":[["セイ"],"",""],
+"宇":[["ウ"],"",""],
+"宙":[["チュウ"],"",""],
+"宝":[["たから"],"",""],
+"寿":[["ジュ"],"",""],
+"封":[["フウ"],"フウ",""],
+"専":[["セン"],"セン",""],
+"将":[["ショウ"],"",""],
+"尊":[["ソン"],"ソン",""],
+"導":[["ドウ"],"ドウ","みちび(く)"],
+"尻":[["コウ"],"",""],
+"届":[["とど(ける)","とど(く)"],"","とど(ける)"],
+"展":[["テン"],"テン",""],
+"層":[["ソウ"],"",""],
+"巨":[["キョ"],"",""],
+"巻":[["ま(く)"],"",""],
+"布":[["フ"],"フ",""],
+"帽":[["ボウ"],"ボウ",""],
+"幅":[["フク"],"",""],
+"干":[["ほ(す)"],"","ほ(す)"],
+"幼":[["ヨウ"],"",""],
+"庁":[["チョウ"],"チョウ",""],
+"床":[["ショウ","とこ"],"ショウ","とこ"],
+"延":[["の(ばす)","エン"],"エン","の(ばす)"],
+"張":[["チョウ"],"チョウ","は(る)"],
+"律":[["リツ"],"リツ",""],
+"復":[["フク"],"フク",""],
+"志":[["シ"],"シ",""],
+"応":[["オウ"],"オウ",""],
+"快":[["カイ"],"",""],
+"恋":[["こい"],"","こい"],
+"恵":[["ケイ"],"",""],
+"患":[["カン"],"",""],
+"悩":[["ノウ","なや(む)"],"ノウ","なや(む)"],
+"憎":[["ゾウ"],"",""],
+"批":[["ヒ"],"ヒ",""],
+"承":[["ショウ","うけたまわ(る)"],"ショウ","うけたまわ(る)"],
+"技":[["ギ"],"ギ",""],
+"担":[["タン"],"タン",""],
+"拝":[["ハイ","おが(む)"],"ハイ","おが(む)"],
+"拡":[["カク"],"カク",""],
+"挟":[["キョウ"],"",""],
+"捜":[["ソウ","さが(す)"],"ソウ","さが(す)"],
+"捨":[["す(てる)"],"","す(てる)"],
+"掃":[["ソウ"],"ソウ",""],
+"授":[0,"ジュ",""],
+"掘":[["クツ"],"",""],
+"採":[["サイ","と(る)"],"サイ","と(る)"],
+"接":[["セツ"],"セツ",""],
+"換":[["か(える)","カン"],"カン","か(える)"],
+"損":[["ソン"],"ソン",""],
+"操":[["ソウ","あやつ(る)"],"ソウ","あやつ(る)"],
+"故":[["コ"],"コ",""],
+"敬":[["ケイ"],"ケイ",""],
+"斬":[["ザン"],"",""],
+"旧":[["キュウ"],"キュウ",""],
+"昇":[["ショウ"],"ショウ",""],
+"普":[["フ"],"フ",""],
+"暖":[["ダン","あたた(かい)"],"ダン","あたた(かい)"],
+"暴":[["ボウ","バク"],"ボウ",""],
+"曇":[["くも(る)"],"","くも(る)"],
+"替":[["か(える)"],"",""],
+"机":[["つくえ"],"","つくえ"],
+"条":[["ジョウ"],"ジョウ",""],
+"枚":[0,"マイ",""],
+"枝":[["シ"],"",""],
+"枯":[["コ"],"",""],
+"柔":[["ジュウ"],"ジュウ",""],
+"査":[["サ"],"サ",""],
+"棒":[["ボウ"],"ボウ",""],
+"検":[["ケン"],"ケン",""],
+"欧":[["オウ"],"",""],
+"武":[["ブ"],"",""],
+"殿":[["デン"],"",""],
+"比":[["ヒ"],"",""],
+"永":[["エイ"],"",""],
+"汗":[["あせ","カン"],"カン","あせ"],
+"汚":[["オ","よご(す)"],"オ","よご(す)"],
+"沈":[["チン"],"",""],
+"河":[["カ"],"",""],
+"沸":[["わ(く)","わ(かす)"],"","わ(く)"],
+"況":[["キョウ"],"キョウ",""],
+"泉":[["セン"],"セン",""],
+"泊":[["ハク","と(まる)"],"ハク","と(まる)"],
+"泥":[["どろ"],"","どろ"],
+"涙":[["なみだ"],"","なみだ"],
+"液":[["エキ"],"",""],
+"涼":[["すず(しい)"],"",""],
+"混":[["ま(ぜる)","こ(む)"],"","ま(ぜる)"],
+"減":[["ゲン","へ(る)"],"ゲン","へ(る)"],
+"測":[["ソク"],"ソク",""],
+"湾":[["ワン"],"",""],
+"湿":[["シツ"],"",""],
+"準":[["ジュン"],"ジュン",""],
+"溶":[["と(ける)"],"",""],
+"滴":[["テキ"],"",""],
+"濃":[["ノウ"],"",""],
+"濯":[["タク"],"タク",""],
+"灰":[["カイ"],"",""],
+"燃":[["も(える)"],"",""],
+"燥":[["ソウ"],"",""],
+"爆":[["バク"],"バク",""],
+"片":[["かた～"],"",""],
+"版":[["ハン"],"",""],
+"狙":[["ソ"],"",""],
+"独":[["ドク"],"",""],
+"狭":[["せま(い)"],"","せま(い)"],
+"率":[["ソツ"],"ソツ",""],
+"珍":[["チン"],"",""],
+"環":[["カン"],"カン",""],
+"瓶":[["ビン"],"ビン",""],
+"甘":[["あま(い)"],"","あま(い)"],
+"畜":[["チク"],"",""],
+"略":[["リャク"],"",""],
+"異":[["イ"],"イ",""],
+"畳":[["たたみ"],"","たたみ"],
+"療":[["リョウ"],"リョウ",""],
+"看":[["カン"],"カン",""],
+"砂":[["サ","すな"],"サ","すな"],
+"硬":[["コウ"],"コウ",""],
+"磨":[["みが(く)","マ"],"マ","みが(く)"],
+"祈":[["いの(る)"],"","いの(る)"],
+"禁":[["キン"],"キン",""],
+"移":[["イ"],"イ",""],
+"税":[["ゼイ"],"ゼイ",""],
+"符":[["フ"],"",""],
+"筒":[["トウ"],"トウ",""],
+"築":[["チク"],"チク",""],
+"簡":[["カン"],"カン",""],
+"籍":[["セキ"],"セキ",""],
+"粒":[["リュウ"],"",""],
+"紅":[["コウ"],"コウ",""],
+"純":[["ジュン"],"",""],
+"紹":[["ショウ"],"ショウ",""],
+"絡":[["ラク"],"ラク",""],
+"綿":[["メン"],"",""],
+"総":[["ソウ"],"",""],
+"編":[["ヘン","あ(む)"],"ヘン","あ(む)"],
+"績":[["セキ"],"セキ",""],
+"缶":[["カン"],"",""],
+"署":[["ショ"],"",""],
+"群":[["グン"],"",""],
+"翌":[["ヨク"],"",""],
+"耕":[["コウ"],"",""],
+"肌":[["キ"],"",""],
+"肩":[["かた"],"","かた"],
+"肯":[["コウ"],"",""],
+"胸":[["キョウ","むね"],"キョウ","むね"],
+"脂":[["シ"],"",""],
+"脇":[["キョウ"],"",""],
+"脳":[["ノウ"],"",""],
+"腕":[["ワン"],"",""],
+"腰":[["こし"],"","こし"],
+"膚":[["フ"],"",""],
+"膝":[["ひざ"],"","ひざ"],
+"臓":[["ゾウ"],"",""],
+"舟":[["シュウ"],"",""],
+"般":[["ハン"],"",""],
+"荒":[["あら(い)"],"",""],
+"菓":[["カ"],"カ",""],
+"著":[["チョ"],"",""],
+"蒸":[["ジョウ"],"",""],
+"蔵":[["ゾウ"],"ゾウ",""],
+"薄":[["うす(い)"],"",""],
+"袋":[["ふくろ"],"","ふくろ"],
+"被":[["ヒ"],"ヒ",""],
+"装":[["ソウ"],"ソウ",""],
+"裏":[["うら"],"","うら"],
+"補":[["ホ"],"",""],
+"製":[["セイ"],"セイ",""],
+"複":[["フク"],"フク",""],
+"触":[["さわ(る)"],"","さわ(る)"],
+"設":[["セツ"],"セツ",""],
+"評":[["ヒョウ"],"ヒョウ",""],
+"詞":[["シ"],"シ",""],
+"詰":[["つ(まる)"],"",""],
+"誌":[["シ"],"シ",""],
+"諸":[["ショ"],"",""],
+"講":[["コウ"],"コウ",""],
+"豊":[["ゆた(か)"],"","ゆた(か)"],
+"販":[["ハン"],"ハン",""],
+"貿":[["ボウ"],"",""],
+"賃":[["チン"],"チン",""],
+"賢":[["ケン"],"",""],
+"贈":[["おく(る)"],"","おく(る)"],
+"超":[["チョウ"],"",""],
+"跡":[["セキ"],"",""],
+"踊":[["ヨウ"],"",""],
+"軒":[["ケン"],"",""],
+"軟":[["ナン"],"",""],
+"較":[["カク"],"",""],
+"輸":[["ユ"],"ユ",""],
+"辛":[["から(い)"],"","から(い)"],
+"述":[["ジュツ"],"ジュツ",""],
+"逆":[["ギャク"],"",""],
+"造":[["ゾウ"],"ゾウ",""],
+"郊":[["コウ"],"",""],
+"郵":[["ユウ"],"ユウ",""],
+"針":[["シン","はり"],"シン","はり"],
+"鈍":[["ドン"],"",""],
+"鉱":[["コウ"],"",""],
+"銅":[["ドウ"],"",""],
+"鋭":[["エイ"],"",""],
+"闇":[["アン"],"",""],
+"阪":[["ハン","さか"],"ハン","さか"],
+"防":[["ボウ"],"ボウ",""],
+"隅":[["グウ"],"",""],
+"隻":[["セキ"],"",""],
+"雇":[["コ","やと(う)"],"コ","やと(う)"],
+"零":[["レイ"],"",""],
+"震":[["シン","ふる(える)"],"シン","ふる(える)"],
+"革":[["カク"],"",""],
+"韓":[["カン"],"カン",""],
+"頃":[["ころ"],"","ころ"],
+"預":[["あず(かる)"],"",""],
+"領":[["リョウ"],"リョウ",""],
+"額":[["ガク"],"",""],
+"香":[["コウ"],"",""],
+"駐":[["チュウ"],"チュウ",""],
+"骨":[["ほね"],"","ほね"],
+"齢":[["レイ"],"レイ",""],
+"且":[["ショ"],"",""],
+"丘":[["おか"],"","おか"],
+"丙":[["ヘイ"],"",""],
+"串":[["カン"],"",""],
+"丹":[["タン"],"",""],
+"丼":[["トン"],"トン",""],
+"乏":[["ボウ"],"",""],
+"乙":[["オツ"],"",""],
+"乞":[["コツ"],"",""],
+"亀":[["キ"],"",""],
+"井":[["セイ"],"",""],
+"亜":[["ア"],"",""],
+"享":[["キョウ"],"",""],
+"亭":[["テイ"],"",""],
+"仁":[["ジン"],"",""],
+"仙":[["セン"],"",""],
+"仰":[["ギョウ"],"",""],
+"企":[["キ"],"キ",""],
+"伎":[["キ"],"キ",""],
+"伏":[["フク"],"",""],
+"伐":[["バツ"],"",""],
+"伯":[["ハク"],"",""],
+"伴":[["ハン","ともな(う)"],"ハン","ともな(う)"],
+"但":[["タン"],"",""],
+"佐":[["サ"],"サ",""],
+"佳":[["カ"],"",""],
+"併":[["ヘイ"],"",""],
+"侍":[["ジ"],"",""],
+"侮":[["ブ","あなど(る)"],"ブ","あなど(る)"],
+"侯":[["コウ"],"",""],
+"侵":[["シン"],"",""],
+"侶":[["リョ"],"",""],
+"促":[["ソク"],"",""],
+"俊":[["シュン"],"",""],
+"俗":[["ゾク"],"",""],
+"俳":[["ハイ"],"ハイ",""],
+"俵":[["ヒョウ"],"",""],
+"俸":[["ホウ"],"",""],
+"倣":[["ホウ"],"",""],
+"倫":[["リン"],"",""],
+"倹":[["ケン"],"",""],
+"偏":[["ヘン"],"",""],
+"偵":[["テイ"],"",""],
+"偽":[["ギ"],"",""],
+"傍":[["ボウ"],"",""],
+"傑":[["ケツ"],"",""],
+"傘":[["かさ"],"","かさ"],
+"催":[["サイ","もよお(す)"],"サイ","もよお(す)"],
+"傲":[["ゴウ"],"",""],
+"債":[["サイ"],"",""],
+"傷":[["きず","ショウ"],"ショウ","きず"],
+"僅":[["キン"],"",""],
+"僕":[["ボク"],"ボク",""],
+"僚":[["リョウ"],"リョウ",""],
+"僧":[["ソウ"],"",""],
+"儀":[["ギ"],"ギ",""],
+"儒":[["ジュ"],"",""],
+"償":[["ショウ"],"",""],
+"充":[["ジュウ"],"ジュウ",""],
+"克":[["コク"],"",""],
+"免":[["メン"],"メン",""],
+"兼":[["ケン"],"",""],
+"冒":[["ボウ"],"",""],
+"冗":[["ジョウ"],"ジョウ",""],
+"冠":[["カン"],"",""],
+"冥":[["メイ"],"",""],
+"冶":[["ヤ"],"",""],
+"凄":[["セイ"],"",""],
+"准":[["ジュン"],"",""],
+"凝":[["ギョウ"],"",""],
+"凡":[["ボン"],"",""],
+"凶":[["キョウ"],"",""],
+"凸":[["トツ"],"",""],
+"凹":[["オウ"],"",""],
+"刃":[["ジン"],"",""],
+"刈":[["ガイ"],"",""],
+"刑":[["ケイ"],"",""],
+"刹":[["セチ"],"",""],
+"削":[["サク","けず(る)"],"サク","けず(る)"],
+"剖":[["ボウ"],"",""],
+"剛":[["ゴウ"],"",""],
+"剝":[["ハク"],"",""],
+"剣":[["ケン"],"ケン",""],
+"剤":[["ザイ"],"",""],
+"剰":[["ジョウ"],"",""],
+"創":[["ソウ"],"ソウ",""],
+"劣":[["レツ"],"",""],
+"励":[["レイ","はげ(む)"],"レイ","はげ(む)"],
+"劾":[["ガイ"],"",""],
+"勃":[["ボツ"],"",""],
+"勅":[["チョク"],"",""],
+"勘":[["カン"],"",""],
+"勧":[["カン"],"",""],
+"勲":[["クン"],"",""],
+"勾":[["コウ"],"",""],
+"匂":[["にお(う)"],"","にお(う)"],
+"匠":[["ショウ"],"",""],
+"匿":[["トク"],"",""],
+"升":[["ショウ"],"",""],
+"卑":[["ヒ"],"",""],
+"卓":[["タク"],"タク",""],
+"即":[["ソク"],"",""],
+"却":[["キャク"],"",""],
+"卸":[["シャ"],"",""],
+"厄":[["ヤク"],"",""],
+"厘":[["リン"],"",""],
+"厳":[["きび(しい)"],"","きび(しい)"],
+"又":[["ユウ"],"",""],
+"及":[["およ(ぶ)","キュウ"],"キュウ","およ(ぶ)"],
+"叔":[["シュク"],"",""],
+"叙":[["ジョ"],"",""],
+"句":[["ク"],"ク",""],
+"叱":[["しか(る)"],"","しか(る)"],
+"吉":[["キチ"],"",""],
+"后":[["コウ"],"",""],
+"吏":[["リ"],"",""],
+"吐":[["ト"],"",""],
+"吟":[["ギン"],"",""],
+"呂":[["ロ"],"",""],
+"呈":[["テイ"],"",""],
+"呉":[["ゴ"],"",""],
+"呪":[["ジュ"],"",""],
+"咽":[["イン"],"",""],
+"哀":[["アイ"],"",""],
+"哲":[["テツ"],"",""],
+"哺":[["ホ"],"",""],
+"唄":[["バイ"],"",""],
+"唆":[["サ"],"",""],
+"唇":[["シン"],"",""],
+"唐":[["トウ"],"",""],
+"唯":[["ユイ"],"",""],
+"唾":[["ダ"],"",""],
+"啓":[["ケイ"],"ケイ",""],
+"喉":[["のど"],"","のど"],
+"喚":[["カン"],"",""],
+"喝":[["カツ"],"",""],
+"喩":[["ユ"],"",""],
+"喪":[["ソウ"],"",""],
+"嗅":[["キュウ"],"",""],
+"嗣":[["シ"],"",""],
+"嘆":[["タン"],"",""],
+"嘱":[["ショク"],"",""],
+"嘲":[["チョウ"],"",""],
+"噴":[["フン"],"",""],
+"嚇":[["カク"],"",""],
+"囚":[["シュウ"],"",""],
+"圏":[["ケン"],"ケン",""],
+"坑":[["コウ"],"",""],
+"坪":[["ヘイ"],"",""],
+"垂":[["スイ"],"",""],
+"垣":[["エン"],"",""],
+"執":[["シツ"],"",""],
+"培":[["バイ"],"",""],
+"埼":[["キ"],"",""],
+"堀":[["ほり"],"",""],
+"堅":[["ケン"],"",""],
+"堆":[["タイ"],"",""],
+"堕":[["ダ"],"",""],
+"堤":[["テイ"],"",""],
+"堪":[["た(える)","タン"],"タン","た(える)"],
+"塀":[["ヘイ"],"",""],
+"塁":[["ルイ"],"",""],
+"塊":[["カイ"],"",""],
+"塑":[["ソ"],"",""],
+"塚":[["チョウ"],"",""],
+"塞":[["ソク"],"",""],
+"塡":[["テン"],"",""],
+"塾":[["ジュク"],"ジュク",""],
+"墓":[["はか"],"","はか"],
+"墜":[["ツイ"],"",""],
+"墨":[["ボク"],"",""],
+"墳":[["フン"],"",""],
+"墾":[["コン"],"",""],
+"壇":[["タン"],"",""],
+"壊":[["カイ","こわ(す)"],"カイ","こわ(す)"],
+"壌":[["ジョウ"],"",""],
+"壮":[["ソウ"],"",""],
+"壱":[["イチ"],"",""],
+"奇":[["キ"],"",""],
+"奈":[["ナ"],"",""],
+"奉":[["ホウ"],"",""],
+"奏":[["ソウ"],"",""],
+"契":[["ケイ"],"ケイ",""],
+"奔":[["ホン"],"",""],
+"奨":[["ショウ"],"ショウ",""],
+"奪":[["ダツ"],"",""],
+"奮":[["フン"],"",""],
+"奴":[["ド"],"",""],
+"如":[["ジョ","ニョ"],"ジョ","ごと(し)"],
+"妃":[["ヒ"],"",""],
+"妄":[["モウ"],"",""],
+"妊":[["ニン"],"",""],
+"妖":[["ヨウ"],"",""],
+"妙":[["ミョウ"],"",""],
+"妥":[["ダ"],"ダ",""],
+"妨":[["ボウ"],"",""],
+"妬":[["ト"],"",""],
+"姫":[["キ"],"",""],
+"姻":[["イン"],"",""],
+"姿":[["すがた"],"",""],
+"威":[["イ"],"",""],
+"娠":[["シン"],"",""],
+"娯":[["ゴ"],"",""],
+"婆":[["バ"],"",""],
+"婿":[["セイ"],"",""],
+"媒":[["バイ"],"",""],
+"媛":[["エン"],"",""],
+"嫁":[["カ"],"",""],
+"嫉":[["シツ"],"",""],
+"嫌":[["きら(う)"],"","きら(う)"],
+"嫡":[["チャク"],"",""],
+"嬢":[["ジョウ"],"",""],
+"孔":[["コウ"],"",""],
+"孝":[["コウ"],"",""],
+"孤":[["コ"],"",""],
+"宗":[["シュウ"],"",""],
+"宛":[["エン"],"",""],
+"宜":[["ギ"],"",""],
+"宣":[["セン"],"",""],
+"宰":[["サイ"],"",""],
+"宴":[["エン"],"",""],
+"宵":[["ショウ"],"",""],
+"寂":[["さび(しい)"],"","さび(しい)"],
+"密":[["ミツ"],"ミツ",""],
+"寛":[["カン"],"",""],
+"寡":[["カ"],"",""],
+"寧":[["ネイ"],"ネイ",""],
+"審":[["シン"],"シン",""],
+"寮":[["リョウ"],"リョウ",""],
+"寸":[["スン"],"",""],
+"射":[["シャ"],"シャ",""],
+"尉":[["イ"],"",""],
+"尋":[["たず(ねる)"],"",""],
+"尚":[["ショウ"],"",""],
+"就":[["シュウ"],"シュウ",""],
+"尺":[["シャク"],"",""],
+"尼":[["ニ"],"",""],
+"尽":[["つ(くす)"],"","つ(くす)"],
+"尾":[["ビ"],"",""],
+"尿":[["ニョウ"],"",""],
+"屈":[["クツ"],"",""],
+"属":[["ゾク"],"",""],
+"履":[["リ","は(く)"],"リ","は(く)"],
+"屯":[["トン"],"",""],
+"岐":[["キ"],"",""],
+"岬":[["コウ"],"",""],
+"岳":[["ガク"],"",""],
+"峠":[["とうげ"],"",""],
+"峡":[["キョウ"],"",""],
+"峰":[["ホウ"],"",""],
+"崇":[["スウ"],"",""],
+"崎":[["キ"],"",""],
+"崖":[["ガイ"],"",""],
+"崩":[["ホウ"],"",""],
+"嵐":[["あらし"],"","あらし"],
+"巡":[["ジュン"],"",""],
+"巧":[["コウ"],"",""],
+"己":[["コ"],"",""],
+"巾":[["キン"],"",""],
+"帆":[["ハン"],"",""],
+"帝":[["テイ"],"",""],
+"帥":[["スイ"],"",""],
+"幕":[["マク"],"",""],
+"幣":[["ヘイ"],"",""],
+"幹":[["カン"],"カン",""],
+"幻":[["ゲン"],"",""],
+"幽":[["ユウ"],"",""],
+"序":[["ジョ"],"ジョ",""],
+"庶":[["ショ"],"",""],
+"庸":[["ヨウ"],"",""],
+"廃":[["ハイ"],"",""],
+"廉":[["レン"],"",""],
+"廊":[["ロウ"],"",""],
+"廷":[["テイ"],"",""],
+"弁":[["ベン"],"ベン",""],
+"弄":[["ロウ"],"",""],
+"弊":[["ヘイ"],"ヘイ",""],
+"弐":[["ニ"],"",""],
+"弔":[["チョウ"],"",""],
+"弥":[["ミ"],"",""],
+"弦":[["ゲン"],"",""],
+"弧":[["コ"],"",""],
+"弾":[["ひ(く)"],"","ひ(く)"],
+"彙":[["イ"],"",""],
+"彩":[["サイ"],"",""],
+"彫":[["チョウ"],"",""],
+"彰":[["ショウ"],"",""],
+"影":[["エイ","かげ"],"エイ","かげ"],
+"往":[["オウ"],"オウ",""],
+"征":[["セイ"],"",""],
+"徐":[["ジョ"],"ジョ",""],
+"従":[["したが(う)"],"","したが(う)"],
+"循":[["ジュン"],"ジュン",""],
+"微":[["ビ"],"",""],
+"徳":[["トク"],"",""],
+"徴":[["チョウ"],"",""],
+"徹":[["テツ"],"テツ",""],
+"忌":[["キ"],"",""],
+"忍":[["ニン"],"",""],
+"忠":[["チュウ"],"",""],
+"怠":[["タイ"],"",""],
+"怨":[["エン"],"",""],
+"怪":[["ケ"],"ケ",""],
+"恒":[["コウ"],"",""],
+"恣":[["シ"],"",""],
+"恨":[["コン","うら(む)"],"コン","うら(む)"],
+"恩":[["オン"],"",""],
+"恭":[["キョウ"],"",""],
+"悔":[["く(いる)","カイ"],"カイ","く(いる)"],
+"悟":[["ゴ"],"ゴ",""],
+"悠":[["ユウ"],"",""],
+"悦":[["エツ"],"",""],
+"悼":[["トウ"],"",""],
+"惑":[["ワク"],"ワク",""],
+"惜":[["セキ"],"",""],
+"惧":[["ク"],"",""],
+"惨":[["サン","みじ(め)"],"サン","みじ(め)"],
+"惰":[["ダ"],"",""],
+"愁":[["シュウ"],"",""],
+"愉":[["ユ"],"",""],
+"愚":[["グ"],"",""],
+"慄":[["リツ"],"",""],
+"慈":[["ジ"],"",""],
+"態":[["タイ"],"タイ",""],
+"慌":[["コウ"],"",""],
+"慎":[["シン","つつし(む)"],"シン","つつし(む)"],
+"慕":[["ボ"],"",""],
+"慢":[["マン"],"マン",""],
+"慨":[["ガイ"],"",""],
+"慮":[["リョ"],"リョ",""],
+"慰":[["イ"],"",""],
+"慶":[["ケイ"],"",""],
+"憂":[["ユウ"],"",""],
+"憤":[["フン"],"",""],
+"憧":[["ショウ"],"",""],
+"憩":[["ケイ"],"ケイ",""],
+"憬":[["ケイ"],"",""],
+"憲":[["ケン"],"",""],
+"憶":[["オク"],"オク",""],
+"憾":[["カン"],"",""],
+"懇":[["コン"],"",""],
+"懐":[["なつ(かしい)","ふところ"],"","なつ(かしい)"],
+"懲":[["チョウ"],"",""],
+"懸":[["ケン"],"ケン",""],
+"我":[["ガ"],"ガ",""],
+"戒":[["カイ"],"",""],
+"戚":[["ソク"],"",""],
+"戯":[["ギ"],"",""],
+"戴":[["タイ"],"タイ",""],
+"房":[["ボウ"],"",""],
+"扇":[["セン"],"セン",""],
+"扉":[["ヒ"],"",""],
+"扱":[["あつか(い)"],"",""],
+"扶":[["フ"],"",""],
+"抄":[["ショウ"],"",""],
+"把":[["ハ"],"",""],
+"抑":[["ヨク"],"",""],
+"抗":[["コウ"],"",""],
+"択":[["タク"],"",""],
+"披":[["ヒ"],"",""],
+"抵":[["テイ"],"",""],
+"抹":[["マツ"],"",""],
+"抽":[["チュウ"],"",""],
+"拉":[["ラツ"],"",""],
+"拍":[["ハク"],"",""],
+"拐":[["カイ"],"",""],
+"拒":[["キョ"],"",""],
+"拓":[["タク"],"",""],
+"拘":[["コウ"],"",""],
+"拙":[["セツ"],"",""],
+"拠":[["キョ","コ"],"キョ",""],
+"括":[["カツ"],"",""],
+"拭":[["ショク"],"",""],
+"拳":[["ケン"],"",""],
+"拶":[["サツ"],"サツ",""],
+"拷":[["ゴウ"],"",""],
+"挑":[["チョウ"],"",""],
+"挨":[["アイ"],"アイ",""],
+"挫":[["ザ"],"",""],
+"振":[["ふ(る)","ふ(るう)"],"","ふ(る)"],
+"挿":[["ソウ"],"",""],
+"捉":[["ソク"],"",""],
+"捗":[["チョク"],"",""],
+"据":[["キョ"],"",""],
+"捻":[["ネン"],"",""],
+"掌":[["ショウ"],"",""],
+"排":[["ハイ"],"ハイ",""],
+"控":[["ひか(える)"],"","ひか(える)"],
+"推":[["スイ","お(す)"],"スイ","お(す)"],
+"措":[["ソ"],"",""],
+"掲":[["かか(げる)"],"",""],
+"描":[["か(く)"],"","か(く)"],
+"提":[["テイ"],"テイ",""],
+"揚":[["あ(がる)"],"",""],
+"握":[["にぎ(る)"],"","にぎ(る)"],
+"揮":[["キ"],"",""],
+"援":[["エン"],"エン",""],
+"揺":[["ゆ(れる)"],"",""],
+"搬":[["ハン"],"",""],
+"搭":[["トウ"],"トウ",""],
+"携":[["ケイ"],"ケイ",""],
+"搾":[["サク"],"",""],
+"摂":[["セツ"],"",""],
+"摘":[["テキ"],"",""],
+"摩":[["マ"],"",""],
+"摯":[["シ"],"",""],
+"撃":[["ゲキ"],"ゲキ",""],
+"撤":[["テツ"],"テツ",""],
+"撮":[["と(る)"],"","と(る)"],
+"撲":[["ボク"],"",""],
+"擁":[["ヨウ"],"",""],
+"擦":[["サツ"],"",""],
+"擬":[["ギ"],"",""],
+"攻":[["コウ"],"コウ",""],
+"敏":[["ビン"],"",""],
+"敢":[["カン"],"",""],
+"敵":[["テキ"],"テキ",""],
+"敷":[["フ"],"",""],
+"斉":[["セイ"],"",""],
+"斎":[["サイ"],"",""],
+"斑":[["ハン"],"",""],
+"斗":[["ト"],"",""],
+"斜":[["シャ"],"",""],
+"斤":[["キン"],"",""],
+"斥":[["セキ"],"",""],
+"施":[["シ"],"",""],
+"旋":[["セン"],"",""],
+"既":[["キ"],"キ",""],
+"旦":[["ダン"],"",""],
+"旨":[["シ"],"",""],
+"旬":[["ジュン"],"",""],
+"旺":[["オウ"],"",""],
+"昆":[["コン"],"",""],
+"昧":[["マイ"],"",""],
+"是":[["ゼ"],"",""],
+"晶":[["ショウ"],"",""],
+"暁":[["ギョウ"],"",""],
+"暇":[["カ","ひま"],"カ","ひま"],
+"暦":[["レキ"],"",""],
+"暫":[["ザン"],"",""],
+"曖":[["アイ"],"",""],
+"曹":[["ソウ"],"",""],
+"曽":[["ソウ"],"",""],
+"朕":[["チン"],"",""],
+"朗":[["ロウ"],"",""],
+"朱":[["シュ"],"",""],
+"朴":[["ボク"],"ボク",""],
+"朽":[["キュウ"],"",""],
+"杉":[["サン"],"",""],
+"析":[["セキ"],"セキ",""],
+"枕":[["チン"],"",""],
+"枠":[["わく"],"",""],
+"枢":[["スウ"],"",""],
+"架":[["カ"],"",""],
+"柄":[["がら"],"","がら"],
+"某":[["ボウ"],"",""],
+"染":[["セン"],"セン",""],
+"柳":[["リュウ"],"",""],
+"柵":[["サク"],"",""],
+"柿":[["シ"],"",""],
+"栃":[["とち"],"",""],
+"栓":[["セン"],"",""],
+"株":[["かぶ"],"",""],
+"核":[["カク"],"",""],
+"栽":[["サイ"],"",""],
+"桁":[["コウ"],"",""],
+"桃":[["もも"],"","もも"],
+"桑":[["ソウ"],"",""],
+"桜":[["さくら"],"","さくら"],
+"桟":[["サン"],"",""],
+"梗":[["コウ"],"",""],
+"梨":[["なし"],"","なし"],
+"棄":[["キ"],"",""],
+"棋":[["キ"],"",""],
+"棚":[["ホウ"],"",""],
+"棟":[["トウ"],"",""],
+"棺":[["カン"],"",""],
+"椅":[["イ"],"イ",""],
+"椎":[["ツイ"],"",""],
+"楷":[["カイ"],"",""],
+"楼":[["ロウ"],"",""],
+"概":[["ガイ"],"",""],
+"槽":[["ソウ"],"",""],
+"模":[["ボ"],"ボ",""],
+"樹":[["ジュ"],"",""],
+"欄":[["ラン"],"",""],
+"欺":[["ギ"],"",""],
+"款":[["カン"],"",""],
+"歓":[["カン"],"カン",""],
+"殉":[["ジュン"],"",""],
+"殊":[["シュ"],"",""],
+"殖":[["ショク"],"",""],
+"殴":[["なぐ(る)"],"","なぐ(る)"],
+"殻":[["カク"],"",""],
+"毀":[["キ"],"",""],
+"氾":[["ハン"],"",""],
+"汁":[["ジュウ"],"",""],
+"汎":[["ハン"],"",""],
+"江":[["コウ"],"",""],
+"汰":[["タ"],"",""],
+"沃":[["ヨウ"],"",""],
+"沖":[["おき"],"",""],
+"沙":[["サ"],"",""],
+"没":[["ボツ"],"",""],
+"沢":[["タク"],"タク",""],
+"沼":[["ショウ"],"",""],
+"沿":[["エン"],"",""],
+"泌":[["ヒツ"],"",""],
+"泡":[["ホウ"],"",""],
+"泰":[["タイ"],"",""],
+"洞":[["ドウ"],"",""],
+"津":[["シン"],"",""],
+"洪":[["コウ"],"",""],
+"派":[["ハ"],"",""],
+"浄":[["ジョウ"],"",""],
+"浜":[["はま"],"",""],
+"浦":[["ホ"],"",""],
+"浪":[["ロウ"],"",""],
+"浸":[["シン"],"",""],
+"涯":[["ガイ"],"ガイ",""],
+"淑":[["シュク"],"",""],
+"淡":[["タン"],"",""],
+"淫":[["イン"],"",""],
+"添":[["そ(う)","テン"],"テン","そ(う)"],
+"渇":[["カツ"],"",""],
+"渉":[["ショウ"],"",""],
+"渋":[["ジュウ"],"ジュウ",""],
+"渓":[["ケイ"],"",""],
+"渦":[["カ"],"",""],
+"湧":[["ユウ"],"",""],
+"源":[["ゲン","みなもと"],"ゲン","みなもと"],
+"溝":[["コウ"],"",""],
+"溺":[["デキ"],"",""],
+"滅":[["メツ"],"メツ",""],
+"滋":[["ジ"],"",""],
+"滑":[["カツ"],"",""],
+"滝":[["たき"],"","たき"],
+"滞":[["タイ"],"タイ",""],
+"漂":[["ヒョウ"],"",""],
+"漆":[["シツ"],"",""],
+"漏":[["ロウ","も(らす)"],"ロウ","も(らす)"],
+"漠":[["バク"],"バク",""],
+"漫":[["マン"],"マン",""],
+"漬":[["シ"],"",""],
+"漸":[["ゼン"],"",""],
+"潔":[["ケツ"],"",""],
+"潜":[["セン"],"",""],
+"潟":[["セキ"],"",""],
+"潤":[["ジュン"],"",""],
+"潮":[["チョウ"],"",""],
+"潰":[["カイ"],"",""],
+"澄":[["チョウ"],"",""],
+"激":[["ゲキ"],"ゲキ",""],
+"濁":[["ダク"],"",""],
+"濫":[["ラン"],"",""],
+"瀬":[["せ"],"",""],
+"災":[["サイ"],"サイ",""],
+"炉":[["ロ"],"",""],
+"炊":[["スイ"],"",""],
+"炎":[["エン"],"エン","ほのお"],
+"為":[["イ"],"イ",""],
+"烈":[["レツ"],"",""],
+"焦":[["ショウ","あせ(る)"],"ショウ","あせ(る)"],
+"煎":[["セン"],"",""],
+"煩":[["ハン"],"",""],
+"煮":[["に(る)"],"","に(る)"],
+"熊":[["ユウ"],"",""],
+"熟":[["ジュク"],"",""],
+"爪":[["つめ"],"","つめ"],
+"爵":[["シャク"],"",""],
+"爽":[["ソウ"],"",""],
+"牙":[["ガ"],"",""],
+"牲":[["セイ"],"",""],
+"犠":[["ギ"],"",""],
+"狂":[["キョウ"],"",""],
+"狩":[["シュ"],"",""],
+"猛":[["モウ"],"モウ",""],
+"猟":[["リョウ"],"",""],
+"献":[["ケン"],"",""],
+"猶":[["ユウ"],"",""],
+"猿":[["エン","さる"],"エン","さる"],
+"獄":[["ゴク"],"",""],
+"獣":[["ジュウ"],"",""],
+"獲":[["カク"],"カク",""],
+"玄":[["ゲン"],"ゲン",""],
+"玩":[["ガン"],"",""],
+"珠":[["シュ"],"",""],
+"班":[["ハン"],"",""],
+"琴":[["キン"],"",""],
+"瑠":[["ル"],"",""],
+"璃":[["リ"],"",""],
+"璧":[["ヘキ"],"ヘキ",""],
+"璽":[["ジ"],"",""],
+"瓦":[["ガ"],"",""],
+"甚":[["ジン"],"",""],
+"甲":[["コウ"],"",""],
+"畏":[["イ"],"",""],
+"畔":[["ハン"],"",""],
+"畝":[["ボウ"],"",""],
+"畿":[["キ"],"",""],
+"疎":[["ソ"],"ソ",""],
+"疫":[["エキ"],"",""],
+"疾":[["シツ"],"",""],
+"症":[["ショウ"],"ショウ",""],
+"痕":[["コン"],"",""],
+"痘":[["トウ"],"",""],
+"痢":[["リ"],"",""],
+"痩":[["や(せる)"],"","や(せる)"],
+"痴":[["チ"],"",""],
+"瘍":[["ヨウ"],"",""],
+"癒":[["ユ"],"",""],
+"癖":[["ヘキ"],"",""],
+"皇":[["コウ"],"",""],
+"盆":[["ボン"],"ボン",""],
+"益":[["エキ"],"エキ",""],
+"盛":[["セイ"],"",""],
+"盟":[["メイ"],"",""],
+"監":[["カン"],"",""],
+"盤":[["バン"],"",""],
+"盲":[["モウ"],"モウ",""],
+"盾":[["ジュン"],"",""],
+"眉":[["まゆ"],"","まゆ"],
+"眺":[["なが(める)"],"",""],
+"眼":[["ガン"],"",""],
+"睡":[["スイ"],"スイ",""],
+"督":[["トク"],"",""],
+"睦":[["ボク"],"",""],
+"瞬":[["シュン","またた(く)"],"シュン","またた(く)"],
+"瞭":[["リョウ"],"",""],
+"瞳":[["ドウ"],"",""],
+"矛":[["ム"],"",""],
+"矯":[["キョウ"],"",""],
+"砕":[["サイ"],"",""],
+"砲":[["ホウ"],"",""],
+"硝":[["ショウ"],"",""],
+"硫":[["リュウ"],"",""],
+"碁":[["ゴ"],"",""],
+"碑":[["ヒ"],"",""],
+"磁":[["ジ"],"",""],
+"礁":[["ショウ"],"",""],
+"礎":[["ソ"],"ソ",""],
+"祉":[["シ"],"",""],
+"祥":[["ショウ"],"",""],
+"禅":[["ゼン"],"",""],
+"禍":[["カ"],"",""],
+"秀":[["シュウ"],"",""],
+"秘":[["ヒ"],"ヒ",""],
+"租":[["ソ"],"",""],
+"秩":[["チツ"],"チツ",""],
+"称":[["ショウ"],"",""],
+"稚":[["チ"],"",""],
+"稲":[["トウ"],"",""],
+"稼":[["カ"],"",""],
+"稽":[["ケイ"],"",""],
+"稿":[["コウ"],"コウ",""],
+"穀":[["コク"],"",""],
+"穂":[["スイ"],"",""],
+"穏":[["オン"],"",""],
+"穫":[["カク"],"",""],
+"穴":[["ケツ"],"",""],
+"窃":[["セツ"],"",""],
+"窒":[["チツ"],"",""],
+"窟":[["クツ"],"",""],
+"窮":[["キュウ"],"",""],
+"窯":[["ヨウ"],"",""],
+"竜":[["リュウ"],"",""],
+"端":[["タン"],"タン",""],
+"筋":[["キン"],"キン",""],
+"策":[["サク"],"サク",""],
+"箇":[["カ"],"",""],
+"箋":[["セン"],"セン",""],
+"箸":[["はし"],"","はし"],
+"範":[["ハン"],"",""],
+"篤":[["トク"],"",""],
+"簿":[["ボ"],"",""],
+"籠":[["ロウ"],"",""],
+"粋":[["スイ"],"",""],
+"粗":[["ソ"],"",""],
+"粘":[["ねば(る)"],"",""],
+"粛":[["シュク"],"",""],
+"粧":[["ショウ"],"",""],
+"糖":[["トウ"],"トウ",""],
+"糧":[["リョウ"],"",""],
+"系":[["ケイ"],"",""],
+"糾":[["キュウ"],"",""],
+"紋":[["モン"],"",""],
+"納":[["ノウ","ナッ"],"ノウ","おさ(める)"],
+"紛":[["フン"],"",""],
+"素":[["ソ","ス"],"ソ",""],
+"紡":[["ボウ"],"",""],
+"索":[["サク"],"サク",""],
+"紫":[["むらさき"],"",""],
+"累":[["ルイ"],"",""],
+"紳":[["シン"],"",""],
+"紺":[["コン"],"",""],
+"絞":[["コウ"],"",""],
+"統":[["トウ"],"トウ",""],
+"絹":[["ケン"],"",""],
+"継":[["つ(ぐ)"],"",""],
+"維":[["イ"],"",""],
+"綱":[["コウ"],"",""],
+"網":[["モウ"],"",""],
+"綻":[["タン"],"",""],
+"緊":[["キン"],"キン",""],
+"締":[["し(める)"],"","し(める)"],
+"緩":[["カン"],"",""],
+"緯":[["イ"],"",""],
+"緻":[["チ"],"",""],
+"縁":[["エン"],"",""],
+"縄":[["なわ"],"",""],
+"縛":[["バク"],"",""],
+"縦":[["ジュウ"],"",""],
+"縫":[["ホウ"],"",""],
+"縮":[["シュク"],"シュク","ちぢ(む)"],
+"繁":[["ハン"],"",""],
+"繊":[["セン"],"",""],
+"織":[["ショク"],"",""],
+"繕":[["ゼン"],"",""],
+"繭":[["ケン"],"",""],
+"繰":[["く(る)"],"","く(る)"],
+"罰":[["バツ"],"",""],
+"罵":[["バ"],"",""],
+"罷":[["ヒ"],"",""],
+"羅":[["ラ"],"",""],
+"羞":[["シュウ"],"",""],
+"羨":[["セン"],"",""],
+"義":[["ギ"],"ギ",""],
+"翁":[["オウ"],"",""],
+"翻":[["ホン"],"ホン",""],
+"翼":[["ヨク"],"",""],
+"耐":[["タイ"],"",""],
+"耗":[["モウ"],"",""],
+"聖":[["セイ"],"",""],
+"聴":[["き(く)"],"","き(く)"],
+"肖":[["ショウ"],"",""],
+"肘":[["ひじ"],"","ひじ"],
+"肝":[["きも"],"","きも"],
+"股":[["コ"],"",""],
+"肢":[["シ"],"",""],
+"肥":[["ヒ"],"",""],
+"肪":[["ボウ"],"",""],
+"肺":[["ハイ"],"ハイ",""],
+"胆":[["タン"],"",""],
+"胎":[["タイ"],"",""],
+"胞":[["ホウ"],"",""],
+"胴":[["ドウ"],"",""],
+"脅":[["キョウ"],"",""],
+"脊":[["セキ"],"",""],
+"脚":[["キャク"],"",""],
+"脱":[["ぬ(ぐ)"],"","ぬ(ぐ)"],
+"腎":[["ジン"],"",""],
+"腐":[["くさ(る)"],"",""],
+"腫":[["シュ"],"",""],
+"腺":[["セン"],"",""],
+"膜":[["マク"],"",""],
+"膨":[["ボウ"],"",""],
+"膳":[["ゼン"],"",""],
+"臆":[["オク"],"",""],
+"臨":[["リン"],"",""],
+"臭":[["くさ(い)"],"","くさ(い)"],
+"至":[["シ"],"",""],
+"致":[["チ","いた(す)"],"チ","いた(す)"],
+"臼":[["キュウ"],"",""],
+"興":[["キョウ"],"キョウ",""],
+"舌":[["ゼツ"],"",""],
+"舎":[["シャ"],"",""],
+"舗":[["ホ"],"ホ",""],
+"舶":[["ハク"],"",""],
+"舷":[["ゲン"],"",""],
+"艇":[["テイ"],"",""],
+"艦":[["カン"],"",""],
+"艶":[["エン"],"",""],
+"芋":[["ウ"],"",""],
+"芝":[["しば"],"","しば"],
+"芯":[["シン"],"シン",""],
+"芳":[["ホウ"],"",""],
+"苗":[["ビョウ"],"",""],
+"苛":[["カ"],"",""],
+"茂":[["モ"],"",""],
+"茎":[["ケイ"],"",""],
+"茨":[["シ"],"",""],
+"荘":[["ソウ"],"",""],
+"菊":[["キク"],"",""],
+"菌":[["キン"],"",""],
+"華":[["カ"],"",""],
+"萎":[["イ"],"",""],
+"葛":[["カツ"],"",""],
+"葬":[["ソウ"],"ソウ",""],
+"蓄":[["チク"],"",""],
+"蓋":[["ふた"],"","ふた"],
+"蔑":[["ベツ"],"",""],
+"蔽":[["ヘイ"],"",""],
+"薦":[["セン"],"セン",""],
+"薪":[["シン"],"",""],
+"薫":[["クン"],"",""],
+"藍":[["ラン"],"",""],
+"藤":[["トウ"],"トウ",""],
+"藩":[["ハン"],"",""],
+"藻":[["ソウ"],"",""],
+"虎":[["コ"],"",""],
+"虐":[["ギャク"],"",""],
+"虚":[["キョ"],"",""],
+"虜":[["リョ"],"",""],
+"虞":[["グ"],"",""],
+"虹":[["コウ"],"",""],
+"蚊":[["か"],"","か"],
+"蚕":[["サン"],"",""],
+"蛇":[["ジャ","へび"],"ジャ","へび"],
+"蛍":[["ケイ"],"",""],
+"蛮":[["バン"],"",""],
+"蜂":[["ホウ"],"",""],
+"蜜":[["ミツ"],"",""],
+"融":[["ユウ"],"",""],
+"衆":[["シュウ"],"",""],
+"衛":[["エイ"],"",""],
+"衝":[["ショウ"],"ショウ",""],
+"衡":[["コウ"],"",""],
+"衰":[["スイ"],"",""],
+"衷":[["チュウ"],"",""],
+"袖":[["シュウ"],"",""],
+"裁":[["サイ"],"サイ",""],
+"裂":[["レツ"],"",""],
+"裕":[["ユウ"],"",""],
+"裸":[["ラ"],"",""],
+"裾":[["キョ"],"",""],
+"褐":[["カツ"],"",""],
+"褒":[["ほ(める)"],"","ほ(める)"],
+"襟":[["キン"],"",""],
+"襲":[["シュウ"],"",""],
+"覆":[["フク"],"",""],
+"覇":[["ハ"],"",""],
+"視":[["シ"],"シ",""],
+"覧":[["ラン"],"ラン",""],
+"訂":[["テイ"],"",""],
+"訃":[["フ"],"",""],
+"討":[["トウ"],"トウ",""],
+"託":[["タク"],"",""],
+"訟":[["ショウ"],"",""],
+"訳":[["ヤク","わけ"],"ヤク","わけ"],
+"訴":[["ソ"],"",""],
+"診":[["シン"],"シン","み(る)"],
+"証":[["ショウ"],"ショウ",""],
+"詐":[["サ"],"",""],
+"詔":[["ショウ"],"",""],
+"詠":[["エイ"],"",""],
+"詣":[["ケイ"],"",""],
+"詮":[["セン"],"",""],
+"該":[["ガイ"],"",""],
+"詳":[["くわ(しい)"],"",""],
+"誇":[["コ"],"",""],
+"誉":[["ヨ"],"",""],
+"誓":[["ちか(う)"],"",""],
+"誕":[["タン"],"タン",""],
+"誘":[["さそ(う)"],"","さそ(う)"],
+"誠":[["セイ","まこと"],"セイ","まこと"],
+"請":[["セイ"],"セイ",""],
+"諦":[["あきら(める)"],"","あきら(める)"],
+"諧":[["カイ"],"",""],
+"諭":[["ユ"],"",""],
+"諮":[["シ"],"",""],
+"諾":[["ダク"],"",""],
+"謀":[["ボウ"],"",""],
+"謁":[["エツ"],"",""],
+"謄":[["トウ"],"",""],
+"謎":[["なぞ"],"","なぞ"],
+"謙":[["ケン"],"ケン",""],
+"謝":[["シャ","あやま(る)"],"シャ","あやま(る)"],
+"謡":[["ヨウ"],"",""],
+"謹":[["キン"],"",""],
+"譜":[["フ"],"",""],
+"譲":[["ジョウ","ゆず(る)"],"ジョウ","ゆず(る)"],
+"護":[["ゴ"],"ゴ",""],
+"豚":[["ぶた"],"","ぶた"],
+"豪":[["ゴウ"],"",""],
+"貌":[["ボウ"],"",""],
+"貞":[["テイ"],"",""],
+"貢":[["コウ"],"",""],
+"貪":[["タン"],"",""],
+"貫":[["カン"],"",""],
+"貴":[["キ"],"キ",""],
+"貼":[["は(る)"],"","は(る)"],
+"賀":[["ガ"],"ガ",""],
+"賂":[["ロ"],"",""],
+"賄":[["ワイ"],"",""],
+"賊":[["ゾク"],"",""],
+"賓":[["ヒン"],"",""],
+"賜":[["シ"],"",""],
+"賠":[["バイ"],"",""],
+"賦":[["フ"],"",""],
+"賭":[["ト"],"",""],
+"購":[["コウ"],"",""],
+"赦":[["シャ"],"",""],
+"赴":[["フ"],"",""],
+"趣":[["シュ"],"シュ",""],
+"距":[["キョ"],"",""],
+"跳":[["チョウ"],"",""],
+"践":[["セン"],"",""],
+"踏":[["ふ(む)"],"","ふ(む)"],
+"踪":[["ソウ"],"",""],
+"蹴":[["け(る)"],"","け(る)"],
+"躍":[["ヤク"],"ヤク",""],
+"軌":[["キ"],"",""],
+"軸":[["ジク"],"",""],
+"載":[["サイ"],"",""],
+"輝":[["キ"],"",""],
+"輩":[["ハイ"],"ハイ",""],
+"轄":[["カツ"],"",""],
+"辣":[["ラツ"],"",""],
+"辱":[["ジョク"],"ジョク",""],
+"迅":[["ジン"],"",""],
+"迫":[["ハク"],"",""],
+"迭":[["テツ"],"",""],
+"透":[["トウ"],"",""],
+"逐":[["チク"],"",""],
+"逓":[["テイ"],"",""],
+"逝":[["セイ"],"",""],
+"逮":[["タイ"],"タイ",""],
+"逸":[["イツ"],"",""],
+"遂":[["スイ"],"",""],
+"遇":[["グウ"],"",""],
+"遍":[["ヘン"],"",""],
+"遜":[["ソン"],"",""],
+"遡":[["ソ"],"",""],
+"遣":[["つか(う)"],"","つか(う)"],
+"遭":[["あ(う)"],"",""],
+"遮":[["シャ"],"",""],
+"遵":[["ジュン"],"",""],
+"遷":[["セン"],"",""],
+"遺":[["イ"],"イ",""],
+"避":[["ヒ"],"ヒ",""],
+"還":[["カン"],"",""],
+"那":[["ナ"],"",""],
+"邦":[["ホウ"],"",""],
+"邪":[["ジャ"],"ジャ",""],
+"邸":[["テイ"],"",""],
+"郎":[["ロウ"],"",""],
+"郭":[["カク"],"",""],
+"郷":[["キョウ"],"",""],
+"酌":[["シャク"],"",""],
+"酎":[["チュウ"],"",""],
+"酔":[["スイ"],"",""],
+"酢":[["サク"],"",""],
+"酪":[["ラク"],"",""],
+"酬":[["シュウ"],"",""],
+"酵":[["コウ"],"",""],
+"酷":[["コク"],"",""],
+"酸":[["サン","す(い)"],"サン","す(い)"],
+"醒":[["セイ"],"",""],
+"醜":[["シュウ"],"",""],
+"醸":[["ジョウ"],"",""],
+"采":[["サイ"],"",""],
+"釈":[["シャク"],"",""],
+"釜":[["フ"],"",""],
+"釣":[["つ(る)"],"",""],
+"鈴":[["すず"],"","すず"],
+"鉛":[["エン"],"エン",""],
+"鉢":[["ハチ"],"",""],
+"銃":[["ジュウ"],"",""],
+"銘":[["メイ"],"メイ",""],
+"銭":[["ぜに"],"","ぜに"],
+"鋳":[["チュウ"],"",""],
+"鋼":[["コウ"],"",""],
+"錠":[["ジョウ"],"",""],
+"錦":[["キン"],"",""],
+"錬":[["レン"],"",""],
+"錮":[["コ"],"",""],
+"錯":[["サク"],"サク",""],
+"鍋":[["なべ"],"","なべ"],
+"鍛":[["タン"],"",""],
+"鍵":[["かぎ"],"","かぎ"],
+"鎌":[["レン"],"",""],
+"鎖":[["サ"],"サ",""],
+"鎮":[["チン"],"",""],
+"鐘":[["ショウ"],"",""],
+"鑑":[["カン"],"カン",""],
+"閑":[["カン"],"",""],
+"閣":[["カク"],"カク",""],
+"閥":[["バツ"],"",""],
+"閲":[["エツ"],"",""],
+"闘":[["トウ"],"",""],
+"阜":[["フ"],"",""],
+"阻":[["ソ"],"",""],
+"附":[["フ"],"",""],
+"陛":[["ヘイ"],"",""],
+"陣":[["ジン"],"",""],
+"陥":[["カン"],"",""],
+"陪":[["バイ"],"",""],
+"陰":[["イン"],"イン",""],
+"陳":[["チン"],"",""],
+"陵":[["リョウ"],"",""],
+"陶":[["トウ"],"",""],
+"隆":[["リュウ"],"",""],
+"随":[["ズイ"],"",""],
+"隔":[["カク"],"",""],
+"隙":[["ゲキ"],"",""],
+"障":[["ショウ"],"ショウ",""],
+"隠":[["かく(れる)"],"",""],
+"隣":[["となり"],"","となり"],
+"隷":[["レイ"],"",""],
+"雄":[["ユウ"],"",""],
+"雅":[["ガ"],"",""],
+"雌":[["シ"],"",""],
+"離":[["リ","はな(れる)"],"リ","はな(れる)"],
+"雰":[["フン"],"",""],
+"雷":[["かみなり"],"",""],
+"需":[["ジュ"],"ジュ",""],
+"霊":[["レイ"],"",""],
+"霜":[["ソウ"],"",""],
+"霧":[["ム"],"",""],
+"露":[["ロ"],"ロ",""],
+"韻":[["イン"],"",""],
+"響":[["キョウ","ひび(く)"],"キョウ","ひび(く)"],
+"項":[["コウ"],"",""],
+"須":[["ス"],"ス",""],
+"頑":[["ガン"],"ガン",""],
+"頒":[["ハン"],"",""],
+"頓":[["トン"],"",""],
+"頰":[["キョウ"],"",""],
+"頻":[["ヒン"],"",""],
+"顎":[["あご"],"","あご"],
+"顕":[["ケン"],"",""],
+"顧":[["コ","かえり(みる)"],"コ","かえり(みる)"],
+"飢":[["キ"],"",""],
+"飼":[["か(う)"],"","か(う)"],
+"飽":[["ホウ"],"",""],
+"飾":[["ショク","かざ(る)"],"ショク","かざ(る)"],
+"餅":[["もち"],"",""],
+"餌":[["ジ"],"",""],
+"餓":[["ガ"],"",""],
+"駄":[["ダ"],"ダ",""],
+"駆":[["か(ける)"],"","か(ける)"],
+"駒":[["ク"],"",""],
+"騎":[["キ"],"",""],
+"騒":[["ソウ"],"",""],
+"騰":[["トウ"],"",""],
+"驚":[["キョウ","おどろ(く)"],"キョウ","おどろ(く)"],
+"骸":[["ガイ"],"",""],
+"髄":[["ズイ"],"",""],
+"鬱":[["ウツ"],"",""],
+"鬼":[["おに"],"",""],
+"魂":[["コン"],"",""],
+"魅":[["ミ"],"",""],
+"魔":[["マ"],"マ",""],
+"鮮":[["セン"],"セン",""],
+"鯨":[["ゲイ"],"",""],
+"鶏":[["とり"],"","とり"],
+"鶴":[["カク"],"",""],
+"鹿":[["か"],"","か"],
+"麓":[["ロク"],"",""],
+"麗":[["レイ"],"",""],
+"麺":[["メン"],"",""],
+"麻":[["マ"],"",""],
+"黙":[["モク"],"",""],
+"鼓":[["コ"],"",""],
+"贅":[["ゼイ"],"ゼイ",""],
+"槍":[["やり"],"","やり"],
+"塵":[["ちり","ジン"],"ジン","ちり"],
+"諺":[["ことわざ"],"","ことわざ"]
+};
+
 // Wygenerowane przez tools/ctx_merge.js z work/pilot.json – nie edytuj ręcznie (popraw plik roboczy i scal ponownie).
 // Zdania do słówek (CTX_V, klucz zapis|czytanie) i dane kanji (CTX_K): format w SCHEMA.md → „CTX”.
 window.CTX_V = window.CTX_V || {};
@@ -28161,7 +30481,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-21 18:07";
+window.APP_VERSION = "2026-10-21 20:38";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -28328,7 +30648,7 @@ function questionHTML(it) {
 }
 function reviewHTML(x) {
   const it = personaItem(fillExpl(x.it)), a = answerOf(it);
-  return `<div class="card rv"><div class="small muted">${esc(skillOf(it))} · ${esc(it.label || TYPE_LABEL[it.t] || "")}</div>
+  return `<div class="card rv"><div class="small muted">${esc(skillOf(it))} · ${esc(it.label || TYPE_LABEL[it.t] || "")}${it.hint2 ? ` – ${esc(it.hint2)}` : ""}</div>
     <div class="rvq">${questionHTML(it)}</div>
     ${x.yours ? `<div class="rvy">✗ Twoja odpowiedź: ${x.yours}</div>` : `<div class="rvy">✗ Bez odpowiedzi</div>`}
     <div class="rva">✓ Poprawnie: <span class="jpline">${a.ans || ""}</span> ${a.say ? sayBtn(a.say) : ""}</div>
@@ -28420,7 +30740,7 @@ const showOf = id => typeof realiaById === "function" ? realiaById(id) : "";
 function renderItem(card, it, report, onNext, ctx = {}) {
   it = personaItem(fillExpl(it));
   const P = ctx.mode === "practice";
-  const head = `<div class="qtype">${it.sec ? `<span class="qsec">${esc(it.sec)}</span> · ` : ""}${esc(it.label || TYPE_LABEL[it.t] || "")}</div>${it.show ? showOf(it.show) : ""}`;
+  const head = `<div class="qtype">${it.sec ? `<span class="qsec">${esc(it.sec)}</span> · ` : ""}${esc(it.label || TYPE_LABEL[it.t] || "")}</div>${it.hint2 ? `<div class="qsub small muted">${esc(it.hint2)}</div>` : ""}${it.show ? showOf(it.show) : ""}`;
   let reported = false;
   const rep = (ok, yours) => { if (!reported) { reported = true; report(ok, yours); } };
   // ctx.onFinal(ok, {sc}) – ostateczny wynik zadania (po ewentualnej drugiej próbie); ctx.onHint() – użyto podpowiedzi
@@ -28490,7 +30810,7 @@ function renderItem(card, it, report, onNext, ctx = {}) {
       B.innerHTML = bank.map((t, k) => `<button class="tile" data-b="${k}">${ruby(t.w)}</button>`).join("");
       chk.disabled = bank.length > 0;
       $$("[data-k]", A).forEach(b => b.onclick = () => { if (locked) return; bank.push(ans.splice(+b.dataset.k, 1)[0]); draw(); });
-      $$("[data-b]", B).forEach(b => b.onclick = () => { if (locked) return; const t = bank.splice(+b.dataset.b, 1)[0]; ans.push(t); TTS.speak(reading(t.w), { rate: 1.1 }); draw(); });
+      $$("[data-b]", B).forEach(b => b.onclick = () => { if (locked) return; const t = bank.splice(+b.dataset.b, 1)[0]; ans.push(t); TTS.speak(t.w, { rate: 1.1 }); draw(); });
     }
     draw();
     const end = ok => { locked = true; const nv = $(".qnav", card); nv && nv.remove(); $(".try", card).innerHTML = ""; fin(ok, { yours: ok ? "" : ruby(ans.map(t => t.w).join("")) }); };
@@ -28703,17 +31023,20 @@ function genVocab(vocab, pool, n, kinds = [0, 1, 2, 3]) {
 // kinds: 0 znaczenie, 1 który znak, 2 przeczytaj słowo
 function genKanji(kanji, pool, kinds = [0, 1, 2]) {
   const res = [];
-  const kinfo = k => ({ r: [k[1], k[2]].filter(Boolean).join(" / "), m: k[3] });
+  // notka przy opcji: tylko najczęstsze czytania (CTX.mainText), rzadsze są na karcie znaku pod odpowiedzią
+  const rdOf = k => (window.CTX && CTX.mainText(k[0])) || [k[1], k[2]].filter(Boolean).join(" / ");
+  const kinfo = k => ({ r: rdOf(k), m: k[3] });
   kanji.forEach((k, i) => {
     const others = distract(kanji.length >= 5 ? kanji : pool, k, 3, x => x[0]);
     if (others.length < 3) return;
     const all = [k, ...others], kind = kinds[i % kinds.length];
     if (kind === 0) res.push({ t: "mc", label: "Co znaczy ten znak?", q: `<span style="font-family:var(--jpserif);font-size:60px">${k[0]}</span>`, big: true, opts: all.map(o => o[3]), a: 0, kj: k[0], skill: "Kanji",
-      info: all.map(o => ({ r: `${o[0]} – ${[o[1], o[2]].filter(Boolean).join(" / ")}` })) });
+      info: all.map(o => ({ r: `${o[0]} – ${rdOf(o)}` })) });
     else if (kind === 1) res.push({ t: "mc", label: "Który to znak?", q: "„" + k[3] + "”", opts: all.map(o => `<span style="font-size:30px">${o[0]}</span>`), a: 0, kj: k[0], skill: "Kanji", info: all.map(kinfo) });
     else {
       const ex = (k[4] || [])[0];
-      if (ex) { const p = plain(ex), r = reading(ex); res.push({ t: "type", label: "Przeczytaj słowo", q: `<span style="font-size:34px">${p}</span>`, a: [r], say: r, sayShow: ex, kj: k[0], skill: "Kanji" }); }
+      // pytanie o CAŁE słowo (先月 → せんげつ), nie o sam znak – mówi to podtytuł (poza podpisem ćwiczenia)
+      if (ex) { const p = plain(ex), r = reading(ex); res.push({ t: "type", label: "Przeczytaj słowo", sub: "czytanie słowa", hint2: p === k[0] ? `Sam znak ${k[0]} jako słowo.` : `Całe słowo ze znakiem ${k[0]} – wpisz czytanie całego słowa, nie samego znaku.`, q: `<span style="font-size:34px">${p}</span>`, a: [r], say: r, sayShow: ex, kj: k[0], skill: "Kanji" }); }
     }
   });
   return res;
@@ -28740,7 +31063,7 @@ function genWrite(chars, mode) {
     const label = mode === "trace" ? "Kolejność kresek" : "Napisz z pamięci";
     if (/^[぀-ヿ]$/.test(c)) { const ro = kanaRoma(K2H(c)), pl = toPolish(c); return { t: "write", ch: c, mode, label, m: ro || (/^[っッ]$/.test(c) ? "małe tsu (pauza)" : c), r: pl ? `czytaj „${pl}”` : "", skill: "Pisanie znaków" }; }
     const o = KD().by[c]; if (!o) return null;
-    return { t: "write", ch: c, mode, label, m: kMean(o), r: [kOn(o).join("・"), kKun(o).join("・")].filter(Boolean).join(" / "), skill: "Pisanie znaków" };
+    return { t: "write", ch: c, mode, label, m: kMean(o), r: (window.CTX && CTX.mainText(c)) || [kOn(o).join("・"), kKun(o).join("・")].filter(Boolean).join(" / "), skill: "Pisanie znaków" };
   }).filter(Boolean);
 }
 
@@ -28748,7 +31071,8 @@ function genWrite(chars, mode) {
 // Dane (format: SCHEMA.md → „CTX”):
 //   CTX_V["zapis|czytanie"] = [{ jp, pl }, …]   zdania do słówka (klucz jak karta powtórek v|zapis|czytanie, bez „v|”)
 //   CTX_K["znak"] = { main: ["ガク", "まな(ぶ)"], words: [["{大学|だいがく}", "uczelnia"], …], ex: [{ jp, pl }, …] }
-// W zdaniach słowa są oddzielone spacją (tylko ASCII): „{私|わたし} は {学生|がくせい} です。” – na ekranie i w głosie spacji nie ma,
+// W zdaniach słowa są oddzielone spacją (tylko ASCII): „{私|わたし} は {学生|がくせい} です。” – na ekranie i w głosie spacji nie ma
+// (do głosu idzie zdanie ze spacjami: SPK.text w core.js czyta samodzielne は/へ jako わ/え i dopiero wtedy usuwa spacje),
 // a romaji powstaje z kany słowo po słowie (samodzielne は → wa, へ → e, を → o). Romaji nigdy nie jest wpisane w dane.
 window.CTX = (function () {
   const V = () => window.CTX_V || {}, K = () => window.CTX_K || {};
@@ -28814,16 +31138,37 @@ window.CTX = (function () {
     if (o) { add(o.on, "on"); add(o.kun, "kun"); }
     return rows;
   }
-  // czytania: najważniejsze (main) i pozostałe (rzadsze)
+  // czytania: najważniejsze (main, 1–2) i pozostałe (rzadsze). main: ręcznie wybrane w CTX_K, a gdy ich nie ma –
+  // wyliczone z częstości w prawdziwych słowach kursu (CTX_M z content/ctx_main.js, heurystyka w tools/kread.js), nigdy kolejność słownika
+  const M = () => window.CTX_M || {};
+  const isOn = r => /[ァ-ヺ]/.test(r);
   function readings(c) {
-    const all = readingsOf(c), e = kanji(c);
-    if (!e || !Array.isArray(e.main) || !e.main.length) return null;
-    const isOn = r => /[ァ-ヺ]/.test(r);
-    const main = e.main.map(r => ({ r, kind: isOn(r) ? "on" : "kun" }));
+    const all = readingsOf(c), e = kanji(c), m = M()[c];
+    let main = e && Array.isArray(e.main) && e.main.length ? e.main : m && Array.isArray(m[0]) && m[0].length ? m[0] : null;
+    if (!main) { const x = all.find(y => y.kind === "on") || all[0]; main = x ? [x.r] : null; }
+    if (!main) return null;
+    main = main.map(r => ({ r, kind: isOn(r) ? "on" : "kun" }));
     const mk = new Set(main.map(x => normR(x.r)));
     const rest = all.filter(x => !mk.has(normR(x.r)));
-    return { main, rest };
+    return { main, rest, freq: !(e && e.main) };
   }
+  // najczęstsze czytanie danego rodzaju (kind: "on" | "kun") – do trybów quizu; "" gdy znak nie ma takiego w użyciu
+  function top(c, kind) {
+    const m = M()[c];
+    if (m) return (kind === "on" ? m[1] : m[2]) || "";
+    const R = readings(c), x = R && R.main.find(y => y.kind === kind);
+    return x ? x.r : "";
+  }
+  // wszystkie czytania znaku (znormalizowane, hiragana) – żeby dystraktor nigdy nie był innym poprawnym czytaniem tego znaku
+  function allNorm(c) {
+    const s = new Set(readingsOf(c).map(x => normR(x.r)));
+    const R = readings(c); if (R) R.main.forEach(x => s.add(normR(x.r)));
+    const m = M()[c]; if (m) [m[1], m[2]].filter(Boolean).forEach(r => s.add(normR(r)));
+    readingsOf(c).forEach(x => { if (/\(/.test(x.r)) s.add(K2H(x.r.replace(/\(.*$/, "").replace(/[～〜]/g, ""))); });
+    return s;
+  }
+  // krótko, w jednej linijce: „セン · さき” (kafelki, notki przy odpowiedziach)
+  const mainText = c => { const R = readings(c); return R ? R.main.map(x => x.r).join(" · ") : ""; };
 
   /* ---------- HTML ---------- */
   const rdHTML = x => {
@@ -28845,7 +31190,7 @@ window.CTX = (function () {
   function exHTML(list, o = {}) {
     list = (list || []).filter(e => e && e.jp);
     if (!list.length) return "";
-    return `<div class="ctx-exs${o.cls ? " " + o.cls : ""}">${o.title ? `<div class="ctx-h small">${o.title}</div>` : ""}${list.map(e => `<div class="ctx-ex">${sayBtn(jp(e.jp))}<div class="txt"><div class="jpl">${ruby(jp(e.jp))}</div><div class="ctx-ro">${esc(romaji(e.jp))}</div><div class="pl${S.settings.hidepl && !o.showPl ? " hid" : ""}">${esc(e.pl)}</div></div></div>`).join("")}</div>`;
+    return `<div class="ctx-exs${o.cls ? " " + o.cls : ""}">${o.title ? `<div class="ctx-h small">${o.title}</div>` : ""}${list.map(e => `<div class="ctx-ex">${sayBtn(e.jp)}<div class="txt"><div class="jpl">${ruby(jp(e.jp))}</div><div class="ctx-ro">${esc(romaji(e.jp))}</div><div class="pl${S.settings.hidepl && !o.showPl ? " hid" : ""}">${esc(e.pl)}</div></div></div>`).join("")}</div>`;
   }
   const vocabExHTML = (w, r, o = {}) => exHTML(vocabEx(w, r).slice(0, o.n || 2), o);
   function kanjiExHTML(c, o = {}) { const e = kanji(c); return e ? exHTML((e.ex || []).slice(0, o.n || 2), o) : ""; }
@@ -28875,7 +31220,7 @@ tr.hasx td{border-bottom:none}
 .fb .ctx-exs{margin-top:8px}`;
   try { const el = document.createElement("style"); el.id = "ctx-css"; el.textContent = css; document.head.appendChild(el); } catch (e) { }
 
-  return { jp, romaji, polish, gloss, vocabEx, kanji, readings, readingsOf, readHTML, wordsHTML, exHTML, vocabExHTML, kanjiExHTML, _reset: () => { GL = null; } };
+  return { jp, romaji, polish, gloss, vocabEx, kanji, readings, readingsOf, top, allNorm, mainText, normR, readHTML, wordsHTML, exHTML, vocabExHTML, kanjiExHTML, _reset: () => { GL = null; } };
 })();
 
 /* ===================== kanji: oficjalne listy, kolejność kresek, pisanie palcem ===================== */
@@ -28900,7 +31245,10 @@ const kOn = o => (o.on || "").split("・").filter(Boolean);
 const kKun = o => (o.kun || "").split("・").filter(Boolean);
 const kunWord = k => k.replace(/[()～]/g, "");          // た(べる) → たべる
 const kunStem = k => k.replace(/\(.*\)/, "").replace(/～/g, "");   // た(べる) → た
+// czytania znaku: wszędzie ten sam komponent (CTX.readHTML) – 1–2 najczęstsze na wierzchu, rzadsze zwinięte w „więcej czytań”
 function kReadLine(o) {
+  const h = window.CTX ? CTX.readHTML(o.c) : "";
+  if (h) return h;
   return `on: <span class="jp">${esc(kOn(o).join("・") || "–")}</span> · kun: <span class="jp">${esc(kKun(o).join("・") || "–")}</span>`;
 }
 // przykładowe słowa: z lekcji, a jeśli znak jest spoza kursu, ze słówek kursu
@@ -28915,10 +31263,9 @@ function kExamples(o, n = 3) {
   }
   return out;
 }
+// głos karty znaku: najważniejsze czytania samego znaku (先 → „せん、さき”), nigdy czytanie przykładowego słowa
 function kSay(o) {
-  const ex = kExamples(o, 1)[0];
-  if (ex) return reading(ex.jp);
-  return kunWord(kKun(o)[0] || "") || K2H(kOn(o)[0] || "") || "";
+  return SPK.kanji(o.c) || kunWord(kKun(o)[0] || "") || K2H(kOn(o)[0] || "") || "";
 }
 
 /* ---------- dane kolejności kresek (hanzi-writer-data-jp) ---------- */
@@ -29123,7 +31470,7 @@ function kanjiModal(c) {
   const inSrs = S.srs["k|" + c];
   const info = `<div class="kdet"><b style="font-size:20px">${esc(kMean(o))}</b>
     <div class="pills">${o.jlpt ? `<span class="pill">N${o.jlpt}</span>` : ""}${o.strokes ? `<span class="pill">${kreski(o.strokes)}</span>` : ""}${o.grade && o.grade <= 6 ? `<span class="pill">${o.grade}. klasa szkoły</span>` : o.grade ? `<span class="pill">jōyō</span>` : ""}${o.course ? `<span class="pill">w kursie</span>` : ""}</div>
-    ${cx ? CTX.readHTML(c) : `<div class="small">${kReadLine(o)}</div>`}</div>`;
+    ${kReadLine(o)}</div>`;
   const after = `<div class="kdet">
     ${cx ? CTX.wordsHTML(c, 5) + CTX.kanjiExHTML(c, { n: 2, title: "W zdaniu:" }) : ex.length ? `<ul class="ex-list">${ex.map(e => `<li>${sayBtn(e.jp)}<div class="txt"><div class="jpl">${ruby(e.jp)}</div>${e.pl ? `<div class="pl">${esc(e.pl)}</div>` : ""}</div></li>`).join("")}</ul>` : ""}
     ${mn ? `<div class="mn"><div>🧩 <b>Części:</b> ${esc(mn[0])}</div><div>💡 ${esc(mn[1])}</div></div>` : o.parts ? `<div class="mn">🧩 <b>Części:</b> <span class="jp">${esc([...o.parts].join(" + "))}</span></div>` : ""}
@@ -29183,7 +31530,7 @@ function viewKanjiAll(tab, q) {
     <div class="kall">${groups.map((g, gi) => `<div class="kgroup" data-g="${gi}">${tab === "kurs" ? `<h2 style="color:${g.color}">${esc(g.title)} <span class="pill">${g.list.length}</span></h2>` : ""}
       <div class="card kqbar"><div class="row">
         <b class="small">Quiz${tab === "kurs" ? " " + esc(g.short) : ""}:</b>
-        <button class="btn sm kq" data-g="${gi}" data-t="m">⚡ Znaczenie</button><button class="btn sm kq" data-g="${gi}" data-t="r">🔤 Czytanie</button><button class="btn sm kq" data-g="${gi}" data-t="w">✍️ Pisanie</button>
+        <button class="btn sm kq" data-g="${gi}" data-t="m">⚡ Znaczenie</button><button class="btn sm kq" data-g="${gi}" data-t="r">🔤 Czytanie</button><select class="kmode" aria-label="Które czytania w quizie czytania"><option value="main">najczęstsze czytania</option><option value="on">najczęstsze onyomi (音読み)</option><option value="kun">najczęstsze kunyomi (訓読み)</option></select><button class="btn sm kq" data-g="${gi}" data-t="w">✍️ Pisanie</button>
         ${big ? `<label class="small">zakres <select class="kscope"><option value="50">50 najczęstszych</option><option value="100">100 najczęstszych</option><option value="250">250 najczęstszych</option><option value="0">wszystkie</option></select></label>` : ""}
         <label class="small"><input type="checkbox" class="kskip"> pomiń znane ✓</label></div></div>
       <div class="kgrid ${tab === "kurs" ? "" : "compact"}"></div><div class="row kmore" style="justify-content:center;margin-top:10px"></div></div>`).join("")}
@@ -29216,7 +31563,10 @@ function viewKanjiAll(tab, q) {
     if (src.length < 4) src = pool;
     const back = `#/kanji/${tab}`;
     if (b.dataset.t === "w") return kWriteQuiz(pick(src, 10), back, g.color);
-    const make = () => b.dataset.t === "m" ? kqMeaning(pick(src, 16), pool) : kqReading(pick(src, 16), pool);
+    const md = ($(".kmode", el) || {}).value || "main";
+    if (b.dataset.t === "r" && md !== "main") { src = src.filter(o => kqHas(o, md)); if (src.length < 4) src = pool.filter(o => kqHas(o, md)); }
+    if (b.dataset.t === "r" && !src.length) { toast("Te znaki nie mają często używanego czytania tego rodzaju."); return; }
+    const make = () => b.dataset.t === "m" ? kqMeaning(pick(src, 16), pool) : kqReading(pick(src, 16), pool, md);
     runQuiz(app(), make(), { mode: "practice", src: "kanji:" + g.id, back, color: g.color, regen: make });
   });
 }
@@ -29233,29 +31583,76 @@ function kqMeaning(items, pool) {
   return items.map((o, i) => {
     const oth = kOthers(o, pool, 3, kMean), ex = kExamples(o, 1)[0];
     const exs = `${o.c}: ${kMean(o)} · on: ${kOn(o).join("・") || "–"} · kun: ${kKun(o).join("・") || "–"}${ex ? "<br>" + ex.jp + (ex.pl ? " – " + esc(ex.pl) : "") : ""}`;
-    const all = [o, ...oth], rd = x => [kOn(x).join("・"), kKun(x).join("・")].filter(Boolean).join(" / ");
+    const all = [o, ...oth], rd = x => window.CTX ? CTX.mainText(x.c) : [kOn(x).join("・"), kKun(x).join("・")].filter(Boolean).join(" / ");
     if (i % 2 === 0) return { t: "mc", label: "Co znaczy ten znak?", q: KBIG(o.c), big: true, opts: all.map(kMean), a: 0, kj: o.c, skill: "Kanji", info: all.map(x => ({ r: `${x.c} – ${rd(x)}` })) };
     return { t: "mc", label: "Który znak to…", q: "„" + kMean(o) + "”", opts: all.map(x => `<span style="font-family:var(--jpserif);font-size:32px">${x.c}</span>`), a: 0, kj: o.c, skill: "Kanji", info: all.map(x => ({ r: rd(x), m: kMean(x) })) };
   });
 }
-function kqReading(items, pool) {
-  const res = [];
-  items.forEach((o, i) => {
-    const on = kOn(o), kun = kKun(o), ex = kExamples(o, 1)[0];
-    const useKun = kun.length && (i % 2 === 1 || !on.length);
-    if (!on.length && !kun.length) return;
-    const exs = `${o.c} (${kMean(o)}) · on: ${on.join("・") || "–"} · kun: ${kun.join("・") || "–"}${ex ? "<br>" + ex.jp + (ex.pl ? " – " + esc(ex.pl) : "") : ""}`;
-    if (i % 3 === 2 && ex && HAS_KANJI.test(plain(ex.jp))) {
-      res.push({ t: "type", label: "Przeczytaj słowo", q: `<span style="font-family:var(--jpserif);font-size:40px">${plain(ex.jp)}</span>${ex.pl ? ` <span class="small muted">(${esc(ex.pl)})</span>` : ""}`, a: [reading(ex.jp)], say: reading(ex.jp), sayShow: ex.jp, kj: o.c, skill: "Kanji" });
-      return;
+// quiz czytania: tylko najczęstsze, praktyczne czytania (CTX.readings / CTX.top – częstość w prawdziwych słowach, nie kolejność słownika).
+// mode: "main" – najczęstsze czytania (on albo kun), "on" – najczęstsze onyomi, "kun" – najczęstsze kunyomi.
+// Każde pytanie mówi wprost, o co pyta: sam znak, całe słowo (先月 → せんげつ) albo słowo w zdaniu (czytanie z kontekstu).
+// Dystraktory: częste czytania INNYCH znaków, nigdy inne poprawne czytanie tego samego znaku.
+const kqHas = (o, mode) => !!(window.CTX && (mode === "main" ? CTX.readings(o.c) : CTX.top(o.c, mode)));
+function kqAnswer(o, mode, i) {
+  if (mode !== "main") return CTX.top(o.c, mode);
+  const R = CTX.readings(o.c); return R ? R.main[i % R.main.length].r : "";
+}
+function kqDistract(o, r, pool, n) {
+  const bad = CTX.allNorm(o.c), on = /[ァ-ヺ]/.test(r), out = [], seen = new Set([CTX.normR(r)]);
+  const tryAdd = x => {
+    if (out.length >= n || x.c === o.c) return;
+    const R = CTX.readings(x.c); if (!R) return;
+    for (const y of shuffle(R.main.map(z => z.r).concat([CTX.top(x.c, on ? "on" : "kun")]).filter(Boolean))) {
+      const k = CTX.normR(y);
+      if (/[ァ-ヺ]/.test(y) !== on || seen.has(k) || bad.has(k) || bad.has(K2H(y.replace(/\(.*$/, "").replace(/[～〜]/g, "")))) continue;
+      seen.add(k); out.push({ x, r: y }); return;
     }
-    const mine = useKun ? kun[0] : on[0];
-    const key = x => { const r = useKun ? kKun(x)[0] : kOn(x)[0]; return r ? kunWord(K2H(r)) : ""; };
-    const oth = kOthers(o, pool, 3, key).filter(x => key(x) !== kunWord(K2H(mine)));
-    const show = x => useKun ? kKun(x)[0] : kOn(x)[0];
-    res.push({ t: "mc", label: useKun ? "Czytanie kun (japońskie)" : "Czytanie on (chińskie)", q: KBIG(o.c) + `<div class="small muted">${esc(kMean(o))}</div>`, big: true,
-      opts: [mine, ...oth.map(show)].map(x => `<span class="jp" style="font-size:22px">${esc(x)}</span>`), a: 0, kj: o.c, skill: "Kanji", say: useKun ? kunWord(mine) : K2H(mine),
-      info: [o, ...oth].map(x => ({ r: `„${toPolish(kunWord(K2H(show(x) || "")))}”`, m: `${x.c} – ${kMean(x)}` })) });
+  };
+  shuffle(pool.slice()).forEach(tryAdd);
+  if (out.length < n) shuffle(KD().list.filter(x => x.jlpt).slice(0, 800)).forEach(tryAdd);
+  return out;
+}
+// słowo ze znakiem w zdaniu z CTX_K: zdanie z podkreślonym słowem (bez furigany), reszta z furiganą
+function kqSentence(o) {
+  const e = window.CTX && CTX.kanji(o.c); if (!e) return null;
+  for (const s of shuffle((e.ex || []).slice())) {
+    const toks = String(s.jp || "").split(/ +/), ti = toks.findIndex(t => new RegExp("\\{[^|}]*" + o.c + "[^|}]*\\|").test(t));
+    if (ti < 0) continue;
+    const m = toks[ti].match(/\{([^|}]+)\|([^}]+)\}/); if (!m || !m[1].includes(o.c)) continue;
+    const shown = toks.map((t, j) => j === ti ? t.replace(m[0], `<u class="kqw">${m[1]}</u>`) : t).join("");
+    return { s, w: m[1], r: K2H(m[2]), mk: m[0], shown };
+  }
+  return null;
+}
+function kqReading(items, pool, mode = "main") {
+  const res = [], words = o => kExamples(o, 5).filter(e => HAS_KANJI.test(plain(e.jp)) && plain(e.jp) !== o.c && plain(e.jp).includes(o.c));
+  items.forEach((o, i) => {
+    if (!window.CTX) return;
+    // słowo i zdanie tylko w trybie „najczęstsze czytania” (tryby on/kun pytają o sam znak)
+    if (mode === "main" && i % 3 === 1) {
+      const ex = words(o)[(i >> 2) % Math.max(1, words(o).length)];
+      if (ex) {
+        const p = plain(ex.jp), r = reading(ex.jp);
+        res.push({ t: "type", label: "Przeczytaj słowo", sub: "czytanie słowa", hint2: `Całe słowo ze znakiem ${o.c} – wpisz czytanie całego słowa, nie samego znaku.`, q: `<span style="font-family:var(--jpserif);font-size:40px">${p}</span>${ex.pl ? ` <span class="small muted">(${esc(ex.pl)})</span>` : ""}`, a: [K2H(r)], say: K2H(r), sayShow: ex.jp, kj: o.c, skill: "Kanji" });
+        return;
+      }
+    }
+    if (mode === "main" && i % 3 === 2) {
+      const x = kqSentence(o);
+      if (x) {
+        res.push({ t: "type", label: "Przeczytaj podkreślone słowo w zdaniu", sub: "słowo w zdaniu", hint2: `Czytanie z kontekstu: wpisz, jak w tym zdaniu czyta się podkreślone ${x.w}.`, q: `<span class="jpl" style="font-size:22px;line-height:2">${x.shown}</span>`, tr: x.s.pl, a: [x.r], say: x.r, sayShow: x.mk, kj: o.c, skill: "Kanji" });
+        return;
+      }
+    }
+    const r = kqAnswer(o, mode, i >> 1); if (!r) return;
+    const on = /[ァ-ヺ]/.test(r), oth = kqDistract(o, r, pool, 3);
+    if (oth.length < 3) return;
+    const label = mode === "on" ? "Najczęstsze onyomi (音読み) samego znaku" : mode === "kun" ? "Najczęstsze kunyomi (訓読み) samego znaku" : "Jak najczęściej czytasz sam znak?";
+    const R = CTX.readings(o.c), also = R.main.map(x => x.r).filter(x => CTX.normR(x) !== CTX.normR(r));
+    res.push({ t: "mc", label, sub: "czytanie znaku", hint2: on ? "Czytanie on (chińskie) – zapis katakaną." : "Czytanie kun (japońskie) – zapis hiraganą, okurigana w nawiasie.", q: KBIG(o.c) + `<div class="small muted">${esc(kMean(o))}</div>`, big: true,
+      opts: [r, ...oth.map(y => y.r)].map(x => `<span class="jp" style="font-size:22px">${esc(x)}</span>`), a: 0, kj: o.c, skill: "Kanji", say: K2H(CTX.normR(r)),
+      ex: also.length ? `${o.c} często czytasz też ${also.join(" i ")}.` : "",
+      info: [{ r: `„${toPolish(K2H(CTX.normR(r)))}”`, m: `${o.c} – ${kMean(o)}` }, ...oth.map(y => ({ r: `„${toPolish(K2H(CTX.normR(y.r)))}”`, m: `${y.x.c} – ${kMean(y.x)}` }))] });
   });
   return res;
 }
@@ -37298,7 +39695,7 @@ function kanjiRowHTML(k, i, MN) {
   const words = e ? CTX.wordsHTML(k[0], 5) : exs.length ? `<ul class="ex-list ctx-words">${exs.map(x => `<li>${sayBtn(x.jp)}<div class="txt"><span class="jpl">${ruby(x.jp)}</span> <span class="ctx-ro">${esc(toRomaji(reading(x.jp)))}</span>${x.pl ? `<div class="pl">${esc(x.pl)}</div>` : ""}</div></li>`).join("")}</ul>` : "";
   return `<div class="card kx"><div class="kc kxt" data-k="${i}"><div class="k ka" data-anim="${k[0]}" data-size="76" data-tap="0"></div></div>
     <div class="kxb"><div class="m">${esc(k[3])}</div>
-      ${e ? CTX.readHTML(k[0]) : `<div class="small">on: <span class="jp">${esc(k[1] || "–")}</span> · kun: <span class="jp">${esc(k[2] || "–")}</span></div>`}
+      ${CTX.readHTML(k[0]) || `<div class="small">on: <span class="jp">${esc(k[1] || "–")}</span> · kun: <span class="jp">${esc(k[2] || "–")}</span></div>`}
       ${words}${e ? CTX.kanjiExHTML(k[0], { n: 1, title: "W zdaniu:" }) : ""}
       ${MN[k[0]] && S.settings.kmn !== false ? `<div class="kmn">💡 ${esc(MN[k[0]][1])}</div>` : ""}</div></div>`;
 }
@@ -37702,7 +40099,7 @@ function viewSearch(q) {
     const ps = kitSearch(s).slice(0, 15);
     res.innerHTML = (ps.length ? `<h3>Zwroty</h3>` + ps.map(p => `<div class="card sr">${sayBtn(kitSay(p), { raw: true })}<span class="w">${ruby(persona(p.jp))}</span><span style="flex:1">${esc(persona(p.pl))}</span><a class="pill" href="#/przetrwanie/${p.sit}">🛟 ${esc(KIT().sit[p.sit].title)}</a></div>`).join("") : "")
       + (gs.length ? `<h3>Gramatyka</h3>` + gs.map(({ g, l, L }) => `<a class="card sr" href="#/lesson/${l.id}/learn"><span class="pill">${esc(L.short)}</span><span>${ruby(esc(g.title))}</span></a>`).join("") : "")
-      + (ks.length ? `<h3>Kanji</h3>` + ks.map(({ k, l, L }) => `<div class="card sr"><span class="w" style="font-family:var(--jpserif);font-size:30px;min-width:50px">${k[0]}</span><span style="flex:1">${esc(k[3])} <span class="small muted jp">${esc(k[1])} · ${esc(k[2])}</span></span><a class="pill" href="#/lesson/${l.id}/kanji">${esc(L.short)} · ${l._n}</a></div>`).join("") : "")
+      + (ks.length ? `<h3>Kanji</h3>` + ks.map(({ k, l, L }) => `<div class="card sr"><span class="w" style="font-family:var(--jpserif);font-size:30px;min-width:50px">${k[0]}</span><span style="flex:1">${esc(k[3])}${CTX.readHTML(k[0]) || ` <span class="small muted jp">${esc(k[1])} · ${esc(k[2])}</span>`}</span><a class="pill" href="#/lesson/${l.id}/kanji">${esc(L.short)} · ${l._n}</a></div>`).join("") : "")
       + (vs.length ? `<h3>Słówka</h3>` + vs.map(({ v, l, L }, i) => { const x = i < 15 ? CTX.vocabExHTML(v[0], v[1], { n: 1 }) : ""; return `<div class="card sr">${sayBtn(v[1], { raw: true })}<span class="w">${ruby(wordMarkup(v[0], v[1]))}</span><span style="flex:1">${esc(v[2])}</span><a class="pill" href="#/lesson/${l.id}/vocab">${esc(L.short)} · ${l._n}</a>${x ? `<div style="flex-basis:100%;min-width:0">${x}</div>` : ""}</div>`; }).join("") : "")
       || `<p class="muted">Nic nie znaleziono.</p>`;
   }
@@ -37765,11 +40162,11 @@ function viewSettings(sub) {
     • Animacja i sprawdzanie kolejności kresek: <b>hanzi-writer</b> (David Chanin, licencja MIT) i dane <b>hanzi-writer-data-jp</b> (k1LoW; dane z animCJK – LGPL 3, Make Me a Hanzi / Arphic Technology – Arphic Public License).${window.PWA_MODE ? ` Pełne teksty licencji: <a href="licenses/LGPL.txt">LGPL</a>, <a href="licenses/ARPHICPL.TXT">Arphic</a>, <a href="licenses/hanzi-writer.LICENSE">MIT</a>.` : ""}<br>
     • Listy JLPT nie są oficjalnie publikowane przez organizatora egzaminu; to powszechnie używany podział znaków z oficjalnej listy jōyō.</div></details>`;
   const v = $("#voice"); if (v) v.onchange = () => { S.settings.voice = v.value; saveState(); TTS.speak("こんにちは。よろしくおねがいします。"); };
-  const vf = $("#tvf"); if (vf) vf.onclick = () => TTS.speak("駅はどこですか。", { gender: "f" });
-  const vm = $("#tvm"); if (vm) vm.onclick = () => TTS.speak("駅はどこですか。", { gender: "m" });
+  const vf = $("#tvf"); if (vf) vf.onclick = () => TTS.speak("{駅|えき}はどこですか。", { gender: "f" });
+  const vm = $("#tvm"); if (vm) vm.onclick = () => TTS.speak("{駅|えき}はどこですか。", { gender: "m" });
   const vp = $("#tvp"); if (vp) vp.onclick = () => { PLV = null; speakPL("Przepraszam, gdzie jest dworzec?"); };
   $("#rate").oninput = e => { S.settings.rate = +e.target.value; $("#rv").textContent = S.settings.rate; saveState(); };
-  $("#rate").onchange = () => TTS.speak("ゆっくり話してください。");
+  $("#rate").onchange = () => TTS.speak("ゆっくり{話|はな}してください。");
   $("#passm").onchange = e => { S.settings.pass = +e.target.value; saveState(); toast(`Test zaliczasz teraz od ${PASS}%.`); };
   $("#auto").onchange = e => { S.settings.autoplay = e.target.checked; saveState(); };
   $("#rom").onchange = e => { S.settings.romaji = e.target.checked; saveState(); };
