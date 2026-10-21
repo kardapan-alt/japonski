@@ -399,6 +399,15 @@ table.ctab td{padding:6px;white-space:nowrap}
 /* wybór głosu na ekranie „Zanim zaczniesz”: zaznaczony przycisk musi być wyraźny */
 .btn.meg.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn.meg.on::after{content:" ✓"}
+/* 🎯 poziom startowy i nowy start (src/lvl.js) */
+.lvlpick .lvlc{display:flex;flex-direction:column;gap:2px;max-width:100%}
+.lvlpick .lvlc .muted{font-size:12px}
+.lvlauto{display:block;color:var(--fg2)}
+.pill.lvlauto{display:inline-block;background:var(--okbg);color:var(--fg)}
+.li.auto .num{background:var(--okbg);color:var(--fg)}
+.lvlhead{justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.lvlbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:61;background:var(--fg);color:var(--bg);padding:8px 8px 8px 16px;border-radius:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 32px)}
+.lvlbar .ib{color:inherit;background:transparent}
 </style></head><body>
 <header class="top"><div class="topin"><a class="logo" href="#/"><span class="hanko">日</span><span class="tlabel">Nauka japońskiego</span></a><span class="sp"></span>
 <a class="tbtn" data-nav="review" href="#/review">🔁<span class="tlabel"> Powtórki</span><span class="badge" id="revbadge" style="display:none"></span></a>
@@ -28152,7 +28161,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-17 18:44";
+window.APP_VERSION = "2026-10-21 18:07";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -31721,7 +31730,7 @@ const profName = p => p.name || (p.id === "p0" ? "Osoba 1" : "Nowa osoba");
 function profSummary(id) {
   let o = null; try { o = id === PROF.cur ? S : JSON.parse(localStorage.getItem(profStore(id)) || "null"); } catch (e) { }
   if (!o) return "jeszcze bez postępów";
-  const done = Object.values(o.lessons || {}).filter(l => l.done).length, st = o.streak || {};
+  const done = Object.values(o.lessons || {}).filter(l => l && l.done && !l.auto).length, st = o.streak || {};
   return `${plN(done, "1 lekcja", done + " lekcje", done + " lekcji")} · ⭐ ${o.xp || 0} pkt${typeof flowWeekLine === "function" ? flowWeekLine(o) : ""}`;
 }
 function yday() { const y = new Date(); y.setDate(y.getDate() - 1); return y.getFullYear() + "-" + String(y.getMonth() + 1).padStart(2, "0") + "-" + String(y.getDate()).padStart(2, "0"); }
@@ -31735,6 +31744,7 @@ function switchProfile(id) {
   PROF.cur = id; PROF_PICKED = true; saveProfiles(); STORE = profStore(id);
   loadState(); applyTheme(); backfillGrammarSRS(); migrateMist();
   if (typeof memProfileChanged === "function") memProfileChanged();   // etap 1: dziennik odpowiedzi tej osoby
+  if (window.LVL) LVL.boot();   // zaliczenia automatyczne z poziomu tej osoby (src/lvl.js)
   // powrót do pierwszej osoby: połącz z kontem i wyślij to, co czekało
   if (id === "p0" && window.CloudSync) { if (!CloudSync.db) CloudSync.init(); else CloudSync.pull(true); }
   if (window.Konto) Konto.bind();      // konto tej osoby (jeśli jest zalogowana na tym urządzeniu) – przed GitHubem
@@ -31807,6 +31817,8 @@ const KATA_OK = s => /^[ァ-ヶー・]{1,12}$/.test(s);
 function viewMe() {
   const me = Object.assign({ name: "", plv: "", jp: "", g: "" }, S.me || {});
   const first = !meOK();
+  // pierwszy ekran nowej osoby: od czego zaczynasz (domyślnie od zera, jedno stuknięcie – src/lvl.js)
+  const pickLvl = first && window.LVL && !Object.values(S.lessons || {}).some(r => r && !r.auto);
   const desk = !window.PWA_MODE && !window.claude && !(window.matchMedia && matchMedia("(pointer: coarse)").matches);
   app().innerHTML = `${first ? "" : `<div class="crumbs"><a href="#/">Start</a> › <a href="#/settings/osoby">Ustawienia</a> › Imię i głos</div>`}
     <h1>${first ? "Zanim zaczniesz 👋" : "Imię i głos"}</h1>
@@ -31824,7 +31836,8 @@ function viewMe() {
       <h3>2. Kto czyta Twoje kwestie w scenkach?</h3>
       <div class="row"><button class="btn meg${me.g === "f" ? " on" : ""}" data-g="f">👩 głos kobiecy</button><button class="btn meg${me.g === "m" ? " on" : ""}" data-g="m">👨 głos męski</button></div>
       <p class="small muted" style="margin:6px 0 0">Tłumaczenia Twoich kwestii dopasujemy (np. byłam / byłem).</p>
-      ${first && desk && PROF.list.length === 1 ? `<h3>3. Czy na tym komputerze uczy się jeszcze ktoś?</h3>
+      ${pickLvl ? `<h3>3. Od czego zaczynasz?</h3>${LVL.pickHTML(LVL.cur(), false)}<p class="small muted" style="margin:0">Lekcje z niższych poziomów oznaczę jako zaliczone, ale dalej możesz do nich wracać. Poziom zmienisz w Ustawieniach.</p>` : ""}
+      ${first && desk && PROF.list.length === 1 ? `<h3>${pickLvl ? 4 : 3}. Czy na tym komputerze uczy się jeszcze ktoś?</h3>
       <label class="small"><input type="checkbox" id="meadd"> Tak – po zapisaniu dodam drugą osobę (każda ma swoje postępy)</label>` : ""}
       <div class="row" style="margin-top:16px"><button class="btn pri" id="meok" disabled>✓ Gotowe</button>${first ? "" : `<a class="btn" href="#/settings/osoby">Anuluj</a>`}</div>
     </div>`;
@@ -31847,12 +31860,14 @@ function viewMe() {
     jp.value = H2K(romajiToKana(jp.value, true)).replace(/\s+/g, "");
     if (!KATA_OK(jp.value)) { toast("Imię po japońsku zapisz katakaną (np. カタジナ)."); return; }
     S.me = Object.assign({}, S.me || {}, { name: nm.value.trim().slice(0, 20), plv: plv.value.trim().slice(0, 20), jp: jp.value, g });
+    if (pickLvl) { const v = LVL.picked($(".mecard")); if (v !== LVL.cur()) LVL.set(v); }
     saveState();
     const p = curProf(); p.name = S.me.name; saveProfiles(); profChip();
     toast(`Miło mi, ${esc(S.me.plv || S.me.name)}! よろしくおねがいします。`, 3000);
     if ($("#meadd") && $("#meadd").checked) { addProfile(); return; }
     go(first ? "/" : "/settings/osoby");
   };
+  if (pickLvl) LVL.bindPick($(".mecard"));
   chips(); valid();
   if (first && typeof kontoCardBind === "function") kontoCardBind();   // „Masz już konto? Zaloguj się” – postępy wracają bez ustawiania od nowa
 }
@@ -31886,9 +31901,62 @@ function mergeCardPick(m, c) {
   if ((c.due || 0) !== (m.due || 0)) return (c.due || 0) > (m.due || 0) ? c : m;
   return JSON.stringify(c) > JSON.stringify(m) ? c : m;
 }
+/* ---------- nowy start (S.reset) i poziom (S.lvl): reguły zbieżne przy łączeniu ----------
+   S.reset = {t, id, c, cs}: wygrywa nowszy wpis (t, przy remisie id). c – granica dla lekcji i egzaminów, cs – dla kart powtórek.
+   Strona, której własna granica jest starsza od zwycięskiej, oddaje tylko to, co zmieniła po zwycięskiej granicy
+   (lekcja: t – ostatnia zmiana, dt – ostatnie zaliczenie/wynik; karta: ostatnia powtórka albo dodanie). Strona, która już
+   zastosowała granicę (własne c ≥ c zwycięzcy), ma tylko świeże dane – zostaje cała. Cofnięcie nowego startu to nowszy wpis
+   z dawną granicą, więc też wygrywa na wszystkich urządzeniach.
+   S.lvl = {v, t}: wybrany poziom startowy, wygrywa nowszy. Lekcje z auto:1 („zaliczone automatycznie”) nie są prawdziwym
+   zaliczeniem: przy łączeniu znikają z obu stron i są liczone od nowa z wygranego poziomu (lvlApplyAuto w src/lvl.js). */
+function lvlWin(x, y) {
+  const ok = r => isObj(r) && +r.t > 0;
+  if (!ok(x)) return ok(y) ? y : undefined;
+  if (!ok(y)) return x;
+  return +y.t > +x.t || (+y.t === +x.t && String(y.id || y.v || "") > String(x.id || x.v || "")) ? y : x;
+}
+// czas karty: ostatnia powtórka; karta jeszcze niepowtarzana – chwila dodania (due nowej karty = czas dodania)
+function lvlCardT(c) {
+  if (!isObj(c)) return 0;
+  const h = c.f || (+c.n || 0) > 0 || (+c.box || 0) > 0 || (+c.r || 0) > 0;
+  return Math.max(+(c.f && c.f.l) || 0, +c.r || 0, h ? 0 : +c.due || 0);
+}
+const lvlPassMin = () => { try { return typeof passMark === "function" ? passMark() : 80; } catch (e) { return 80; } };
+// zaliczenie automatyczne → zwykły zapis lekcji (prawdziwy wynik ≥ progu zostaje zaliczeniem); pusty wpis znika
+function lvlStripAuto(L) {
+  if (!isObj(L)) return;
+  for (const id of Object.keys(L)) {
+    const r = L[id]; if (!isObj(r) || !r.auto) continue;
+    delete r.auto; if (!((+r.best || 0) >= lvlPassMin())) delete r.done;
+    if (!Object.keys(r).some(k => r[k] && k !== "done")) delete L[id];
+  }
+}
+// st – kopia jednej strony łączenia; W – zwycięski S.reset
+function lvlCut(st, W) {
+  const own = isObj(st.reset) ? st.reset : {}, c = +W.c || 0, cs = +W.cs || 0;
+  if ((+own.c || 0) < c) {
+    const L = isObj(st.lessons) ? st.lessons : {};
+    for (const id of Object.keys(L)) {
+      const r = L[id];
+      if (!isObj(r) || (+r.t || 0) < c) { delete L[id]; continue; }
+      if ((+r.dt || 0) < c) { delete r.done; delete r.best; delete r.auto; delete r.dt; }
+    }
+    if ("exams" in st) st.exams = {};
+  }
+  if ((+own.cs || 0) < cs) {
+    const srs = isObj(st.srs) ? st.srs : {};
+    for (const k of Object.keys(srs)) if (lvlCardT(srs[k]) < cs) delete srs[k];
+    if ("newq" in st) st.newq = [];
+  }
+}
 function mergeState(a, b) {
   a = JSON.parse(JSON.stringify(a || {})); b = JSON.parse(JSON.stringify(b || {}));
-  const o = Object.assign({}, b, a);   // pola nieznane: lokalne, a gdy ich brak – z drugiego urządzenia (żadne pole nie ginie)
+  const RW = lvlWin(a.reset, b.reset), LW = lvlWin(a.lvl, b.lvl);
+  if (RW) { lvlCut(a, RW); lvlCut(b, RW); }
+  lvlStripAuto(a.lessons); lvlStripAuto(b.lessons);
+  const o = Object.assign({}, b, a);
+  if (RW) o.reset = RW;
+  if (LW) o.lvl = LW;   // pola nieznane: lokalne, a gdy ich brak – z drugiego urządzenia (żadne pole nie ginie)
   const has = f => f in a || f in b;
   // karty powtórek: suma; przy tej samej karcie wstępnie nowsza (stan pamięci i tak odtwarza potem dziennik – src/mem.js)
   if (has("srs")) o.srs = Object.assign({}, a.srs);
@@ -31928,12 +31996,13 @@ function mergeState(a, b) {
   const seen = new Set();
   if (has("newq")) o.newq = (a.newq || []).concat(b.newq || []).filter(e => e && e.k && !(o.srs || {})[e.k] && !seen.has(e.k) && seen.add(e.k));
   if (has("settings")) o.settings = a.settings || b.settings;
+  if (typeof lvlApplyAuto === "function") lvlApplyAuto(o);   // zaliczenia automatyczne z wygranego poziomu (src/lvl.js)
   o.t = Date.now();
   return o;
 }
 function stateSummary(o) {
   o = o || {};
-  const done = Object.values(o.lessons || {}).filter(l => l && l.done).length;
+  const done = Object.values(o.lessons || {}).filter(l => l && l.done && !l.auto).length;   // bez zaliczeń automatycznych
   const days = Object.keys(o.daily || {}).sort();
   const last = o.t ? new Date(o.t) : days.length ? new Date(days[days.length - 1]) : null;
   return { done, cards: Object.keys(o.srs || {}).length, xp: +o.xp || 0, last: last && !isNaN(last) ? last.toLocaleDateString("pl-PL") : "–", name: (o.me && o.me.name) || "" };
@@ -32043,11 +32112,15 @@ function memAskImport(p) {
   const me = (S.me && S.me.name) || "", other = p.name && me && p.name !== me;
   const from = p.dn ? `z urządzenia „${esc(p.dn)}”${p.name ? ` (${esc(p.name)})` : ""}` : p.name ? `(${esc(p.name)})` : "";
   const nAns = p.ev.length, nCards = Object.keys((p.st && p.st.srs) || {}).length;
+  // kod sprzed nowego startu (S.reset) z prawdziwymi wynikami: „Połącz” ich nie przywróci
+  const sr = isObj(S.reset) ? S.reset : null, pr = p.st && isObj(p.st.reset) ? p.st.reset : null;
+  const pre = !!(p.full && sr && (+sr.c || 0) > (pr ? +pr.c || 0 : 0) && Object.values((p.st && p.st.lessons) || {}).some(r => isObj(r) && !r.auto && (r.done || r.best) && (+r.dt || 0) < +sr.c));
   const m = document.createElement("div"); m.className = "modal";
   m.innerHTML = `<div class="box"><h2 style="margin-top:0">📥 Wczytać zmiany?</h2>
     <p class="small">${p.legacy ? `Kod postępów${p.name ? ` (${esc(p.name)})` : ""}` : `Zmiany ${from}`}${p.at ? `, ${esc(memPlDate(p.at))}, ${esc(memPlTime(p.at))}` : ""}.${nAns || nCards ? ` W środku: ${nAns ? nAns + " " + plN(nAns, "wpis", "wpisy", "wpisów") + " z dziennika" : ""}${nAns && nCards ? ", " : ""}${nCards ? nCards + " " + plN(nCards, "karta", "karty", "kart") : ""}.` : ""}</p>
     ${other ? `<div class="warnbox">To postępy innej osoby (${esc(p.name)}). Połączyć mimo to? Jeśli to ktoś inny, lepiej dodaj tę osobę w Ustawieniach (Kto się uczy) i wczytaj tam.</div>` : ""}
-    ${p.own ? `<p class="small">To kod z tego urządzenia. Wczytaj go, jeśli chcesz odzyskać zapisane w nim postępy (np. po wyzerowaniu). Na drugim urządzeniu wczytuje się go tak samo.</p>` : ""}
+    ${p.own && !pre ? `<p class="small">To kod z tego urządzenia. Wczytaj go, jeśli chcesz odzyskać zapisane w nim postępy (np. po wyzerowaniu). Na drugim urządzeniu wczytuje się go tak samo.</p>` : ""}
+    ${pre ? `<p class="small">${p.own ? "To kod z tego urządzenia, sprzed Twojego nowego startu." : "Ten kod jest sprzed Twojego nowego startu."} „Połącz” zachowa nowy start, więc wyniki lekcji z kodu nie wrócą. Żeby je odzyskać, wybierz „Zastąp” w „Zaawansowanych”.</p>` : ""}
     ${!p.full && !p.legacy ? `<p class="small muted">To tylko zmiany od poprzedniego wysłania – nie pełna kopia.</p>` : ""}
     <p class="small muted">Postępy się połączą: z obu stron zostaje to, co lepsze. ${window.MEM_LOG && MEM_LOG.mode === "fb" ? "Przed wczytaniem zapiszę kopię. W tej przeglądarce kopia może zniknąć po zamknięciu kursu, więc cofnąć wczytanie najpewniej da się od razu." : "Przed wczytaniem zapiszę kopię, więc możesz to cofnąć."}</p>
     <div class="grid" style="gap:8px"><button class="btn pri mg">🔀 ${other ? "Połącz mimo to" : "Połącz"}</button><button class="btn cn">Anuluj</button></div>
@@ -32083,14 +32156,15 @@ function memAskImport(p) {
   };
 }
 function memResultText(r, p) {
-  if (!r.changed && !r.added) return "Wszystko z tego kodu już tu jest – nic nie trzeba było dodawać.";
+  const cut = r.cut ? " Postępy sprzed nowego startu z tego kodu nie wracają. Jeśli chcesz je odzyskać, wczytaj kod jeszcze raz i wybierz „Zastąp” w „Zaawansowanych” albo użyj Kopii awaryjnych w Ustawieniach." : "";
+  if (!r.changed && !r.added) return cut ? "Nic nie trzeba było dodawać." + cut : "Wszystko z tego kodu już tu jest – nic nie trzeba było dodawać.";
   const src = p.dn ? ` z urządzenia „${esc(p.dn)}”${p.name ? ` (${esc(p.name)})` : ""}` : p.name ? ` (${esc(p.name)})` : "";
   const rest = [r.newCards ? memCardN(r.newCards) : "", r.newLessons ? memLessN(r.newLessons) : ""].filter(Boolean);
   let t;
   if (r.answers) t = `Dodano ${memAnsN(r.answers)}${src}${rest.length ? ", " + rest.join(", ") : ""}.`;
   else if (rest.length) t = `Dodano${src}: ${rest.join(", ")}.`;
   else t = `Zaktualizowano postępy${src}.`;
-  return t + " Nic nie zostało nadpisane.";
+  return t + " Nic nie zostało nadpisane." + cut;
 }
 function memShowImportResult(r, p) {
   const m = document.createElement("div"); m.className = "modal";
@@ -32866,7 +32940,7 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
   window.MEM_CORE = { W, DECAY, FACTOR, STABLE, CAP, R, D0, nextD, recallS, forgetS, shortS, step, ivlOf, ivlMod, boxOf, project, migX, seedF, legacyOf, replay, mergeKey, dayNum, dueAt, hash01, ensureAll, hasHist };
 
   /* ---------- start i zmiana osoby ---------- */
-  const hasProg = () => !!(S && (S.xp || Object.keys(S.lessons || {}).length || Object.keys(S.srs || {}).length));
+  const hasProg = () => !!(S && (S.xp || Object.values(S.lessons || {}).some(r => r && !r.auto) || Object.keys(S.srs || {}).length));
   function boot() {
     const l = L();
     try { if (l) l.open(PROF.cur); } catch (e) { }
@@ -32896,7 +32970,23 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
 
   /* ---------- łączenie postępów (wczytanie zmian, chmura) ---------- */
   const strip = o => { const c = Object.assign({}, o); delete c.t; return canon(c); };
-  const doneN = o => Object.values((o && o.lessons) || {}).filter(x => x && x.done).length;
+  const doneN = o => Object.values((o && o.lessons) || {}).filter(x => x && x.done && !x.auto).length;   // tylko prawdziwe zaliczenia
+  // stan sprzed nowego startu sr wstawiony świadomie („Zastąp”, przywrócenie kopii): nowy wpis S.reset tuż nad sr z dawną granicą –
+  // wygrywa z sr także przy synchronizacji, a start zrobiony później na innym urządzeniu wygrywa z nim
+  function reStamp(o, sr) {
+    const orr = isO(o.reset) ? o.reset : {}, t = (+sr.t || 0) + 1;
+    o.reset = { t, id: t.toString(36) + Math.random().toString(36).slice(2, 8), c: +orr.c || 0, cs: +orr.cs || 0, u: 1 };
+    o.lvl = { v: (isO(o.lvl) && o.lvl.v) || "kana", t: Math.max(t, (isO(S.lvl) ? +S.lvl.t || 0 : 0) + 1) };
+    if (typeof lvlApplyAuto === "function") lvlApplyAuto(o);
+    return o;
+  }
+  // „Połącz” po nowym starcie: czy wczytany stan miał prawdziwe wyniki sprzed startu (te nie wracają)
+  function cutOf(st, M) {
+    const c = isO(M.reset) ? +M.reset.c || 0 : 0;
+    if (!st || !c || (isO(st.reset) ? +st.reset.c || 0 : 0) >= c) return 0;
+    return Object.values(isO(st.lessons) ? st.lessons : {}).filter(r => isO(r) && !r.auto && (r.done || r.best) && (+r.dt || 0) < c).length
+      + Object.keys(isO(st.exams) ? st.exams : {}).length;
+  }
   // co zmieniło łączenie (do cofnięcia bez utraty późniejszych postępów): pola S z kluczami, karty, punkty
   const FX_SKIP = { srs: 1, settings: 1, me: 1, t: 1, xp: 1, streak: 1, appv: 1, v: 1 };
   const isO = v => !!v && typeof v === "object" && !Array.isArray(v);
@@ -32928,16 +33018,21 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
     let added = [];
     try { added = l && evIn.length ? (await l.addMany(evIn)).added : []; } catch (e) { if (gone()) return Object.assign({}, ABORT); throw e; }
     if (gone()) return Object.assign({}, ABORT, { added: added.length, addedIds: added.map(e => e.id) });
-    const ownAll = []; let snap = null;
+    const ownAll = []; let snap = null, cut = 0;
     for (let attempt = 0; ; attempt++) {
       // S podmieniony w trakcie (druga karta przeglądarki, powtórka zapisana w międzyczasie) → liczymy jeszcze raz od nowa
       const S0 = S, t0 = S.t;
       const now = Date.now(), before = JSON.stringify(S), B0 = JSON.parse(before), own = [];
       ensureAll(S, now, own);                                   // lokalne karty uzgodnione ze starszą wersją
       const st = inc.st ? JSON.parse(JSON.stringify(inc.st)) : null;
-      let M;
+      let M; cut = 0;
       if (o.replace && st) {
         M = st; M.settings = Object.assign({}, st.settings, S.settings);
+        // kod sprzed nowego startu z tego urządzenia: „Zastąp” świadomie przywraca jego postępy (nowszy wpis S.reset, wygrywa też przy synchronizacji)
+        const sr = isO(S.reset) ? S.reset : null, orr = isO(st.reset) ? st.reset : null;
+        if (sr && (!orr || (orr.id !== sr.id && (typeof lvlWin === "function" ? lvlWin(sr, orr) === sr : (+orr.t || 0) < (+sr.t || 0))))) reStamp(M, sr);
+        // nowszy start albo tylko poziom: obowiązuje dalej po „Zastąp”
+        else if ((S.reset || S.lvl) && typeof mergeState === "function") { M = mergeState(M, { reset: S.reset, lvl: S.lvl }); M.settings = Object.assign({}, st.settings, S.settings); }
         ensureAll(M, now, own);
       } else {
         // wczytane karty: uzgodnienie zmian zrobionych starszą wersją kursu (wpisy „leg”)
@@ -32953,6 +33048,12 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
         }
         M = typeof mergeState === "function" ? mergeState(S, st || {}) : JSON.parse(JSON.stringify(S));
         if (!M.srs) M.srs = {};
+        cut = cutOf(st, M);
+        // nowy start z wyczyszczonymi powtórkami (S.reset.cs, src/sync.js): karty i wpisy dziennika sprzed tej chwili się nie liczą
+        const cs = M.reset && typeof M.reset === "object" ? +M.reset.cs || 0 : 0, cT = typeof lvlCardT === "function" ? lvlCardT : () => Infinity;
+        const aCut = !!cs && (+((S.reset || {}).cs) || 0) < cs, bCut = !!cs && (+(((st || {}).reset || {}).cs) || 0) < cs;
+        const okA = c => c && (!aCut || cT(c) >= cs) ? c : undefined, okB = c => c && (!bCut || cT(c) >= cs) ? c : undefined;
+        const evOk = e => !cs || (e.e === "mig" ? +(e.x && e.x.l) || 0 : +e.t || 0) >= cs;
         // pusty telefon: ustawienia też z drugiego urządzenia
         if (st && st.settings && !hasProg()) M.settings = Object.assign({}, S.settings, st.settings);
         const keys = new Set(Object.keys(B));
@@ -32960,7 +33061,8 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
         const A = S.srs || {}, bSeed = {};
         // stare karty z drugiego urządzenia (bez f), nowsze od lokalnych → punkt startowy „mig”
         for (const k of keys) {
-          const b = B[k], a = A[k];
+          const b = okB(B[k]), a = okA(A[k]);
+          if (cs && !M.srs[k]) continue;
           if (b && !b.f && hasHist(b) && (!a || !a.f || (+b.r || 0) > (a.f.l || 0) + 1000 || (+b.n || 0) > (a.f.n || 0))) {
             const x = migX(b, now), cx = canon(x), same = (pre[k] || []).find(e => e.e === "mig" && e.x && canon(e.x) === cx);
             if (same) bSeed[k] = same.id;
@@ -32970,8 +33072,9 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
         const byK = l ? await l.byKeys([...keys]) : {};
         if (gone()) return Object.assign({}, ABORT);
         for (const k of keys) {
-          const a = A[k], b = B[k];
-          const evs = (byK[k] || []).concat(l ? [] : own.filter(e => e.k === k));
+          if (cs && !M.srs[k]) continue;
+          const a = okA(A[k]), b = okB(B[k]);
+          const evs = (byK[k] || []).concat(l ? [] : own.filter(e => e.k === k)).filter(evOk);
           const card = mergeKey(k, evs, a && a.f ? a : null, b && (b.f || hasHist(b)) ? b : null, M.srs[k], ret(), bSeed[k]);
           if (card) M.srs[k] = card;
         }
@@ -32989,7 +33092,7 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
         fx: eff ? eff.fx : undefined, cards: eff ? eff.cards : undefined, xp: eff ? eff.xp : undefined,
         changed, snap, added: added.length, answers: added.filter(e => e.e === "rev" || e.e === "ans" || e.e === "leg").length,
         ownIds: [...new Set(ownAll.concat(own).map(e => e.id))], addedIds: added.map(e => e.id), q: l ? l.lastQ : 0,
-        newCards: Math.max(0, Object.keys(S.srs || {}).length - Object.keys(B0.srs || {}).length), newLessons: Math.max(0, doneN(S) - doneN(B0))
+        newCards: Math.max(0, Object.keys(S.srs || {}).length - Object.keys(B0.srs || {}).length), newLessons: Math.max(0, doneN(S) - doneN(B0)), cut
       };
       if (changed || added.length) fire("mem:merged", { added: res.added, cards: res.newCards, from: inc.from || "" });
       return res;
@@ -33024,8 +33127,8 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
     // powtórki zrobione po wczytaniu zostają: te karty odtwarzamy z dziennika
     const after = (await l.ownSince(info.q || 0)).filter(e => e.e === "rev" && e.k);
     const keys = [...new Set(after.map(e => e.k))].filter(k => restored.srs && restored.srs[k] && (!only || only.has(k)));
-    const byK = await l.byKeys(keys), now = Date.now();
-    for (const k of keys) { const a = restored.srs[k]; const card = mergeKey(k, byK[k] || [], a.f ? a : null, null, a, ret()); if (card) restored.srs[k] = card; }
+    const byK = await l.byKeys(keys), now = Date.now(), rcs = restored.reset && typeof restored.reset === "object" ? +restored.reset.cs || 0 : 0;
+    for (const k of keys) { const a = restored.srs[k]; const card = mergeKey(k, (byK[k] || []).filter(e => !rcs || (e.e === "mig" ? +(e.x && e.x.l) || 0 : +e.t || 0) >= rcs), a.f ? a : null, null, a, ret()); if (card) restored.srs[k] = card; }
     restored.settings = Object.assign({}, restored.settings, S.settings);
     S = restored; if (typeof loadStateFix === "function") loadStateFix();
     ensureAll(S, now); saveState();
@@ -33045,6 +33148,9 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
     if (!o || !o.lessons) return false;
     await l.snapshot("przed przywróceniem");
     o.settings = Object.assign({}, o.settings, S.settings);
+    // kopia sprzed nowego startu: przywrócenie to nowszy wpis S.reset z dawną granicą – wygrywa też przy synchronizacji
+    const sr = S.reset && typeof S.reset === "object" ? S.reset : null, orr = o.reset && typeof o.reset === "object" ? o.reset : {};
+    if (sr && sr.id !== orr.id) reStamp(o, sr);
     S = o; if (typeof loadStateFix === "function") loadStateFix();
     ensureAll(S, Date.now()); saveState();
     fire("mem:merged", { added: 0, cards: 0, from: "restore" });
@@ -35274,7 +35380,7 @@ window.KONTO_CONFIG = window.KONTO_CONFIG || {
   }
   // nowa osoba (pusta, bez imienia i postępów) – można ją usunąć bez pytania, gdy okazuje się, że to ktoś, kto już tu jest
   function emptyProfile() {
-    try { return !(S.me && S.me.name) && !(S.xp > 0) && !Object.keys(S.srs || {}).length && !Object.values(S.lessons || {}).some(l => l && (l.done || l.best)); } catch (e) { return false; }
+    try { return !(S.me && S.me.name) && !(S.xp > 0) && !Object.keys(S.srs || {}).length && !Object.values(S.lessons || {}).some(l => l && ((l.done && !l.auto) || l.best)); } catch (e) { return false; }
   }
   function goTwin(twin) {
     const empty = curP();
@@ -36457,7 +36563,7 @@ function viewHome() {
     ${planHTML(nx, gentle)}
     <div class="fside">${flowWeekHTML()}${typeof tipFor === "function" ? tipFor(gentle ? "break" : "home") : ""}</div>
   </div>
-  <h2>Poziomy</h2>
+  <div class="row lvlhead"><h2>Poziomy</h2>${window.LVL ? `<a class="small lvllink" href="#/settings/poziom">🎯 Zaczynasz od: ${esc(LVL.shortOf(LVL.cur()))} · zmień</a>` : ""}</div>
   <div class="grid g2">${LV.map(L => {
     const p = levelProgress(L);
     return `<a class="card lvl" href="#/level/${L.id}" style="--c:${L.color}"><span class="bar"></span>
@@ -36510,13 +36616,13 @@ function planHTML(nx, gentle) {
   const goal = typeof flowGoal === "function" ? flowGoal() : 15, mins = typeof flowMinsToday === "function" ? flowMinsToday() : 0;
   const reached = mins >= goal, short = typeof flowIsShort === "function" && flowIsShort();
   const nm = S.me && (S.me.plv || S.me.name), hi = nm ? `, ${esc(nm)}` : "";
-  const cards = Object.keys(S.srs).length, fresh = !cards && !Object.keys(S.lessons || {}).length;
+  const cards = Object.keys(S.srs).length, fresh = !cards && !Object.values(S.lessons || {}).some(r => r && !r.auto);   // zaliczenia automatyczne (src/lvl.js) to jeszcze nie postęp
   const today_ = `<div class="ftoday"><b>Dziś: ${Math.floor(mins)} z ${goal} min</b>${short ? `<span class="pill">krótsza sesja</span>` : ""}</div>
     <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="${goal}" aria-valuenow="${Math.floor(mins)}" aria-label="Minuty nauki dzisiaj"><i style="width:${Math.min(100, Math.round(100 * mins / goal))}%"></i></div>`;
   if (fresh && nx) return `<div class="card fplan">
     <h1>Japoński od zera do biegłości <span class="jp">🇯🇵</span></h1>
     <p class="muted">Osiem poziomów: od wymowy i kana, przez N5–N1 (zgodnie z egzaminem JLPT), aż po japoński „z ulicy”. Każda lekcja to teoria, słówka z wymową, kanji, scenka z głosami i dużo ćwiczeń.</p>
-    <p>Twój plan: <b>${goal} minut dziennie</b>. Zacznij od pierwszej lekcji – słówka z niej trafią potem do powtórek.</p>
+    <p>Twój plan: <b>${goal} minut dziennie</b>. Zacznij od ${nx.id === ((LV[0] || { lessons: [] }).lessons[0] || {}).id ? "pierwszej lekcji" : "pierwszej lekcji swojego poziomu"} – słówka z niej trafią potem do powtórek.</p>
     <div class="row"><a class="btn pri" href="#/lesson/${nx.id}">▶ Zacznij: ${esc(nx.title)}</a><a class="btn" href="#/jak-sie-uczyc">🧠 Jak się uczyć</a></div>
     ${voiceWarnHTML()}</div>`;
   let sp = null; try { sp = typeof flowSessionPlan === "function" ? flowSessionPlan() : null; } catch (e) { }
@@ -36565,6 +36671,193 @@ function flowWeekHTML() {
       <div class="stat" title="Punkty za odpowiedzi sprawdzone przez aplikację i za utrwalone karty"><b>${S.xp}</b><span class="small muted">${plN(S.xp, "punkt", "punkty", "punktów")}</span></div>
     </div>` : ""}</div>`;
 }
+
+/* ===================== poziom startowy, zaliczenia automatyczne i nowy start ===================== */
+/* S.lvl = {v: id poziomu, t}: od którego poziomu uczysz się. Lekcje wszystkich niższych poziomów dostają done:true i auto:1
+   („zaliczone automatycznie”) – stara wersja kursu widzi je jako zaliczone, a prawdziwe zaliczenie testu usuwa znacznik.
+   S.reset = {t, id, c, cs}: nowy start; reguły łączenia między urządzeniami są w src/sync.js (lvlWin, lvlCut, lvlStripAuto). */
+(function () {
+  const isO = v => !!v && typeof v === "object" && !Array.isArray(v);
+  // poziomy do wyboru: [id, nazwa, opis]; na pierwszym ekranie N3 obejmuje też wyższe poziomy
+  const OPTS = [
+    ["kana", "Początkujący", "Od zera: wymowa, hiragana, katakana, pierwsze słowa i zwroty."],
+    ["n5a", "N5", "Znasz już kanę – zaczynasz od podstaw języka."],
+    ["n4", "N4", "Masz za sobą N5 – poziom podstawowy wyższy."],
+    ["d3", "N4+", "Znasz N4 – utrwalasz i poszerzasz podstawy."],
+    ["n3", "N3", "Znasz podstawy – poziom średniozaawansowany."],
+    ["n2", "N2", "Poziom zaawansowany."],
+    ["n1", "N1", "Biegłość."]
+  ];
+  const lvs = () => typeof LV !== "undefined" ? LV : [];
+  const opts = full => OPTS.filter(o => lvs().some(L => L.id === o[0])).filter(o => full || (o[0] !== "n2" && o[0] !== "n1"))
+    .map(o => !full && o[0] === "n3" ? [o[0], "N3 i wyżej", "Znasz podstawy i chcesz uczyć się dalej, na wyższym poziomie."] : o);
+  const passMin = () => { try { return typeof passMark === "function" ? passMark() : 80; } catch (e) { return 80; } };
+  const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const cur = () => { const v = isO(S.lvl) ? S.lvl.v : ""; return lvs().some(L => L.id === v) ? v : "kana"; };
+  const nameOf = v => { const o = OPTS.find(x => x[0] === v), L = lvs().find(x => x.id === v); return L ? L.title : o ? o[1] : v; };
+  const shortOf = v => { const o = OPTS.find(x => x[0] === v); return o ? o[1] : v; };
+
+  // zaliczenia automatyczne z poziomu st.lvl (deterministycznie: ten sam poziom i te same prawdziwe wyniki → ten sam stan)
+  function applyAuto(st) {
+    if (!st || !lvs().length) return false;
+    if (!isO(st.lessons)) st.lessons = {};
+    const L = st.lessons, v = isO(st.lvl) ? st.lvl.v : "", idx = lvs().findIndex(x => x.id === v), pm = passMin();
+    let ch = false;
+    lvs().forEach((lv, i) => lv.lessons.forEach(l => {
+      const r = L[l.id];
+      if (idx > 0 && i < idx) { if (!isO(r) || !r.done) { L[l.id] = Object.assign(isO(r) ? r : {}, { done: true, auto: 1 }); ch = true; } }
+      else if (isO(r) && r.auto) {
+        delete r.auto; if (!((+r.best || 0) >= pm)) delete r.done;
+        if (!Object.keys(r).some(k => r[k] && k !== "done")) delete L[l.id];
+        ch = true;
+      }
+    }));
+    return ch;
+  }
+  const autoN = () => Object.values(S.lessons || {}).filter(r => r && r.done && r.auto).length;
+  // zmiana poziomu: wyżej – dochodzą zaliczenia automatyczne poniżej; niżej – znikają tylko automatyczne (wyniki zostają)
+  function set(v) {
+    if (!lvs().some(L => L.id === v)) return false;
+    S.lvl = { v, t: Date.now() };
+    applyAuto(S); saveState();
+    if (typeof updateBadge === "function") updateBadge();
+    return true;
+  }
+  // zapis w lekcji: t – ostatnia zmiana, dt – ostatnie zaliczenie albo wynik (do łączenia po nowym starcie)
+  function touch(st, scored) { const t = Date.now(); st.t = t; if (scored) st.dt = t; }
+
+  /* ---------- nowy start i cofnięcie ---------- */
+  let undoMem = null;   // gdy nie ma dziennika (albo migawka się nie zapisała): kopia w pamięci do końca wizyty
+  async function reset(v, clearSrs) {
+    if (!lvs().some(L => L.id === v)) v = "kana";
+    const json = JSON.stringify(S);
+    let snap = null;
+    try { if (window.MEM_LOG) { await MEM_LOG.ready; snap = await MEM_LOG.snapshot("przed nowym startem", json); } } catch (e) { }
+    const now = Date.now(), prev = isO(S.reset) ? S.reset : {}, id = rid();
+    S.reset = { t: now, id, c: now, cs: clearSrs ? now : (+prev.cs || 0) };
+    S.lessons = {}; S.exams = {};
+    if (clearSrs) { S.srs = {}; S.newq = []; }
+    S.lvl = { v, t: now };
+    applyAuto(S); saveState();
+    undoMem = { id, json, at: now };
+    try { if (window.MEM_LOG && snap !== null && snap !== undefined) await MEM_LOG.setMeta("lvlundo", { snap, id, at: now }); } catch (e) { }
+    if (typeof updateBadge === "function") updateBadge();
+    return id;
+  }
+  async function undoInfo() {
+    let info = null;
+    try { if (window.MEM_LOG) { await MEM_LOG.ready; info = await MEM_LOG.getMeta("lvlundo"); } } catch (e) { }
+    if (!info && undoMem) info = undoMem;
+    return info && isO(S.reset) && S.reset.id === info.id ? info : null;
+  }
+  // cofnięcie: nowszy wpis S.reset z granicą sprzed nowego startu + połączenie z kopią sprzed startu
+  // (wygrywa ze starszymi kopiami na innych urządzeniach; postępy zrobione po nowym starcie zostają)
+  async function undo() {
+    const info = await undoInfo(); if (!info) return false;
+    let old = null;
+    try { old = undoMem && undoMem.id === info.id ? JSON.parse(undoMem.json) : await MEM_LOG.restoreSnapshot(info.snap); } catch (e) { }
+    if (!isO(old) || !old.lessons) return false;
+    // wpis tuż nad cofanym startem (nie „teraz”): wygrywa z nim i starszymi kopiami, ale nowszy start z innego urządzenia wygrywa z cofnięciem
+    const sr = isO(old.reset) ? old.reset : {}, t = (+S.reset.t || 0) + 1;
+    S.reset = { t, id: rid(), c: +sr.c || 0, cs: +sr.cs || 0, u: 1 };
+    S.lvl = { v: isO(old.lvl) && old.lvl.v ? old.lvl.v : "kana", t: Math.max(t, (isO(S.lvl) ? +S.lvl.t || 0 : 0) + 1) };
+    old.reset = Object.assign({}, S.reset); delete old.lvl;
+    saveState();
+    if (typeof memMergeIn === "function") await memMergeIn({ st: old, from: "undo" }, { why: "przed cofnięciem nowego startu" });
+    else { S = mergeState(S, old); saveState(); }
+    undoMem = null;
+    try { if (window.MEM_LOG) await MEM_LOG.setMeta("lvlundo", undefined); } catch (e) { }
+    if (typeof updateBadge === "function") updateBadge();
+    return true;
+  }
+
+  /* ---------- widoki ---------- */
+  function pickHTML(sel, full) {
+    return `<div class="chips lvlpick" role="radiogroup" aria-label="Poziom startowy">${opts(full).map(o => `<button type="button" class="chip lvlc${o[0] === sel ? " on" : ""}" role="radio" aria-checked="${o[0] === sel}" data-lvl="${o[0]}"><b>${esc(o[1])}</b><span class="small muted">${esc(o[2])}</span></button>`).join("")}</div>`;
+  }
+  function bindPick(root, onPick) {
+    $$(".lvlc", root).forEach(b => b.onclick = () => {
+      $$(".lvlc", root).forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-checked", x === b ? "true" : "false"); });
+      if (onPick) onPick(b.dataset.lvl);
+    });
+  }
+  const picked = root => { const b = $(".lvlc.on", root); return b ? b.dataset.lvl : "kana"; };
+  function settingsHTML() {
+    const v = cur(), n = autoN();
+    return `<div class="card" id="poziom" style="margin-bottom:14px"><h2 style="margin-top:0">🎯 Mój poziom i nowy start</h2>
+      <p style="margin:0 0 6px">Zaczynasz od: <b class="lvlnow">${esc(nameOf(v))}</b></p>
+      <p class="small muted" style="margin:0">${n ? `${n} ${plN(n, "lekcja z niższych poziomów jest zaliczona", "lekcje z niższych poziomów są zaliczone", "lekcji z niższych poziomów jest zaliczonych")} automatycznie. Możesz do nich wracać w każdej chwili.` : "Wybierz, od czego chcesz się uczyć. Lekcje z niższych poziomów oznaczę jako zaliczone, ale dalej możesz do nich wracać."}</p>
+      ${pickHTML(v, true)}
+      <p class="small muted" style="margin:0 0 10px">Wyższy poziom: lekcje poniżej będą zaliczone automatycznie. Niższy: zdejmę tylko automatyczne zaliczenia – Twoje wyniki zostają.</p>
+      <div class="row"><button class="btn" id="lvlrst">🔄 Zacznij od nowa</button><button class="btn" id="lvlundo" hidden>↩️ Cofnij nowy start</button></div></div>`;
+  }
+  function settingsBind(sub) {
+    const card = $("#poziom"); if (!card) return;
+    bindPick(card, v => {
+      if (v === cur()) return;
+      set(v);
+      const n = autoN();
+      toast(`Poziom: ${esc(shortOf(v))}.${n ? ` Zaliczone automatycznie: ${n} ${plN(n, "lekcja", "lekcje", "lekcji")}.` : ""}`, 3500);
+      rerender();
+    });
+    $("#lvlrst", card).onclick = () => resetSheet();
+    undoInfo().then(i => { const b = $("#lvlundo", card); if (b && i) { b.hidden = false; b.onclick = doUndo; } });
+    if (sub === "poziom") card.scrollIntoView({ block: "start" });
+  }
+  function rerender() {
+    const n = $("#poziom"); if (!n) return;
+    const d = document.createElement("div"); d.innerHTML = settingsHTML();
+    n.replaceWith(d.firstElementChild); settingsBind();
+  }
+  function resetSheet() {
+    const m = document.createElement("div"); m.className = "modal lvlm";
+    m.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="lvlmh">
+      <h3 id="lvlmh" style="margin-top:0">🔄 Zacznij od nowa</h3>
+      <p class="small">Wyniki lekcji i egzaminów poziomów wrócą do zera. Minuty i dni nauki, punkty, rozmowy, czytanki i ustawienia zostają. Przed startem zapiszę kopię, więc możesz to cofnąć.</p>
+      <b>Od czego zaczynasz?</b>
+      ${pickHTML(cur(), true)}
+      <label class="small lvlsrs"><input type="checkbox" id="lvlsrs"> Wyczyść też powtórki słówek</label>
+      <p class="small muted" style="margin:4px 0 12px">Słówka, kanji i gramatyka wrócą do powtórek, gdy znów przejdziesz lekcje.</p>
+      <div class="row"><button class="btn pri" id="lvlgo">🔄 Zacznij od nowa</button><button class="btn" id="lvlno">Anuluj</button></div></div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.onclick = e => { if (e.target === m) close(); };
+    m.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+    bindPick(m);
+    $("#lvlno", m).onclick = close;
+    $("#lvlgo", m).onclick = async () => {
+      $("#lvlgo", m).disabled = true;
+      const v = picked(m), srs = $("#lvlsrs", m).checked;
+      try { await reset(v, srs); } catch (e) { close(); toast("Nie udało się zacząć od nowa. Nic się nie zmieniło."); return; }
+      close();
+      go("/");
+      undoBar(`Zaczynasz od nowa: ${esc(shortOf(v))}.`);
+    };
+    const f = $(".lvlc.on", m) || $("#lvlgo", m); if (f) f.focus();
+  }
+  // pasek z przyciskiem „Cofnij” (komunikaty toast nie przyjmują kliknięć)
+  function undoBar(msg) {
+    const old = $("#lvlbar"); if (old) old.remove();
+    const b = document.createElement("div"); b.id = "lvlbar"; b.className = "lvlbar"; b.setAttribute("role", "status");
+    b.innerHTML = `<span>${msg}</span> <button class="btn sm" id="lvlbarundo">↩️ Cofnij reset</button><button class="ib" aria-label="Zamknij">✕</button>`;
+    document.body.appendChild(b);
+    const tm = setTimeout(() => b.remove(), 15000);
+    $(".ib", b).onclick = () => { clearTimeout(tm); b.remove(); };
+    $("#lvlbarundo", b).onclick = () => { clearTimeout(tm); b.remove(); doUndo(); };
+  }
+  async function doUndo() {
+    let ok = false;
+    try { ok = await undo(); } catch (e) { }
+    toast(ok ? "Przywrócono postępy sprzed nowego startu ✓" : "Tego nowego startu nie da się już cofnąć.", 3500);
+    route();
+  }
+  // start: zaliczenia automatyczne dla nowych lekcji kursu i po zmianach zrobionych starszą wersją
+  function boot() { try { if (applyAuto(S)) saveState(); } catch (e) { } }
+
+  window.lvlApplyAuto = applyAuto;
+  window.LVL = { opts, cur, set, reset, undo, undoInfo, touch, nameOf, shortOf, pickHTML, bindPick, picked, settingsHTML, settingsBind, boot, autoN,
+    real: r => !!(r && r.done && !r.auto), isAuto: id => { const r = (S.lessons || {})[id]; return !!(r && r.done && r.auto); } };
+})();
 
 /* ===================== dane kursu ===================== */
 const LV = (window.LEVELS || []).slice().sort((a, b) => a.order - b.order);
@@ -36717,7 +37010,7 @@ function backfillGrammarSRS() {
   if (S.gsrs) return;
   // lekcje już zaliczone: karty gramatyki idą do kolejki i wchodzą w dziennym limicie nowych kart
   const E = [];
-  LV.forEach(L => L.lessons.forEach(l => { if ((S.lessons[l.id] || {}).done) E.push(...grammarCards(l)); }));
+  LV.forEach(L => L.lessons.forEach(l => { const r = S.lessons[l.id] || {}; if (r.done && !r.auto) E.push(...grammarCards(l)); }));   // zaliczone automatycznie (src/lvl.js) – bez kart
   S.gsrs = 1;
   S.newq = (S.newq || []).concat(E.filter(e => !S.srs[e.k]));
   saveState();
@@ -36741,8 +37034,8 @@ function viewLevel(id) {
   </div>
   <div class="lesson-list" style="margin-top:14px">${L.lessons.map((l, i) => {
     const st = S.lessons[l.id] || {};
-    return `<a class="card li ${st.done ? "done" : ""}" href="#/lesson/${l.id}"><span class="num">${st.done ? "✓" : i + 1}</span>
-      <span class="t"><b>${esc(l.title)}</b><span class="small muted">${esc(l.goal || "")}</span></span>
+    return `<a class="card li ${st.done ? "done" : ""}${st.done && st.auto ? " auto" : ""}" href="#/lesson/${l.id}"><span class="num">${st.done ? "✓" : i + 1}</span>
+      <span class="t"><b>${esc(l.title)}</b><span class="small muted">${esc(l.goal || "")}</span>${st.done && st.auto ? `<span class="small lvlauto">✓ zaliczone automatycznie</span>` : ""}</span>
       <span class="sc">${st.best ? st.best + "%" : ""}</span></a>`;
   }).join("")}</div>
   ${(STORIES_BY[L.id] || []).length ? `<h2>📚 Czytanki</h2><div class="lesson-list">${storyItems(STORIES_BY[L.id])}</div>` : ""}
@@ -36769,17 +37062,18 @@ function viewLesson(id, tab) {
   const l = LESSONS[id]; if (!l) return viewHome();
   const L = LESSON_LEVEL[id];
   const st = lessonState(id);
-  if (!st.seen) { st.seen = true; saveState(); }
+  const touch = (x, sc) => { if (window.LVL) LVL.touch(x, sc); };   // czas zmiany lekcji – do łączenia po nowym starcie (src/sync.js)
+  if (!st.seen) { st.seen = true; touch(st); saveState(); }
   const tabs = lessonTabs(l);
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0][0];
   const idx = L.lessons.indexOf(l);
   const nextL = L.lessons[idx + 1] || (LV[LV.indexOf(L) + 1] || { lessons: [] }).lessons[0];
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/level/${L.id}">${esc(L.short)}</a> › Lekcja ${idx + 1}</div>
-    <h1 style="--c:${L.color}">${esc(l.title)} ${st.done ? `<span class="pill">✓ zaliczona · ${st.best}%</span>` : ""}</h1>
+    <h1 style="--c:${L.color}">${esc(l.title)} ${st.done && st.auto ? `<span class="pill lvlauto">✓ zaliczone automatycznie</span>` : st.done ? `<span class="pill">✓ zaliczona · ${st.best}%</span>` : ""}</h1>
     <div class="tabs steps">${tabs.map(([k, n], i) => `<a class="tab ${k === tab ? "on" : ""} ${tabDone(st, k) ? "dn" : ""}" href="#/lesson/${id}/${k}"><span class="stn">${tabDone(st, k) ? "✓" : i + 1}</span> ${n}</a>`).join("")}</div>
     <div id="tab" style="--c:${L.color}"></div>`;
   const root = $("#tab");
-  if (tab !== "practice" && tab !== "test" && !(st.v && st.v[tab])) { st.v = st.v || {}; st.v[tab] = 1; saveState(); }
+  if (tab !== "practice" && tab !== "test" && !(st.v && st.v[tab])) { st.v = st.v || {}; st.v[tab] = 1; touch(st); saveState(); }
   const nextTab = (() => { const i = tabs.findIndex(t => t[0] === tab); return tabs[i + 1]; })();
   const nextBtn = nextTab ? `<div class="row" style="justify-content:flex-end;margin-top:18px"><a class="btn pri" href="#/lesson/${id}/${nextTab[0]}">Dalej: ${nextTab[1]} →</a></div>` : "";
   if (tab === "learn") { root.innerHTML = (l.kind === "kana" ? learnKana(l) : learnTheory(l)) + nextBtn; animIn(root); }
@@ -36796,9 +37090,13 @@ function viewLesson(id, tab) {
     // stan lekcji czytamy dopiero na końcu: S mogło zostać podmienione w trakcie (druga karta, synchronizacja, wczytanie postępów)
     const done = pct => {
       const st = lessonState(id);
-      if (P) { st.prac = true; saveState(); return; }
+      if (P) { st.prac = true; touch(st); saveState(); return; }
+      // każde zaliczenie testu (także powtórne, poniżej dawnego wyniku) to nowy czas dt – po nowym starcie na innym urządzeniu się liczy
+      const sc = pct >= PASS || pct > (st.best || 0);
       if (pct > (st.best || 0)) st.best = pct;
-      if (pct >= PASS && !st.done) { st.done = true; toast("🎉 Lekcja zaliczona!"); }
+      // prawdziwe zaliczenie zastępuje zaliczenie automatyczne
+      if (pct >= PASS && (!st.done || st.auto)) { st.done = true; delete st.auto; toast("🎉 Lekcja zaliczona!"); }
+      touch(st, sc);
       saveState();
     };
     const nextHref = P ? `#/lesson/${id}/test` : (nextL ? `#/lesson/${nextL.id}` : `#/level/${L.id}`);
@@ -37292,7 +37590,7 @@ function installHTML() {
   return `<div class="card installc" style="margin-bottom:14px">📱 <b>Dodaj kurs do ekranu telefonu.</b> Będzie działał jak aplikacja, także bez internetu, np. w autobusie czy metrze.
     <div style="margin-top:8px">${how}</div>${ios ? `<p class="small muted" style="margin:8px 0 0">${hasProgress() ? "Aplikacja z ikony zaczyna od zera. Przed dodaniem do ekranu stuknij „📋 Kopiuj kod” (Ustawienia), a potem w aplikacji z ikony: Ustawienia → „Wczytaj z kodu”." : "Na iPhonie aplikacja z ekranu ma osobne postępy niż Safari, więc najlepiej od razu ucz się z ikony."}</p>` : ""}</div>`;
 }
-const hasProgress = () => !!(S.xp || Object.keys(S.lessons || {}).length || Object.keys(S.srs || {}).length);
+const hasProgress = () => !!(S.xp || Object.values(S.lessons || {}).some(r => r && !r.auto) || Object.keys(S.srs || {}).length);
 // iPhone: aplikacja z ikony ma osobną pamięć – podpowiedź, jak przenieść postępy z Safari
 function iosMoveHTML() {
   if (!(window.PWA_MODE && IOS && isStandalone()) || hasProgress()) return "";
@@ -37437,6 +37735,7 @@ function viewSettings(sub) {
   const vs = TTS.voices;
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Ustawienia</div><h1>Ustawienia</h1>
   ${profSettingsHTML()}
+  ${window.LVL ? LVL.settingsHTML() : ""}
   ${transferHTML()}
   ${typeof memSettingsHTML === "function" ? memSettingsHTML() : ""}
   ${typeof flowSettingsHTML === "function" ? flowSettingsHTML() : ""}
@@ -37484,6 +37783,7 @@ function viewSettings(sub) {
   if (typeof memSettingsBind === "function") memSettingsBind();
   if (typeof flowSettingsBind === "function") flowSettingsBind();
   bindProfSettings(sub);
+  if (window.LVL) LVL.settingsBind(sub);   // 🎯 Mój poziom i nowy start (src/lvl.js)
   if (window.AIHelp) AIHelp.settingsBind(sub);   // 💬 Pomoc AI (src/aihelp.js)
   $("#rst").onclick = async () => {
     if (!confirm(PROF.list.length > 1 ? `Na pewno usunąć wszystkie postępy osoby „${curProf().name || "Ja"}”? Kopia zostanie w Kopiach awaryjnych.` : "Na pewno usunąć wszystkie postępy? Kopia zostanie w Kopiach awaryjnych.")) return;
@@ -37516,6 +37816,7 @@ function applyTheme() { const t = S.settings.theme; if (t === "auto") document.d
 /* ===================== start ===================== */
 loadState();
 if (typeof memBoot === "function") memBoot();       // etap 1: dziennik odpowiedzi, migracja kart, migawki (src/mem.js, src/log.js)
+if (window.LVL) LVL.boot();                         // zaliczenia automatyczne z wybranego poziomu (src/lvl.js)
 applyTheme(); TTS.init(); backfillGrammarSRS(); releaseNew(); migrateMist(); profChip();
 if (typeof flowBoot === "function") flowBoot();     // etap 1: minuty nauki, rytm tygodnia (src/rhythm.js)
 // kilka osób na jednym urządzeniu: przy każdym otwarciu pytamy, kto się uczy
