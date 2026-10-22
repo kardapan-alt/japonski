@@ -1,7 +1,7 @@
 // Service worker wersji na telefon: zapisuje kurs w pamięci telefonu, żeby działał bez internetu.
 // Przy każdej nowej wersji zmienia się VERSION, więc telefon pobiera nowe pliki przy następnym otwarciu z internetem.
 // Dane kolejności kresek (duże) mają osobną pamięć i pobierają się ponownie tylko wtedy, gdy same się zmienią.
-const VERSION = "4409389164";
+const VERSION = "cb3827b209";
 const CACHE = "nauka-japonskiego-" + VERSION;
 const SCACHE = "nauka-japonskiego-kreski-517ed1e8d1";
 const FILES = ["./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
