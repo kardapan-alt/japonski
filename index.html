@@ -279,6 +279,7 @@ table.voc td.a{width:124px}
 .trace.hw svg{display:block;touch-action:none;position:relative;z-index:1}
 .hwmsg{text-align:center;min-height:1.5em;font-weight:600}
 .hwmsg.ok{color:var(--ok)} .hwmsg.bad{color:var(--bad)}
+.hwhint{text-align:center;margin:4px auto 0;max-width:34em;line-height:1.45}.hwhint:empty{display:none}
 .hwbtns .btn{padding:8px 12px}
 .kdet .pills{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0}
 .kdet .mn,.kmnbox{background:var(--bg3);border-radius:10px;padding:8px 10px;margin:8px 0;font-size:14px;line-height:1.5}
@@ -407,10 +408,48 @@ table.ctab td{padding:6px;white-space:nowrap}
 .lvlpick .lvlc .muted{font-size:12px}
 .lvlauto{display:block;color:var(--fg2)}
 .pill.lvlauto{display:inline-block;background:var(--okbg);color:var(--fg)}
+.lvlknown{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:14px}.lvlknown>span{flex:1 1 220px}
 .li.auto .num{background:var(--okbg);color:var(--fg)}
 .lvlhead{justify-content:space-between;align-items:baseline;flex-wrap:wrap}
 .lvlbar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:61;background:var(--fg);color:var(--bg);padding:8px 8px 8px 16px;border-radius:12px;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 32px)}
 .lvlbar .ib{color:inherit;background:transparent}
+/* ✏️ wybór lekcji: W nauce / Znam / Na później (src/lvl.js) */
+.lvllinks{display:flex;gap:4px 14px;flex-wrap:wrap}
+.liw{display:flex;gap:6px;align-items:stretch}
+.liw>.li{flex:1;min-width:0}
+.li.later{opacity:.72}
+.li.later .num{background:transparent;border:2px dashed var(--line)}
+.pathc{flex:none;width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:1px solid var(--line);background:var(--bg2);border-radius:var(--r);box-shadow:var(--shadow);font-size:12px;line-height:1.2;padding:6px 4px;color:var(--fg2);min-height:48px}
+.pathc span:first-child{font-size:18px}
+.pathc.own{color:var(--fg);border-color:var(--fg2)}
+.pathc.pc-k{background:var(--okbg)}
+.pathc:focus-visible,.selo:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.selopts{display:grid;gap:8px}
+.selo{display:flex;gap:10px;align-items:flex-start;text-align:left;border:2px solid var(--line);background:var(--bg2);border-radius:12px;padding:10px 12px;min-height:48px}
+.selo b{display:block}
+.selo .si{font-size:22px;line-height:1.2}
+.selo.on{border-color:var(--fg)}
+.selo.on b::after{content:" ✓"}
+.selleg{margin:0;padding-left:18px}
+.sellv{margin-top:10px;padding:0;border-left:5px solid var(--c)}
+.sellv summary{cursor:pointer;padding:14px 16px;display:flex;gap:4px 8px;flex-wrap:wrap;align-items:baseline;min-height:48px}
+.sellv .sellvn{color:var(--c)}
+.sellv .sellvc{margin-left:auto}
+.selall{display:flex;gap:8px;align-items:center;padding:4px 16px 8px;min-height:40px}
+.selrows{border-top:1px solid var(--line)}
+.selrow{display:flex;gap:10px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer;min-height:52px}
+.selrow:last-child{border-bottom:0}
+.selrow input,.selall input{width:22px;height:22px;flex:none;margin:0}
+.selrow .t{flex:1;min-width:0}
+.selrow .t b{display:block;font-weight:600}
+.pst{flex:none;font-size:13px;text-align:right;color:var(--fg)}
+.pst small{display:block;color:var(--fg2);font-size:11px}
+.selset{border-top:1px solid var(--line);margin:12px 0;padding-top:12px}
+.selbar{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;background:var(--bg2);border:1px solid var(--fg2);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 32px)}
+.selbar[hidden]{display:none}
+.selbb{display:flex;gap:6px;flex-wrap:wrap}
+.selbb .btn{min-height:40px}
+body.selbaron #app{padding-bottom:140px}
 </style></head><body>
 <header class="top"><div class="topin"><a class="logo" href="#/"><span class="hanko">日</span><span class="tlabel">Nauka japońskiego</span></a><span class="sp"></span>
 <a class="tbtn" data-nav="review" href="#/review">🔁<span class="tlabel"> Powtórki</span><span class="badge" id="revbadge" style="display:none"></span></a>
@@ -476,7 +515,7 @@ function toRomaji(s) {
     }
     if (c === "ー") { const v = out.slice(-1); if (MACRON[v]) out = out.slice(0, -1) + MACRON[v]; else out += "-"; i++; continue; }
     if (c === "ん") { const nx = ROMA[s[i + 1]] || ""; out += /^[aiueoy]/.test(nx) ? "n'" : "n"; i++; continue; }
-    if (ROMA[c]) out += ROMA[c]; else out += c === "。" ? ". " : c === "、" ? ", " : c;
+    if (ROMA[c]) out += ROMA[c]; else out += c === "。" ? ". " : c === "、" ? ", " : c === "（" || c === "(" ? " (" : c === "）" ? ")" : c;
     i++;
   }
   return out.replace(/\s+/g, " ").trim();
@@ -542,7 +581,21 @@ function longVowels(s) {
   return out;
 }
 function normAnswer(s) {
-  return longVowels(K2H(plain(String(s))).replace(/(こんにち|こんばん)わ/g, "$1は").replace(/を/g, "お").toLowerCase().replace(/[\s。、．，.,!?！？「」『』・〜～…]/g, "").replace(/ō/g, "ou").replace(/ā/g, "aa").replace(/ū/g, "uu").replace(/ī/g, "ii").replace(/ē/g, "ee").replace(/'/g, ""));
+  return longVowels(K2H(plain(String(s))).replace(/(こんにち|こんばん)わ/g, "$1は").replace(/を/g, "お").toLowerCase().replace(/[\s。、．，.,!?！？「」『』・〜～…()（）]/g, "").replace(/ō/g, "ou").replace(/ā/g, "aa").replace(/ū/g, "uu").replace(/ī/g, "ii").replace(/ē/g, "ee").replace(/'/g, ""));
+}
+
+// Formy jednej poprawnej odpowiedzi (już znormalizowane): „・” i „／” rozdzielają warianty (よん・し), „～” pomijamy,
+// dopisek w nawiasie – （な）, (の), (する) – można pominąć albo wpisać: きけん, きけんな, きけん(な), きけん（な）.
+function ansForms(a) {
+  const out = new Set(), s = plain(String(a)), add = x => { x = normAnswer(x); if (x) out.add(x); };
+  add(s);
+  s.split(/[・／\/]/).forEach(x => { add(x); add(x.replace(/[（(][^（()）]*[）)]/g, "")); });
+  return out;
+}
+// Czy wpisana odpowiedź pasuje do którejś z poprawnych (latin: odpowiedź łacinką, myślniki nieistotne)
+function ansMatch(typed, answers, latin) {
+  const v = normAnswer(typed); if (!v) return false;
+  return (answers || []).some(a => { const f = ansForms(a); return f.has(v) || (latin && [...f].some(x => x.replace(/-/g, "") === v)); });
 }
 
 /* ===================== stan ===================== */
@@ -933,7 +986,7 @@ function toPolish(s) {
     if (c === "っ") { const nx = PL2[k.substr(i + 1, 2)] || PL[k[i + 1]] || ""; out += nx.startsWith("c") ? "t" : nx.startsWith("dz") ? "d" : (nx[0] || ""); i++; continue; }
     if (c === "ー") { const v = out.slice(-1); out += /[aiueo]/.test(v) ? v : ""; i++; continue; }
     if (c === "ん") { const nx = PL[k[i + 1]] || ""; out += /^[aiueoj]/.test(nx) ? "n'" : /^[bpm]/.test(nx) ? "m" : "n"; i++; continue; }
-    out += PL[c] !== undefined ? PL[c] : (c === "。" ? ". " : c === "、" ? ", " : c);
+    out += PL[c] !== undefined ? PL[c] : (c === "。" ? ". " : c === "、" ? ", " : c === "（" || c === "(" ? " (" : c === "）" ? ")" : c);
     i++;
   }
   return out.replace(/ou(?![aiueo])/g, "oo").replace(/ei(?![aiueo])/g, "ee").replace(/\s+/g, " ").trim();
@@ -30481,7 +30534,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-21 20:38";
+window.APP_VERSION = "2026-10-22 02:04";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -30522,6 +30575,9 @@ function migrateMist() {
 const PART_PL = { "は": "ła", "へ": "e", "を": "o" }, PART_RO = { "は": "wa", "へ": "e", "を": "o" };
 // krótki japoński (słowo, zwrot) → [po polsku, romaji]; dla długich zdań pusto (wystarczy furigana)
 function plRead(s) {
+  // dopisek gramatyczny w nawiasie osobno: 危険（な） → „kiken (na)”, nie „kikenna”
+  const mk = reading(stripTags(String(s))).trim().match(/^(.+?)\s*[（(]([぀-ヿー]+)[）)]$/);
+  if (mk) { const b = plRead(mk[1]); return b && [`${b[0]} (${toPolish(mk[2])})`, `${b[1]} (${toRomaji(mk[2])})`]; }
   const r = reading(stripTags(String(s))).replace(/[＿_]{2,}|[「」『』（）()…!?！？。、\s]/g, "").trim();
   if (!r || !/^[぀-ヿー〜～・]+$/.test(r) || morae(r).length > 10) return null;
   if (/.[はをへ]./.test(r.replace(/^(こんにちは|こんばんは|では|には|とは)/, "")) && /(です|ます|だ|た)$/.test(r)) return null;   // całe zdanie z partykułą w środku – wystarczy furigana
@@ -30574,7 +30630,9 @@ function runQuiz(root, items, opts = {}) {
       if (!ok && !q.retry && P) queue.push({ it: q.it, i: q.i, retry: true });
       bar.style.width = (100 * firstTry.size / total) + "%";
     }, () => { pos++; next(); }, { mode, retry: q.retry, src: opts.src || "", onHint: () => { lg.h = 1; }, onFinal: logAns });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // pisanie palcem: od razu na górę, bez płynnego przewijania – inaczej po „Dalej” znak jeszcze jedzie pod palcem,
+    // punkty pierwszej kreski się rozjeżdżają i dobrze napisana kreska 1 jest odrzucana
+    if (q.it.t === "write") window.scrollTo(0, 0); else window.scrollTo({ top: 0, behavior: "smooth" });
   }
   function finish() {
     bar.style.width = "100%";
@@ -30584,7 +30642,8 @@ function runQuiz(root, items, opts = {}) {
     addXP(xp);
     const bad = log.filter(x => !x.ok);
     const again = `<button class="btn again">↻ ${P ? "Jeszcze raz" : "Spróbuj jeszcze raz"}</button>`;
-    const nextB = opts.nextHref ? `<a class="btn pri" href="${opts.nextHref}">${opts.nextLabel || "Dalej"} →</a>` : "";
+    const nh = typeof opts.nextHref === "function" ? opts.nextHref() : opts.nextHref;   // funkcja: cel liczony dopiero teraz (np. następna lekcja w Twojej nauce)
+    const nextB = nh ? `<a class="btn pri" href="${nh}">${opts.nextLabel || "Dalej"} →</a>` : "";
     if (P) {
       body.innerHTML = `<div class="card result"><div style="font-size:46px">${pct >= 75 ? "🌟" : "📗"}</div><h2>Ćwiczenia skończone</h2>
         <p>Za pierwszym razem dobrze: <b>${good} z ${total}</b> · +${xp} pkt</p>
@@ -30854,7 +30913,7 @@ function renderItem(card, it, report, onNext, ctx = {}) {
       if (!latin) inp.value = romajiToKana(inp.value, true);
       const v = normAnswer(inp.value);
       if (!give && !v) { inp.focus(); return; }
-      const ok = !give && it.a.some(a => normAnswer(a) === v || (latin && normAnswer(a).replace(/[-]/g, "") === v));
+      const ok = !give && ansMatch(inp.value, it.a, latin);
       if (!ok && !give && P && tries === 0) {
         tries++; rep(false, esc(inp.value));
         // porównanie na postaci znormalizowanej, ale pokazujemy początek prawdziwej odpowiedzi (コーヒー, せんせい – nie „こおひ”, „せんせえ”)
@@ -30904,25 +30963,50 @@ function renderItem(card, it, report, onNext, ctx = {}) {
       }
     });
   } else if (it.t === "write") {
-    writeItem(card, it, head, P, rep, fin);
+    writeItem(card, it, head, P, rep, fin, ctx);
   }
   if (window.AIHelp) AIHelp.mount(card, it, { mode: ctx.mode, src: ctx.src, onHint: ctx.onHint });   // 💬 Zapytaj (src/aihelp.js)
 }
 
+/* ---------- podpowiedź po 2 nietrafionych próbach tej samej kreski: która teraz, gdzie się zaczyna, dokąd biegnie ---------- */
+// medians: linie środkowe (układ 1024, y w górę, od -124 do 900); i: numer oczekiwanej kreski (od 0)
+function hwStrokeHint(ch, medians, i) {
+  const m = medians && medians[i]; if (!m || m.length < 2) return "";
+  const [x0, y0] = m[0], [x1, y1] = m[m.length - 1], n = medians.length;
+  const v = y0 > 560 ? "u góry" : y0 < 210 ? "na dole" : "", h = x0 < 360 ? "po lewej" : x0 > 664 ? "po prawej" : "";
+  const where = v && h ? `${v} ${h}` : v ? `${v} pośrodku` : h ? `pośrodku ${h}` : "na środku";
+  const dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy);
+  let dir = "";
+  if (d > 60) {
+    const a = Math.atan2(dy, dx) * 180 / Math.PI;   // 0 = w prawo, -90 = w dół
+    dir = a > -22.5 && a <= 22.5 ? "w prawo" : a > 22.5 && a <= 67.5 ? "w górę w prawo" : a > 67.5 && a <= 112.5 ? "w górę" : a > 112.5 && a <= 157.5 ? "w górę w lewo"
+      : a > 157.5 || a <= -157.5 ? "w lewo" : a > -157.5 && a <= -112.5 ? "w dół w lewo" : a > -112.5 && a <= -67.5 ? "w dół" : "w dół w prawo";
+  }
+  let t = `Teraz kreska ${i + 1} z ${n} (mignie na znaku): zaczyna się ${where}${dir ? ` i biegnie ${dir}` : ""}.`;
+  // japońska kolejność tam, gdzie intuicja podpowiada inaczej
+  const kd = typeof KD === "function" ? (KD().by || {})[ch] : null, parts = kd && kd.parts || "";
+  const sh = /[⻌辶⻍]/.test(parts) ? "⻌" : /廴/.test(parts) ? "廴" : "";
+  if (sh && i < n - 3) { const rest = [...parts.replace(/[⻌辶⻍廴]/g, "")].filter(c => c !== ch).join(""); t += ` W japońskim ${sh} piszesz na końcu – najpierw ${rest ? rest : "resztę znaku"}.`; }
+  else if ("右有布希".includes(ch) && i < 2) t += ` W ${ch} najpierw krótka ノ, potem 一 (odwrotnie niż w 左).`;
+  else if ("左友在存".includes(ch) && i < 2) t += ` W ${ch} najpierw 一, potem ノ (odwrotnie niż w 右).`;
+  return t;
+}
 /* ---------- zadanie: napisz znak palcem (kolejność kresek sprawdzana) ---------- */
-function writeItem(card, it, head, P, rep, fin) {
+function writeItem(card, it, head, P, rep, fin, ctx = {}) {
   const trace = it.mode === "trace";
   card.dataset.wch = it.ch;
   card.innerHTML = head + `<div class="qq" style="line-height:1.6">${trace
     ? `Popatrz, w jakiej kolejności rysuje się kreski, a potem napisz palcem po szarym wzorze: <b class="jp">${it.ch}</b> – „${esc(it.m || "")}”`
     : `Napisz z pamięci znak: <b>„${esc(it.m || "")}”</b>`} <span class="small muted">${esc(it.r || "")}</span></div>
-    <div class="trace hw"><div class="grid-l"></div><div class="hwt"></div></div><div class="hwmsg small"></div>
+    <div class="trace hw"><div class="grid-l"></div><div class="hwt"></div></div><div class="hwmsg small"></div><div class="hwhint small muted"></div>
     <div class="qnav"><button class="btn sm anim">${trace ? "▶ Pokaż kolejność jeszcze raz" : "👁 Pokaż kolejność (podpowiedź)"}</button>${trace ? `<button class="btn sm skip">Pomiń</button>` : `<button class="btn sm idk">Nie wiem</button>`}</div>`;
   const msg = (t, cls) => { const e = $(".hwmsg", card); if (e) { e.textContent = t; e.className = "hwmsg small " + (cls || ""); } };
-  let done = false, peeked = false;
+  const hint = t => { const e = $(".hwhint", card); if (e) e.textContent = t; };
+  let done = false, peeked = false, hinted = false;
   const end = (miss, how) => {
     if (done) return; done = true;
-    const ok = !peeked && miss >= 0 && miss <= (trace ? 3 : 2);
+    // test z pamięci: kreska pokazana przez podpowiedź to już nie „z pamięci” (w ćwiczeniach podpowiedź tylko trafia do dziennika)
+    const ok = !peeked && !(hinted && !P) && miss >= 0 && miss <= (trace ? 3 : 2);
     rep(ok, ok ? "" : how);
     const nv = $(".qnav", card); nv && nv.remove();
     fin(ok, { yours: ok ? "" : how });
@@ -30933,26 +31017,39 @@ function writeItem(card, it, head, P, rep, fin) {
     const box = $(".trace", card), size = Math.round(box.getBoundingClientRect().width) || 260;
     const w = hwCreate($(".hwt", card), it.ch, data, size, !trace);
     const n = data.strokes.length;
-    let seq = 0;
+    // podpowiedź po pomyłkach na tej samej kresce: w ćwiczeniach po 2; w teście z pamięci po 3, gdy zadanie i tak jest już nieudane
+    const hintAt = trace || P ? 2 : 3;
+    let seq = 0, anim = false;
     const quiz = outline => {
-      seq++;
+      seq++; anim = false;
       try { w.cancelQuiz(); } catch (e) { }
       w.hideCharacter(); outline ? w.showOutline() : w.hideOutline();
       msg(outline ? `Pisz po szarym wzorze: ${kreski(n)}, od pierwszej.` : `Napisz z pamięci: ${kreski(n)}.`);
+      hint("");
       w.quiz({
-        showHintAfterMisses: trace ? 2 : 3, highlightOnComplete: true, leniency: 1.15,
-        onMistake: s => msg(`✗ Kreska ${s.strokeNum + 1}: to nie ta albo w złą stronę${s.mistakesOnStroke >= (trace ? 2 : 3) ? " – zobacz podpowiedź na znaku" : ""}.`, "bad"),
-        onCorrectStroke: s => msg(`✓ Kreska ${s.strokeNum + 1} z ${n}`, "ok"),
+        showHintAfterMisses: hintAt, highlightOnComplete: true, leniency: 1.15,
+        onMistake: s => {
+          const h = s.mistakesOnStroke >= hintAt;
+          msg(`✗ Kreska ${s.strokeNum + 1}: to nie ta albo w złą stronę${h ? " – podpowiedź poniżej" : ", spróbuj jeszcze raz"}.`, "bad");
+          if (!h) return;
+          hint(hwStrokeHint(it.ch, data.medians, s.strokeNum));
+          if (!trace && !hinted) { hinted = true; if (ctx.onHint) ctx.onHint(); }   // z pamięci: poprawnie dopiero po podpowiedzi
+        },
+        onCorrectStroke: s => { msg(`✓ Kreska ${s.strokeNum + 1} z ${n}`, "ok"); hint(""); },
         onComplete: s => { msg(s.totalMistakes ? `Gotowe, pomyłki: ${s.totalMistakes}.` : "🎉 Bez pomyłek!", s.totalMistakes ? "" : "ok"); end(s.totalMistakes, peeked ? "podgląd kolejności" : `pomyłki w kreskach: ${s.totalMistakes}`); }
       });
     };
     const animate = () => {
-      const my = ++seq;
+      const my = ++seq; anim = true;
       try { w.cancelQuiz(); } catch (e) { }
       w.showOutline(); w.hideCharacter();
       msg(`Kolejność kresek (${kreski(n)}): patrz, gdzie zaczyna się każda kreska i w którą stronę idzie.`);
       w.animateCharacter({ onComplete: () => { if (card.isConnected && my === seq && !done) setTimeout(() => card.isConnected && my === seq && !done && quiz(true), 500); } });
     };
+    // kreska zaczęta w trakcie pokazu kolejności się nie gubi: pokaz się urywa i od razu startuje pisanie po wzorze
+    // (pointerdown przychodzi przed touchstart/mousedown, więc hanzi-writer łapie już początek tej kreski)
+    const early = () => { if (anim && !done && card.isConnected) quiz(true); };
+    ["pointerdown", "touchstart", "mousedown"].forEach(t => box.addEventListener(t, early, true));
     $(".anim", card).onclick = () => { if (done) return; if (!trace) peeked = true; animate(); };
     // wyjście awaryjne: znak można pominąć (liczy się jak „Nie wiem”), żeby nigdy nie utknąć w ćwiczeniu
     const skip = () => { if (done) return; seq++; try { w.cancelQuiz(); w.showCharacter(); } catch (e) { } msg("Pominięte – zobacz kolejność kresek poniżej."); end(-1, ""); };
@@ -31297,7 +31394,14 @@ const Strokes = {
   },
   get(c) {
     if (!window.HanziWriter || !c || [...c].length !== 1) return Promise.resolve(null);
-    return this.load(this.groupOf(c)).then(d => d[c] ? this.fix(d[c][0], d[c][1]) : null);
+    return this.load(this.groupOf(c)).then(d => d[c] ? this.dense(this.fix(d[c][0], d[c][1])) : null);
+  },
+  // HanziWriter mierzy odległość palca od WIERZCHOŁKÓW linii środkowej, a te bywają co 300–450 jednostek: dobrze
+  // narysowana długa kreska wypadała „daleko” i przegrywała z sąsiednią. Dzielimy linie na odcinki ≤ 40 (ten sam kształt).
+  dense(d) {
+    if (!d) return d;
+    const medians = d.medians.map(m => { const o = [m[0]]; for (let i = 1; i < m.length; i++) { const [a, b] = m[i - 1], [x, y] = m[i], n = Math.ceil(Math.hypot(x - a, y - b) / 40); for (let k = 1; k <= n; k++) o.push(k === n ? m[i] : [Math.round(a + (x - a) * k / n), Math.round(b + (y - b) * k / n)]); } return o; });
+    return { strokes: d.strokes, medians };
   },
   // obrona przed zepsutymi danymi: kreska z linią środkową daleko poza polem 1024 to kawałek konturu poprzedniej kreski
   // (tak było w 21 znakach kana) – dołączamy kontur do poprzedniej kreski, linię środkową pomijamy
@@ -31412,7 +31516,7 @@ function writerModal(ch, infoHtml, speak, data, opt) {
     msg(outline ? `Pisz po szarym wzorze: ${kreski(n)}.` : `Napisz znak z pamięci: ${kreski(n)}.`);
     writer.quiz({
       showHintAfterMisses: 2, highlightOnComplete: true, leniency: 1.15,
-      onMistake: s => msg(`✗ Kreska ${s.strokeNum + 1}: to nie ta${s.mistakesOnStroke >= 2 ? " – zobacz podpowiedź na znaku" : ", spróbuj jeszcze raz"}.`, "bad"),
+      onMistake: s => msg(`✗ Kreska ${s.strokeNum + 1}: to nie ta${s.mistakesOnStroke >= 2 ? `. ${typeof hwStrokeHint === "function" ? hwStrokeHint(ch, data.medians, s.strokeNum) : "Zobacz podpowiedź na znaku."}` : ", spróbuj jeszcze raz."}`, "bad"),
       onCorrectStroke: s => msg(`✓ Kreska ${s.strokeNum + 1} z ${n}`, "ok"),
       onComplete: s => {
         msg(s.totalMistakes ? `Gotowe! Pomyłki: ${s.totalMistakes}. Spróbuj jeszcze raz bez pomyłek.` : "🎉 Brawo, bez pomyłek!", s.totalMistakes ? "" : "ok");
@@ -32218,7 +32322,7 @@ function aiResultHTML(r) {
 function aiLearner() {
   const me = S.me || {}, all = LV.flatMap(L => L.lessons.map(l => ({ l, L })));
   const done = all.filter(x => (S.lessons[x.l.id] || {}).done);
-  const last = done[done.length - 1], nx = all.find(x => !(S.lessons[x.l.id] || {}).done) || all[all.length - 1];
+  const last = done[done.length - 1], nx = all.find(x => !(S.lessons[x.l.id] || {}).done && (!window.LVL || LVL.want(x.l.id))) || all.find(x => !(S.lessons[x.l.id] || {}).done) || all[all.length - 1];   // „Znam – pomiń” jest zaliczone automatycznie, „Na później” pomijamy (src/lvl.js)
   const kanaL = LV.find(L => L.id === "kana"), n5 = LV.find(L => L.id === "n5a");
   const days = Math.max(0, Math.round((new Date(today()) - new Date(S.start || today())) / 864e5));
   const w = Math.floor(days / 7), m = Math.max(2, Math.round(days / 30.4));
@@ -32334,7 +32438,7 @@ document.addEventListener("click", e => {
     // wczesny etap: kana albo pierwsza część N5 – do japońskich słów dopisujemy też romaji
     let early = true;
     try {
-      const all = LV.flatMap(L => L.lessons.map(l => ({ l, L }))), nx = all.find(x => !(S.lessons[x.l.id] || {}).done);
+      const all = LV.flatMap(L => L.lessons.map(l => ({ l, L }))), nx = all.find(x => !(S.lessons[x.l.id] || {}).done && (!window.LVL || LVL.want(x.l.id)));   // „Na później” pomijamy (src/lvl.js)
       let i = nx ? LV.indexOf(nx.L) : LV.length;
       const sL = src && typeof LESSON_LEVEL !== "undefined" ? LESSON_LEVEL[src] : null, si = sL ? LV.indexOf(sL) : -1;
       if (si > i || (sL && !nx)) { i = si; u = Object.assign({}, u, { level: lvName(sL) }); }
@@ -34305,7 +34409,19 @@ function mergeCardPick(m, c) {
    zastosowała granicę (własne c ≥ c zwycięzcy), ma tylko świeże dane – zostaje cała. Cofnięcie nowego startu to nowszy wpis
    z dawną granicą, więc też wygrywa na wszystkich urządzeniach.
    S.lvl = {v, t}: wybrany poziom startowy, wygrywa nowszy. Lekcje z auto:1 („zaliczone automatycznie”) nie są prawdziwym
-   zaliczeniem: przy łączeniu znikają z obu stron i są liczone od nowa z wygranego poziomu (lvlApplyAuto w src/lvl.js). */
+   zaliczeniem: przy łączeniu znikają z obu stron i są liczone od nowa z wygranego poziomu (lvlApplyAuto w src/lvl.js).
+   S.sel = {id: {s, t}}: wybór dla lekcji („w” w nauce, „k” znam, „p” na później, „” jak domyślnie); osobno dla każdej lekcji
+   wygrywa nowszy t (przy remisie większe s). Nowy start czyści wybory jak wyniki lekcji (granica c, lvlCut). */
+// wybory lekcji z obu stron: dla każdej lekcji nowszy wpis
+function lvlSelMerge(x, y) {
+  const o = {}, ok = e => isObj(e) && +e.t > 0 && typeof (e.s === undefined ? "" : e.s) === "string";
+  for (const src of [x, y]) if (isObj(src)) for (const id of Object.keys(src)) {
+    const e = src[id], m = o[id];
+    if (!ok(e)) continue;
+    if (!m || +e.t > +m.t || (+e.t === +m.t && String(e.s || "") > String(m.s || ""))) o[id] = { s: String(e.s || ""), t: +e.t };
+  }
+  return o;
+}
 function lvlWin(x, y) {
   const ok = r => isObj(r) && +r.t > 0;
   if (!ok(x)) return ok(y) ? y : undefined;
@@ -34339,6 +34455,8 @@ function lvlCut(st, W) {
       if ((+r.dt || 0) < c) { delete r.done; delete r.best; delete r.auto; delete r.dt; }
     }
     if ("exams" in st) st.exams = {};
+    // wybory lekcji (S.sel) sprzed granicy: nowy start przywrócił domyślne
+    if (isObj(st.sel)) for (const id of Object.keys(st.sel)) { const e = st.sel[id]; if (!isObj(e) || (+e.t || 0) < c) delete st.sel[id]; }
   }
   if ((+own.cs || 0) < cs) {
     const srs = isObj(st.srs) ? st.srs : {};
@@ -34393,6 +34511,7 @@ function mergeState(a, b) {
   const seen = new Set();
   if (has("newq")) o.newq = (a.newq || []).concat(b.newq || []).filter(e => e && e.k && !(o.srs || {})[e.k] && !seen.has(e.k) && seen.add(e.k));
   if (has("settings")) o.settings = a.settings || b.settings;
+  if (has("sel")) o.sel = lvlSelMerge(a.sel, b.sel);
   if (typeof lvlApplyAuto === "function") lvlApplyAuto(o);   // zaliczenia automatyczne z wygranego poziomu (src/lvl.js)
   o.t = Date.now();
   return o;
@@ -35429,7 +35548,7 @@ function srsGrade(k, g) { return window.MEM.review(k, g === 0 ? 1 : g === 1 ? 2 
         const sr = isO(S.reset) ? S.reset : null, orr = isO(st.reset) ? st.reset : null;
         if (sr && (!orr || (orr.id !== sr.id && (typeof lvlWin === "function" ? lvlWin(sr, orr) === sr : (+orr.t || 0) < (+sr.t || 0))))) reStamp(M, sr);
         // nowszy start albo tylko poziom: obowiązuje dalej po „Zastąp”
-        else if ((S.reset || S.lvl) && typeof mergeState === "function") { M = mergeState(M, { reset: S.reset, lvl: S.lvl }); M.settings = Object.assign({}, st.settings, S.settings); }
+        else if ((S.reset || S.lvl || S.sel) && typeof mergeState === "function") { M = mergeState(M, Object.assign({ reset: S.reset, lvl: S.lvl }, S.sel ? { sel: S.sel } : {})); M.settings = Object.assign({}, st.settings, S.settings); }
         ensureAll(M, now, own);
       } else {
         // wczytane karty: uzgodnienie zmian zrobionych starszą wersją kursu (wpisy „leg”)
@@ -38960,7 +39079,7 @@ function viewHome() {
     ${planHTML(nx, gentle)}
     <div class="fside">${flowWeekHTML()}${typeof tipFor === "function" ? tipFor(gentle ? "break" : "home") : ""}</div>
   </div>
-  <div class="row lvlhead"><h2>Poziomy</h2>${window.LVL ? `<a class="small lvllink" href="#/settings/poziom">🎯 Zaczynasz od: ${esc(LVL.shortOf(LVL.cur()))} · zmień</a>` : ""}</div>
+  <div class="row lvlhead"><h2>Poziomy</h2>${window.LVL ? `<span class="lvllinks"><a class="small lvllink" href="#/settings/poziom">🎯 Zaczynasz od: ${esc(LVL.shortOf(LVL.cur()))} · zmień</a><a class="small lvllink" href="#/lekcje">✏️ Wybierz lekcje</a></span>` : ""}</div>
   <div class="grid g2">${LV.map(L => {
     const p = levelProgress(L);
     return `<a class="card lvl" href="#/level/${L.id}" style="--c:${L.color}"><span class="bar"></span>
@@ -39032,7 +39151,9 @@ function planHTML(nx, gentle) {
     : { ok: true, href: "#/review", t: "🔁 Powtórki", d: "Na dziś wszystko powtórzone" });
   if (mc && !gentle) steps.push(!fixed ? { ok: false, href: "#/bledy", t: "📝 Pomyłki", b: "Zacznij: 📝 Pomyłki", d: `${Math.min(mc, 12)} ${plN(Math.min(mc, 12), "ćwiczenie", "ćwiczenia", "ćwiczeń")} z zeszytu błędów` }
     : { ok: true, href: "#/bledy", t: "📝 Pomyłki", d: "Dziś już poprawione" });
+  const later = !nx && window.LVL ? LVL.laterN() : 0;   // lekcje „Na później” (src/lvl.js): nie trafiają do planu
   steps.push(nx ? { ok: false, href: `#/lesson/${nx.id}`, t: `▶ ${esc(nx.title)}`, b: "▶ Dalej z lekcją", d: gentle ? "Potem, jeśli masz ochotę: kawałek lekcji" : "Kawałek następnej lekcji" }
+    : later ? { ok: false, href: "#/lekcje", t: "✏️ Wybierz kolejne lekcje", b: "✏️ Wybierz lekcje", d: `Lekcje z Twojej nauki są zaliczone. Na później: ${later} ${plN(later, "lekcja", "lekcje", "lekcji")}` }
     : { ok: true, href: "#/", t: "🎓 Wszystkie lekcje ukończone", d: "Rób powtórki i egzaminy poziomów" });
   const kanaL = LV.find(L => L.id === "kana"), startDone = kanaL ? kanaL.lessons.filter(l => (S.lessons[l.id] || {}).done).length : 0;
   if (!gentle && window.SITS && SITS.length && !Object.keys(S.srs).some(k => k.startsWith("c|")) && (lDone("wym-3") || startDone >= 3))
@@ -39094,15 +39215,25 @@ function flowWeekHTML() {
   const nameOf = v => { const o = OPTS.find(x => x[0] === v), L = lvs().find(x => x.id === v); return L ? L.title : o ? o[1] : v; };
   const shortOf = v => { const o = OPTS.find(x => x[0] === v); return o ? o[1] : v; };
 
-  // zaliczenia automatyczne z poziomu st.lvl (deterministycznie: ten sam poziom i te same prawdziwe wyniki → ten sam stan)
+  /* wybór lekcji: S.sel[id] = {s, t} – s: "w" W mojej nauce, "k" Znam – pomiń, "p" Na później, "" jak domyślnie dla poziomu.
+     Domyślnie: lekcje poniżej wybranego poziomu – Znam, reszta – W mojej nauce. Przy łączeniu wygrywa nowszy t (src/sync.js). */
+  const SEL = { w: ["📖", "W nauce", "W mojej nauce"], k: ["✔️", "Znam", "Znam – pomiń"], p: ["⏳", "Później", "Na później"] };
+  const selOk = s => s === "w" || s === "k" || s === "p";
+  function lvIdx(st) { const v = isO(st && st.lvl) ? st.lvl.v : ""; return lvs().findIndex(x => x.id === v); }
+  const defAt = (idx, i) => idx > 0 && i < idx ? "k" : "w";
+  function lvOfLesson(id) { const a = lvs(); for (let i = 0; i < a.length; i++) if (a[i].lessons.some(l => l.id === id)) return i; return -1; }
+  const own = (st, id) => { const e = isO(st && st.sel) ? st.sel[id] : null; return isO(e) && selOk(e.s) ? e.s : ""; };
+  const defOf = id => defAt(lvIdx(S), lvOfLesson(id));
+  const eff = id => own(S, id) || defOf(id);
+  // zaliczenia automatyczne z poziomu st.lvl i wyborów st.sel (deterministycznie: te same dane → ten sam stan)
   function applyAuto(st) {
     if (!st || !lvs().length) return false;
     if (!isO(st.lessons)) st.lessons = {};
-    const L = st.lessons, v = isO(st.lvl) ? st.lvl.v : "", idx = lvs().findIndex(x => x.id === v), pm = passMin();
+    const L = st.lessons, idx = lvIdx(st), pm = passMin();
     let ch = false;
     lvs().forEach((lv, i) => lv.lessons.forEach(l => {
       const r = L[l.id];
-      if (idx > 0 && i < idx) { if (!isO(r) || !r.done) { L[l.id] = Object.assign(isO(r) ? r : {}, { done: true, auto: 1 }); ch = true; } }
+      if ((own(st, l.id) || defAt(idx, i)) === "k") { if (!isO(r) || !r.done) { L[l.id] = Object.assign(isO(r) ? r : {}, { done: true, auto: 1 }); ch = true; } }
       else if (isO(r) && r.auto) {
         delete r.auto; if (!((+r.best || 0) >= pm)) delete r.done;
         if (!Object.keys(r).some(k => r[k] && k !== "done")) delete L[l.id];
@@ -39120,6 +39251,31 @@ function flowWeekHTML() {
     if (typeof updateBadge === "function") updateBadge();
     return true;
   }
+  // wybór dla lekcji ids: s = "w" | "k" | "p" | "" (jak domyślnie); czas zawsze nowszy od poprzedniego wpisu tej lekcji
+  function setSel(ids, s) {
+    if (!selOk(s)) s = "";
+    if (!isO(S.sel)) S.sel = {};
+    const now = Date.now(), toK = new Set(); let n = 0;
+    ids.forEach(id => {
+      if (lvOfLesson(id) < 0) return;
+      const e = S.sel[id], was = eff(id);
+      if (!s && !own(S, id)) return;   // już domyślnie – bez nowego wpisu
+      S.sel[id] = { s, t: Math.max(now, isO(e) ? (+e.t || 0) + 1 : 0) }; n++;
+      if (was !== "k" && eff(id) === "k") toK.add(id);
+    });
+    // właśnie „Znam – pomiń”: karty tych lekcji czekające w kolejce nowych (S.newq) już do powtórek nie wejdą
+    // (karty, które już są w powtórkach, zostają; przycisk „➕ Dodaj do powtórek” w lekcji doda je z powrotem)
+    if (toK.size && Array.isArray(S.newq)) S.newq = S.newq.filter(e => !(isO(e) && isO(e.card) && toK.has(e.card.l)));
+    if (n) { applyAuto(S); saveState(); if (typeof updateBadge === "function") updateBadge(); }
+    return n;
+  }
+  // liczniki: w / k / p (stan obowiązujący) i ile lekcji ma Twój własny wybór
+  function counts(lvId) {
+    const o = { w: 0, k: 0, p: 0, own: 0, n: 0 };
+    lvs().forEach(L => { if (lvId && L.id !== lvId) return; L.lessons.forEach(l => { o[eff(l.id)]++; o.n++; if (own(S, l.id)) o.own++; }); });
+    return o;
+  }
+  const laterN = () => lvs().reduce((a, L) => a + L.lessons.filter(l => eff(l.id) === "p" && !(S.lessons[l.id] || {}).done).length, 0);
   // zapis w lekcji: t – ostatnia zmiana, dt – ostatnie zaliczenie albo wynik (do łączenia po nowym starcie)
   function touch(st, scored) { const t = Date.now(); st.t = t; if (scored) st.dt = t; }
 
@@ -39132,7 +39288,7 @@ function flowWeekHTML() {
     try { if (window.MEM_LOG) { await MEM_LOG.ready; snap = await MEM_LOG.snapshot("przed nowym startem", json); } } catch (e) { }
     const now = Date.now(), prev = isO(S.reset) ? S.reset : {}, id = rid();
     S.reset = { t: now, id, c: now, cs: clearSrs ? now : (+prev.cs || 0) };
-    S.lessons = {}; S.exams = {};
+    S.lessons = {}; S.exams = {}; if ("sel" in S) S.sel = {};   // wybory lekcji wracają do domyślnych (granica c w src/sync.js)
     if (clearSrs) { S.srs = {}; S.newq = []; }
     S.lvl = { v, t: now };
     applyAuto(S); saveState();
@@ -39186,6 +39342,7 @@ function flowWeekHTML() {
       <p class="small muted" style="margin:0">${n ? `${n} ${plN(n, "lekcja z niższych poziomów jest zaliczona", "lekcje z niższych poziomów są zaliczone", "lekcji z niższych poziomów jest zaliczonych")} automatycznie. Możesz do nich wracać w każdej chwili.` : "Wybierz, od czego chcesz się uczyć. Lekcje z niższych poziomów oznaczę jako zaliczone, ale dalej możesz do nich wracać."}</p>
       ${pickHTML(v, true)}
       <p class="small muted" style="margin:0 0 10px">Wyższy poziom: lekcje poniżej będą zaliczone automatycznie. Niższy: zdejmę tylko automatyczne zaliczenia – Twoje wyniki zostają.</p>
+      ${selSettingsHTML()}
       <div class="row"><button class="btn" id="lvlrst">🔄 Zacznij od nowa</button><button class="btn" id="lvlundo" hidden>↩️ Cofnij nowy start</button></div></div>`;
   }
   function settingsBind(sub) {
@@ -39194,7 +39351,8 @@ function flowWeekHTML() {
       if (v === cur()) return;
       set(v);
       const n = autoN();
-      toast(`Poziom: ${esc(shortOf(v))}.${n ? ` Zaliczone automatycznie: ${n} ${plN(n, "lekcja", "lekcje", "lekcji")}.` : ""}`, 3500);
+      const o = counts().own;
+      toast(`Poziom: ${esc(shortOf(v))}.${n ? ` Zaliczone automatycznie: ${n} ${plN(n, "lekcja", "lekcje", "lekcji")}.` : ""}${o ? " Twoje wybory lekcji zostają." : ""}`, 3500);
       rerender();
     });
     $("#lvlrst", card).onclick = () => resetSheet();
@@ -39210,7 +39368,7 @@ function flowWeekHTML() {
     const m = document.createElement("div"); m.className = "modal lvlm";
     m.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="lvlmh">
       <h3 id="lvlmh" style="margin-top:0">🔄 Zacznij od nowa</h3>
-      <p class="small">Wyniki lekcji i egzaminów poziomów wrócą do zera. Minuty i dni nauki, punkty, rozmowy, czytanki i ustawienia zostają. Przed startem zapiszę kopię, więc możesz to cofnąć.</p>
+      <p class="small">Wyniki lekcji i egzaminów poziomów wrócą do zera. Twoje wybory lekcji wrócą do domyślnych. Minuty i dni nauki, punkty, rozmowy, czytanki i ustawienia zostają. Przed startem zapiszę kopię, więc możesz to cofnąć.</p>
       <b>Od czego zaczynasz?</b>
       ${pickHTML(cur(), true)}
       <label class="small lvlsrs"><input type="checkbox" id="lvlsrs"> Wyczyść też powtórki słówek</label>
@@ -39248,12 +39406,136 @@ function flowWeekHTML() {
     toast(ok ? "Przywrócono postępy sprzed nowego startu ✓" : "Tego nowego startu nie da się już cofnąć.", 3500);
     route();
   }
+  /* ---------- wybór lekcji: przycisk przy lekcji na mapie poziomu, okno z trzema stanami, ekran „✏️ Wybierz lekcje” ---------- */
+  const DESC = { w: "Lekcja jest w planie na dziś i w „Dalej z lekcją”, po kolei.", k: "Liczy się jako zaliczona, a słówka z niej nie trafiają do powtórek. Możesz ją otworzyć i zrobić test.", p: "Nie pojawia się w planie na dziś. Otworzysz ją z mapy, kiedy zechcesz." };
+  const lessonOf = id => { for (const L of lvs()) { const i = L.lessons.findIndex(l => l.id === id); if (i >= 0) return { L, l: L.lessons[i], i }; } return null; };
+  const selName = s => s ? SEL[s][2] : "jak domyślnie dla poziomu";
+  function chipHTML(l) {
+    const e = eff(l.id), o = !!own(S, l.id);
+    return `<button type="button" class="pathc pc-${e}${o ? " own" : ""}" data-sel="${esc(l.id)}" aria-haspopup="dialog" aria-label="${esc(l.title)}: ${esc(SEL[e][2])}${o ? "" : " (domyślnie)"}. Zmień"><span aria-hidden="true">${SEL[e][0]}</span><span>${SEL[e][1]}</span></button>`;
+  }
+  function bindChips(root, after) { $$(".pathc[data-sel]", root).forEach(b => b.onclick = e => { e.preventDefault(); selSheet(b.dataset.sel, after); }); }
+  function selSheet(id, after) {
+    const x = lessonOf(id); if (!x) return;
+    const e = eff(id), o = own(S, id), d = defOf(id), back = document.activeElement;
+    const m = document.createElement("div"); m.className = "modal selm";
+    m.innerHTML = `<div class="box" role="dialog" aria-modal="true" aria-labelledby="selmh">
+      <h3 id="selmh" style="margin:0 0 2px">${esc(x.l.title)}</h3>
+      <p class="small muted" style="margin:0 0 10px">${esc(x.L.short)} · lekcja ${x.i + 1}</p>
+      <div class="selopts" role="radiogroup" aria-label="Ta lekcja w Twojej nauce">${["w", "k", "p"].map(s => `<button type="button" class="selo pc-${s}${s === e ? " on" : ""}" role="radio" aria-checked="${s === e}" data-s="${s}"><span class="si" aria-hidden="true">${SEL[s][0]}</span><span><b>${SEL[s][2]}</b><span class="small muted">${DESC[s]}</span></span></button>`).join("")}</div>
+      <p class="small muted" style="margin:10px 0">Domyślnie dla Twojego poziomu: <b>${SEL[d][2]}</b>.${o ? " Teraz obowiązuje Twój wybór – zostaje także po zmianie poziomu." : ""}</p>
+      <div class="row">${o ? `<button type="button" class="btn sm" id="seldef">↺ Jak domyślnie</button>` : ""}<a class="btn sm" href="#/lekcje" id="selmany">✏️ Kilka lekcji naraz</a><button type="button" class="btn sm" id="selno">Zamknij</button></div></div>`;
+    document.body.appendChild(m);
+    const close = () => { m.remove(); if (back && back.isConnected) try { back.focus(); } catch (er) { } };
+    const pick = s => {
+      m.remove();
+      if (s === o) return;   // bez zmiany (wybranie stanu domyślnego zapisuje go jako Twój wybór – zostaje też po zmianie poziomu)
+      setSel([id], s);
+      toast(`„${esc(x.l.title)}”: ${esc(selName(s))}.`, 2600);
+      if (after) after(); else route();
+    };
+    m.onclick = ev => { if (ev.target === m) close(); };
+    m.addEventListener("keydown", ev => { if (ev.key === "Escape") close(); });
+    $$(".selo", m).forEach(b => b.onclick = () => pick(b.dataset.s));
+    const df = $("#seldef", m); if (df) df.onclick = () => pick("");
+    $("#selno", m).onclick = close;
+    $("#selmany", m).onclick = () => m.remove();
+    const f = $(".selo.on", m); if (f) f.focus();
+  }
+  const cntHTML = c => `📖 W nauce: <b>${c.w}</b> · ✔️ Znam: <b>${c.k}</b> · ⏳ Na później: <b>${c.p}</b>`;
+  // ekran „✏️ Wybierz lekcje”: zaznaczanie lekcji z kilku poziomów naraz i zmiana dla wszystkich zaznaczonych
+  function viewPick() {
+    const idx = Math.max(0, lvIdx(S)), root = app();
+    let openSet = null, sel = new Set(), first = true;
+    const lvOpen = (L, i) => openSet ? openSet.has(L.id) : Math.abs(i - idx) <= 1;
+    function render() {
+      const y = first ? 0 : window.scrollY, c = counts(); first = false;
+      root.innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Wybierz lekcje</div>
+      <div class="card selhead"><h1 style="margin-top:0">✏️ Wybierz lekcje</h1>
+        <p style="margin:0 0 8px">Zaznacz lekcje i wybierz, co z nimi zrobić. Możesz łączyć poziomy, np. część N5 i część N4, i zmieniać to w każdej chwili.</p>
+        <ul class="small selleg"><li>📖 <b>W mojej nauce</b> – w planie na dziś, po kolei.</li><li>✔️ <b>Znam – pomiń</b> – liczy się jako zaliczona, bez słówek w powtórkach.</li><li>⏳ <b>Na później</b> – poza planem; otwierasz ją z mapy poziomu.</li></ul>
+        <p class="small muted" style="margin:6px 0">Zaczynasz od: <b>${esc(shortOf(cur()))}</b> (<a href="#/settings/poziom">zmień</a>). Poziom ustawia, które lekcje są domyślnie „Znam”. Lekcje ustawione przez Ciebie zostają takie, jak je wybierzesz – także po zmianie poziomu.</p>
+        <p class="selsum" style="margin:8px 0">${cntHTML(c)}</p>
+        <div class="row"><button type="button" class="btn sm" id="seldefall"${c.own ? "" : " disabled"}>↺ Przywróć domyślne dla mojego poziomu</button>${c.own ? `<span class="small muted">Twoje wybory: ${c.own} ${plN(c.own, "lekcja", "lekcje", "lekcji")}</span>` : ""}</div></div>
+      ${lvs().map((L, i) => {
+        const k = counts(L.id);
+        return `<details class="card sellv" data-lv="${esc(L.id)}" style="--c:${L.color}"${lvOpen(L, i) ? " open" : ""}><summary><b class="sellvn">${esc(L.short)}</b> <span>${esc(L.title)}</span><span class="small muted sellvc">📖 ${k.w} · ✔️ ${k.k} · ⏳ ${k.p}</span></summary>
+          <label class="selall small"><input type="checkbox" data-all="${esc(L.id)}"> Zaznacz wszystkie z ${esc(L.short)}</label>
+          <div class="selrows">${L.lessons.map((l, j) => {
+            const e = eff(l.id), o = own(S, l.id), r = S.lessons[l.id] || {};
+            return `<label class="selrow"><input type="checkbox" data-id="${esc(l.id)}"${sel.has(l.id) ? " checked" : ""}><span class="t"><b>${j + 1}. ${esc(l.title)}</b>${r.done && !r.auto ? `<span class="small muted">✓ zaliczona${r.best ? " · " + r.best + "%" : ""}</span>` : ""}</span><span class="pst pc-${e}"><span aria-hidden="true">${SEL[e][0]}</span> ${SEL[e][1]}${o ? "" : `<small>domyślnie</small>`}</span></label>`;
+          }).join("")}</div></details>`;
+      }).join("")}
+      <div class="selbar" role="region" aria-label="Zaznaczone lekcje"${sel.size ? "" : " hidden"}><span class="selbn" aria-live="polite">Zaznaczone: <b>${sel.size}</b></span>
+        <div class="selbb"><button type="button" class="btn sm" data-do="w">📖 W nauce</button><button type="button" class="btn sm" data-do="k">✔️ Znam</button><button type="button" class="btn sm" data-do="p">⏳ Później</button><button type="button" class="btn sm" data-do="">↺ Domyślnie</button><button type="button" class="btn sm" data-do="x">Odznacz</button></div></div>`;
+      bind(); syncAll();
+      window.scrollTo(0, y);
+    }
+    function syncAll() {
+      $$("input[data-all]", root).forEach(a => {
+        const ids = (lvs().find(L => L.id === a.dataset.all) || { lessons: [] }).lessons.map(l => l.id), n = ids.filter(id => sel.has(id)).length;
+        a.checked = n > 0 && n === ids.length; a.indeterminate = n > 0 && n < ids.length;
+      });
+      const bar = $(".selbar", root); if (bar) { bar.hidden = !sel.size; $(".selbn b", bar).textContent = sel.size; }
+      document.body.classList.toggle("selbaron", !!sel.size);
+    }
+    function bind() {
+      $$("details.sellv", root).forEach(d => d.ontoggle = () => { openSet = new Set($$("details.sellv[open]", root).map(x => x.dataset.lv)); });
+      $$("input[data-id]", root).forEach(b => b.onchange = () => { if (b.checked) sel.add(b.dataset.id); else sel.delete(b.dataset.id); syncAll(); });
+      $$("input[data-all]", root).forEach(a => a.onchange = () => {
+        const L = lvs().find(x => x.id === a.dataset.all); if (!L) return;
+        L.lessons.forEach(l => { if (a.checked) sel.add(l.id); else sel.delete(l.id); });
+        $$(`details[data-lv="${a.dataset.all}"] input[data-id]`, root).forEach(b => b.checked = a.checked);
+        syncAll();
+      });
+      $$(".selbar [data-do]", root).forEach(b => b.onclick = () => {
+        const s = b.dataset.do;
+        if (s === "x") { sel.clear(); $$("input[data-id]", root).forEach(x => x.checked = false); syncAll(); return; }
+        const ids = [...sel], n = ids.length;
+        openSet = new Set($$("details.sellv[open]", root).map(x => x.dataset.lv));
+        setSel(ids, s); sel.clear(); render();
+        toast(`${n} ${plN(n, "lekcja", "lekcje", "lekcji")}: ${esc(selName(s))}.`, 2600);
+      });
+      const da = $("#seldefall", root); if (da) da.onclick = () => {
+        const prev = {}; lvs().forEach(L => L.lessons.forEach(l => { const o = own(S, l.id); if (o) prev[l.id] = o; }));
+        const ids = Object.keys(prev); if (!ids.length) return;
+        openSet = new Set($$("details.sellv[open]", root).map(x => x.dataset.lv));
+        setSel(ids, ""); sel.clear(); render();
+        undoBarSel(`Przywrócono domyślne dla poziomu ${esc(shortOf(cur()))}.`, () => {
+          ["w", "k", "p"].forEach(s => setSel(ids.filter(id => prev[id] === s), s));
+          if (location.hash === "#/lekcje") render();
+          toast("Przywrócono Twoje wybory ✓", 2600);
+        });
+      };
+    }
+    render();
+  }
+  function undoBarSel(msg, fn) {
+    const old = $("#lvlbar"); if (old) old.remove();
+    const b = document.createElement("div"); b.id = "lvlbar"; b.className = "lvlbar"; b.setAttribute("role", "status");
+    b.innerHTML = `<span>${msg}</span> <button class="btn sm" id="selundo">↩️ Cofnij</button><button class="ib" aria-label="Zamknij">✕</button>`;
+    document.body.appendChild(b);
+    const tm = setTimeout(() => b.remove(), 15000);
+    $(".ib", b).onclick = () => { clearTimeout(tm); b.remove(); };
+    $("#selundo", b).onclick = () => { clearTimeout(tm); b.remove(); fn(); };
+  }
+  function selSettingsHTML() {
+    const c = counts();
+    return `<div class="selset"><b>Lekcje w Twojej nauce</b>
+      <p class="small" style="margin:4px 0">${cntHTML(c)}</p>
+      <p class="small muted" style="margin:0 0 8px">${c.own ? `Twoje wybory: ${c.own} ${plN(c.own, "lekcja", "lekcje", "lekcji")}. Zostają także po zmianie poziomu.` : "Poziom ustawia, które lekcje są domyślnie „Znam”. Każdą lekcję możesz też ustawić osobno: w nauce, znam albo na później."}</p>
+      <a class="btn sm" href="#/lekcje" id="selgo">✏️ Wybierz lekcje</a></div>`;
+  }
+
   // start: zaliczenia automatyczne dla nowych lekcji kursu i po zmianach zrobionych starszą wersją
   function boot() { try { if (applyAuto(S)) saveState(); } catch (e) { } }
 
+  window.addEventListener("hashchange", () => document.body.classList.remove("selbaron"));
   window.lvlApplyAuto = applyAuto;
   window.LVL = { opts, cur, set, reset, undo, undoInfo, touch, nameOf, shortOf, pickHTML, bindPick, picked, settingsHTML, settingsBind, boot, autoN,
-    real: r => !!(r && r.done && !r.auto), isAuto: id => { const r = (S.lessons || {})[id]; return !!(r && r.done && r.auto); } };
+    real: r => !!(r && r.done && !r.auto), isAuto: id => { const r = (S.lessons || {})[id]; return !!(r && r.done && r.auto); },
+    // wybór lekcji (S.sel): stan obowiązujący, czy lekcja jest w planie, zmiana, liczniki, widoki
+    eff, want: id => eff(id) === "w", own: id => own(S, id), def: defOf, setSel, counts, laterN, chipHTML, bindChips, selSheet, viewPick, SEL };
 })();
 
 /* ===================== dane kursu ===================== */
@@ -39339,6 +39621,7 @@ function route() {
   if (p === "japonia") return a ? viewLife(a, b || "") : viewLifeList();
   if (p === "przenies" && typeof viewTransfer === "function") return viewTransfer();
   if (p === "jak-sie-uczyc" && typeof viewHowTo === "function") return viewHowTo();
+  if (p === "lekcje" && window.LVL) return LVL.viewPick();   // ✏️ Wybierz lekcje (src/lvl.js)
   viewHome();
 }
 function furiFor(levelId) {
@@ -39354,9 +39637,17 @@ function levelProgress(L) {
   const n = L.lessons.length, d = L.lessons.filter(l => (S.lessons[l.id] || {}).done).length;
   return { n, d, pct: Math.round(100 * d / Math.max(1, n)) };
 }
+// następna lekcja: pierwsza w kolejności kursu, która jest „W mojej nauce” (src/lvl.js) i nie jest zaliczona
 function nextLesson() {
-  for (const L of LV) for (const l of L.lessons) if (!(S.lessons[l.id] || {}).done) return l;
+  for (const L of LV) for (const l of L.lessons) if (!(S.lessons[l.id] || {}).done && (!window.LVL || LVL.want(l.id))) return l;
   return null;
+}
+// „Następna lekcja” po teście: pierwsza dalej w kolejności kursu (także na wyższym poziomie), niezaliczona i „W mojej nauce”
+// (bez „Znam – pomiń” i „Na później”); gdy takiej nie ma – lekcja z planu (nextLesson), ale nie ta sama
+function nextLessonAfter(id) {
+  const all = LV.flatMap(L => L.lessons), i = all.findIndex(l => l.id === id);
+  const n = all.slice(i + 1).find(l => !(S.lessons[l.id] || {}).done && (!window.LVL || LVL.want(l.id))) || nextLesson();
+  return n && n.id !== id ? n : null;
 }
 function dueCount() { if (window.MEM && MEM.dueKeys) return MEM.dueKeys().length; const now = Date.now(); return Object.values(S.srs).filter(c => c.due <= now).length; }
 // po przerwie zaległości są rozkładane na kilka dni: licznik pokazuje dzisiejszy plan, nie cały zapas
@@ -39390,14 +39681,32 @@ function releaseNew() {
   return n;
 }
 const kartN = n => n + " " + plN(n, "karta", "karty", "kart");
-function addToSRS(lesson, withGrammar) {
+// karty lekcji: słówka i kanji, z withGrammar także punkty gramatyki
+function lessonCards(lesson, withGrammar) {
   const E = [];
   (lesson.vocab || []).forEach(v => E.push({ k: "v|" + v[0] + "|" + v[1], card: { m: v[2], l: lesson.id } }));
   (lesson.kanji || []).forEach(x => E.push({ k: "k|" + x[0], card: { m: x[3], l: lesson.id } }));
   if (withGrammar) E.push(...grammarCards(lesson));
-  const r = queueNew(E, { front: true });
+  return E;
+}
+function addToSRS(lesson, withGrammar) {
+  const r = queueNew(lessonCards(lesson, withGrammar), { front: true });
   if (r.later) toast(`Do powtórek: ${kartN(r.now)} dziś, ${r.later} w kolejnych dniach.`, 3500);
   return r.now;
+}
+// lekcja „✔️ Znam – pomiń” (src/lvl.js): jej karty nie trafiają same do powtórek – zamiast tego notka i przycisk „➕ Dodaj do powtórek”
+// (tylko gdy coś z tej lekcji nie jest jeszcze w powtórkach ani w kolejce)
+function lessonKnownNote(root, l, withGrammar) {
+  const q = new Set((S.newq || []).map(e => e && e.k));
+  if (!lessonCards(l, withGrammar).some(e => !S.srs[e.k] && !q.has(e.k))) return;
+  const d = document.createElement("div"); d.className = "card small lvlknown";
+  d.innerHTML = `<span>✔️ Ta lekcja jest u Ciebie jako „Znam – pomiń”, więc jej ${withGrammar && grammarCards(l).length ? "słówka i gramatyka nie trafiają" : "słówka nie trafiają"} same do powtórek.</span><button type="button" class="btn sm lvladd">➕ Dodaj do powtórek</button>`;
+  root.prepend(d);
+  $(".lvladd", d).onclick = () => {
+    const r = queueNew(lessonCards(l, withGrammar), { front: true });
+    toast(r.now || r.later ? `Do powtórek: ${kartN(r.now)} dziś${r.later ? `, ${r.later} w kolejnych dniach` : ""}.` : "Już są w powtórkach ✓", 3500);
+    updateBadge(); d.remove();
+  };
 }
 // powtórki gramatyki: jedna karta na punkt gramatyczny, przy każdej powtórce inne zdanie przykładowe
 function grammarCards(lesson) {
@@ -39423,23 +39732,25 @@ function viewLevel(id) {
     <h1>${esc(L.title)}</h1><p class="muted">${esc(L.desc)}</p>
     <div class="prog"><i style="width:${p.pct}%"></i></div>
     <div class="row" style="margin-top:12px">
-      <span class="small muted">${p.d} z ${p.n} lekcji zaliczonych</span><span style="flex:1"></span>
+      <span class="small muted">${p.d} z ${p.n} lekcji zaliczonych${window.LVL && LVL.counts(L.id).p ? ` · na później: ${LVL.counts(L.id).p}` : ""}</span><span style="flex:1"></span>
+      ${window.LVL ? `<a class="btn sm" href="#/lekcje">✏️ Wybierz lekcje</a>` : ""}
       <label class="small"><input type="checkbox" id="furi" ${furiFor(L.id) ? "checked" : ""}> furigana</label>
       ${L.id === "kana" ? `<a class="btn sm" href="#/kana/hira">Tabela kana</a>` : `<a class="btn sm" href="#/sciaga/${L.id}">📋 Ściąga gramatyczna</a>`}
       <a class="btn sm dark" href="#/exam/${L.id}">🏁 Egzamin poziomu${ex ? ` (${ex}%)` : ""}</a>
     </div>
   </div>
   <div class="lesson-list" style="margin-top:14px">${L.lessons.map((l, i) => {
-    const st = S.lessons[l.id] || {};
-    return `<a class="card li ${st.done ? "done" : ""}${st.done && st.auto ? " auto" : ""}" href="#/lesson/${l.id}"><span class="num">${st.done ? "✓" : i + 1}</span>
+    const st = S.lessons[l.id] || {}, later = window.LVL && LVL.eff(l.id) === "p";
+    return `<div class="liw"><a class="card li ${st.done ? "done" : ""}${st.done && st.auto ? " auto" : ""}${later ? " later" : ""}" href="#/lesson/${l.id}"><span class="num">${st.done ? "✓" : i + 1}</span>
       <span class="t"><b>${esc(l.title)}</b><span class="small muted">${esc(l.goal || "")}</span>${st.done && st.auto ? `<span class="small lvlauto">✓ zaliczone automatycznie</span>` : ""}</span>
-      <span class="sc">${st.best ? st.best + "%" : ""}</span></a>`;
+      <span class="sc">${st.best ? st.best + "%" : ""}</span></a>${window.LVL ? LVL.chipHTML(l) : ""}</div>`;
   }).join("")}</div>
   ${(STORIES_BY[L.id] || []).length ? `<h2>📚 Czytanki</h2><div class="lesson-list">${storyItems(STORIES_BY[L.id])}</div>` : ""}
   ${(TALKS_IDX().lvl[L.id] || []).length ? `<h2>💬 Rozmowy</h2><div class="lesson-list">${talkItems(TALKS_IDX().lvl[L.id])}</div>` : ""}
   ${(WR().lvl[L.id] || []).length ? `<h2>✍️ Pisanie</h2><div class="lesson-list">${writingItems(WR().lvl[L.id])}</div>` : ""}
   ${(PR().lvl[L.id] || []).length ? `<h2>🔀 Mylące pary</h2><div class="lesson-list">${pairItems(PR().lvl[L.id])}</div>` : ""}`;
   $("#furi").onchange = e => { S.settings.furi[L.id] = e.target.checked; saveState(); document.body.classList.toggle("nofuri", !e.target.checked); };
+  if (window.LVL) LVL.bindChips(app(), () => viewLevel(id));   // W mojej nauce / Znam – pomiń / Na później (src/lvl.js)
 }
 
 /* ===================== widok: lekcja ===================== */
@@ -39464,7 +39775,6 @@ function viewLesson(id, tab) {
   const tabs = lessonTabs(l);
   if (!tabs.some(t => t[0] === tab)) tab = tabs[0][0];
   const idx = L.lessons.indexOf(l);
-  const nextL = L.lessons[idx + 1] || (LV[LV.indexOf(L) + 1] || { lessons: [] }).lessons[0];
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/level/${L.id}">${esc(L.short)}</a> › Lekcja ${idx + 1}</div>
     <h1 style="--c:${L.color}">${esc(l.title)} ${st.done && st.auto ? `<span class="pill lvlauto">✓ zaliczone automatycznie</span>` : st.done ? `<span class="pill">✓ zaliczona · ${st.best}%</span>` : ""}</h1>
     <div class="tabs steps">${tabs.map(([k, n], i) => `<a class="tab ${k === tab ? "on" : ""} ${tabDone(st, k) ? "dn" : ""}" href="#/lesson/${id}/${k}"><span class="stn">${tabDone(st, k) ? "✓" : i + 1}</span> ${n}</a>`).join("")}</div>
@@ -39475,12 +39785,14 @@ function viewLesson(id, tab) {
   const nextBtn = nextTab ? `<div class="row" style="justify-content:flex-end;margin-top:18px"><a class="btn pri" href="#/lesson/${id}/${nextTab[0]}">Dalej: ${nextTab[1]} →</a></div>` : "";
   if (tab === "learn") { root.innerHTML = (l.kind === "kana" ? learnKana(l) : learnTheory(l)) + nextBtn; animIn(root); }
   if (tab === "pron") root.innerHTML = pronTab(l) + nextBtn;
-  if (tab === "vocab") { root.innerHTML = vocabTab(l) + nextBtn; bindVocab(root, l, L); addToSRS(l); }
-  if (tab === "kanji") { root.innerHTML = kanjiTab(l) + nextBtn; bindKanji(root, l, L); addToSRS(l); animIn(root); }
+  // karty do powtórek: same tylko z lekcji w Twojej nauce; przy „✔️ Znam – pomiń” – na Twoje życzenie (lessonKnownNote)
+  const toSRS = g => window.LVL && LVL.eff(id) === "k" ? lessonKnownNote(root, l, g) : addToSRS(l, g);
+  if (tab === "vocab") { root.innerHTML = vocabTab(l) + nextBtn; bindVocab(root, l, L); toSRS(); }
+  if (tab === "kanji") { root.innerHTML = kanjiTab(l) + nextBtn; bindKanji(root, l, L); toSRS(); animIn(root); }
   if (tab === "dialog") { root.innerHTML = `<div id="stage"></div>` + nextBtn; dialogPlayer($("#stage"), l.dialog); }
   if (tab === "film") { root.innerHTML = `<div id="stage"></div>` + nextBtn; kanaFilm($("#stage"), l); }
   if (tab === "practice" || tab === "test") {
-    addToSRS(l, true);
+    toSRS(true);
     const P = tab === "practice";
     const make = () => buildLessonQuiz(l, L, tab);
     const items = make();
@@ -39496,7 +39808,8 @@ function viewLesson(id, tab) {
       touch(st, sc);
       saveState();
     };
-    const nextHref = P ? `#/lesson/${id}/test` : (nextL ? `#/lesson/${nextL.id}` : `#/level/${L.id}`);
+    // cel „Następna lekcja” liczony dopiero na końcu testu – po wyborach lekcji i zaliczeniach (src/lvl.js); bez takiej lekcji – mapa poziomu
+    const nextHref = P ? `#/lesson/${id}/test` : () => { const n = nextLessonAfter(id); return n ? `#/lesson/${n.id}` : `#/level/${L.id}`; };
     const pr = pairsAfter(id);
     const intro = document.createElement("div");
     intro.className = "card"; intro.style.marginBottom = "14px";
