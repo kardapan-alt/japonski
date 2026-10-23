@@ -352,7 +352,9 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) addEve
   --seigaiha:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24' viewBox='0 0 48 24'%3E%3Cpath d='M3.11 -23.82A24 24 0 0 1 44.89 -23.82M-20.89 -11.82A24 24 0 0 1 20.89 -11.82M-15.52 -10.47A18.72 18.72 0 0 1 15.52 -10.47M-10.73 -8.09A13.44 13.44 0 0 1 10.73 -8.09M-6.68 -4.68A8.16 8.16 0 0 1 6.68 -4.68M27.11 -11.82A24 24 0 0 1 68.89 -11.82M32.48 -10.47A18.72 18.72 0 0 1 63.52 -10.47M37.27 -8.09A13.44 13.44 0 0 1 58.73 -8.09M41.32 -4.68A8.16 8.16 0 0 1 54.68 -4.68M3.11 0.18A24 24 0 0 1 44.89 0.18M8.48 1.53A18.72 18.72 0 0 1 39.52 1.53M13.27 3.91A13.44 13.44 0 0 1 34.73 3.91M17.32 7.32A8.16 8.16 0 0 1 30.68 7.32M-20.89 12.18A24 24 0 0 1 20.89 12.18M-15.52 13.53A18.72 18.72 0 0 1 15.52 13.53M-10.73 15.91A13.44 13.44 0 0 1 10.73 15.91M-6.68 19.32A8.16 8.16 0 0 1 6.68 19.32M27.11 12.18A24 24 0 0 1 68.89 12.18M32.48 13.53A18.72 18.72 0 0 1 63.52 13.53M37.27 15.91A13.44 13.44 0 0 1 58.73 15.91M41.32 19.32A8.16 8.16 0 0 1 54.68 19.32M3.11 24.18A24 24 0 0 1 44.89 24.18M8.48 25.53A18.72 18.72 0 0 1 39.52 25.53M13.27 27.91A13.44 13.44 0 0 1 34.73 27.91M-20.89 36.18A24 24 0 0 1 20.89 36.18M27.11 36.18A24 24 0 0 1 68.89 36.18' fill='none' stroke='%23000' stroke-width='1.3'/%3E%3C/svg%3E");
   --fade-tr:radial-gradient(120% 100% at 100% 0,#000000 22%,transparent 70%);
   --fade-up:linear-gradient(transparent,#000000 85%);
-  --jp:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","MS Gothic",sans-serif;
+  /* Roboto i Segoe UI przed japońskimi krojami Androida i Windows: polskie litery w kafelkach i odpowiedziach („dotykać (czegoś: に)”)
+     biorą się z kroju łacińskiego – japoński krój na Xiaomi rysował „ć” i „ś” jako c i s z osobną kreską; znaki japońskie i tak przechodzą dalej */
+  --jp:"Hiragino Sans","Hiragino Kaku Gothic ProN",Roboto,"Segoe UI","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","MS Gothic",sans-serif;
   --jpserif:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Noto Serif CJK JP","MS Mincho",serif;
   --ui:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,var(--jp);
   --head:ui-rounded,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,var(--jp);
@@ -830,6 +832,7 @@ table.voc tr.playing td{background:var(--bg3)}
 .kc .k{font-family:var(--jpserif);font-size:56px;line-height:1.1}
 .kc .m{font-weight:600;font-size:14px}
 .kc .rd{font-size:12px;color:var(--fg2);font-family:var(--jp)}
+.ctx-kd{font:700 10px/1 var(--ui);color:var(--fg2);letter-spacing:.02em}   /* on/kun przed czytaniem na kafelku znaku */
 .kana-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:520px}
 .kana-grid.w3{grid-template-columns:repeat(3,1fr);max-width:330px}
 .kcell{background:var(--bg2);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:8px 2px;text-align:center;cursor:pointer;min-height:70px}
@@ -1308,6 +1311,7 @@ table.ctab td{padding:6px;white-space:nowrap}
 .recbar{width:100%;max-width:320px;height:8px;border-radius:99px;background:var(--bg3);overflow:hidden}
 .recbar i{display:block;height:100%;width:0;background:var(--accent-line);animation:recfill var(--rec-ms,4s) linear forwards}
 @keyframes recfill{to{width:100%}}
+.tbar{margin-top:10px}   /* odliczanie czasu w filmach i scenkach (app.js, talks.js) – ten sam pasek co „Twoja kolej” */
 .recdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:4px;animation:recblink 1s infinite}
 @keyframes recblink{50%{opacity:.25}}
 .duoroles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
@@ -37472,7 +37476,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-22 20:26";
+window.APP_VERSION = "2026-10-23 00:27";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -37622,10 +37626,12 @@ function jpPart(q) {
   const t = stripTags(plain(String(q)));
   return HAS_JP.test(t) && !/[a-ząćęłńóśźż]{3,}/i.test(t) ? q : "";
 }
+// opcja po japońsku? Znaczenie z japońskim dopiskiem („dotykać (czegoś: に)”) to polski tekst: polska czcionka i bez lektora
+const jpOpt = o => { const t = stripTags(plain(String(o))); return HAS_JP.test(t) && !/[a-ząćęłńóśźż]{3,}/.test(t); };
 function answerOf(it) {
   // {ans: html, say: tekst do odtworzenia, rd: tekst do linijki czytania, tr: tłumaczenie, kj: znak do karty z kreskami}
   if (it.t === "mc") {
-    const opt = it.opts[it.a], optJP = HAS_JP.test(stripTags(plain(opt)));
+    const opt = it.opts[it.a], optJP = jpOpt(opt);
     // say z zadania (np. samo zdanie z luką, bez polskiego kontekstu i etykiet A：/B：) ma pierwszeństwo przed całym q
     if (BLANK.test(it.q || "") && optJP) { const f = it.q.replace(BLANK, opt); return { ans: ruby(f), say: it.say || stripTags(f), tr: it.tr || it.trA, rd: opt }; }
     // opcje to zdania z luką („W którym zdaniu pasuje で?”): w odpowiedzi całe zdanie z wypełnioną luką (say), nie ＿＿
@@ -37634,13 +37640,13 @@ function answerOf(it) {
     return { ans: esc(stripTags(opt)), jp: jq ? ruby(jq) : "", say: it.say || (jq ? stripTags(jq) : null), rd: jq, tr: it.trA, kj: it.kj, plAns: true };
   }
   if (it.t === "listen") {
-    const opt = it.opts[it.a], optJP = HAS_JP.test(stripTags(plain(opt)));
+    const opt = it.opts[it.a], optJP = jpOpt(opt);
     if (it.lines) return { ans: it.lines.map(l => ruby(l[1])).join("<br>"), lines: it.lines, tr: optJP ? it.trA : stripTags(opt) };
     return { ans: ruby(it.jp), say: it.raw ? null : (it.say || stripTags(it.jp)), sayRaw: it.raw ? it.jp : null, rd: it.jp, tr: optJP ? it.trA : stripTags(opt), kj: it.kj };
   }
   if (it.t === "order") { const full = it.words.join(it.words.some(w => /^[A-Za-z]/.test(w)) ? " " : ""); return { ans: ruby(full), say: full, tr: it.tr }; }
   if (it.t === "type") {
-    const a0 = it.sayShow || it.a[0], jp = !it.latin && HAS_JP.test(a0);
+    const a0 = it.sayShow || it.a[0], jp = !it.latin && jpOpt(a0);
     const alt = it.latin ? [] : [...new Set(it.a)].filter(x => x !== a0 && x !== plain(a0) && x !== reading(a0));
     return { ans: ruby(a0) + (alt.length ? ` <span class="small muted">(też: ${alt.map(esc).join(", ")})</span>` : ""), say: jp ? (it.say || a0) : null, rd: jp ? a0 : "", tr: it.trA, kj: it.kj };
   }
@@ -37667,7 +37673,7 @@ function reviewHTML(x) {
 // notka przy opcji (po odpowiedzi): czytanie, znaczenie, dlaczego nie
 // opcja z luką ＿＿ (np. „バス＿＿乗ります。”) – bez czytania: „basunorimasu” wyglądałoby na zdanie bez partykuły
 function optNote(it, i) {
-  const parts = [], inf = it.info && it.info[i], opt = it.opts[i], optJP = HAS_JP.test(stripTags(plain(opt))), gap = BLANK.test(opt);
+  const parts = [], inf = it.info && it.info[i], opt = it.opts[i], optJP = jpOpt(opt), gap = BLANK.test(opt);
   if (inf) {
     if (inf.jp && !optJP) parts.push(`<span class="jp">${ruby(inf.jp)}</span>`);
     const pr = inf.jp && !gap ? plRead(inf.jp) : null;
@@ -38227,19 +38233,24 @@ window.CTX = (function () {
     return s;
   }
   // krótko, w jednej linijce: „セン · さき” (kafelki, notki przy odpowiedziach)
-  const mainText = c => { const R = readings(c); return R ? R.main.map(x => x.r).join(" · ") : ""; };
+  const mainText = c => { const R = readings(c); return R ? R.main.map(x => `${x.kind}: ${x.r}`).join(" · ") : ""; };
+  // znaczek rodzaju czytania przy każdym czytaniu: „on 音” (onyomi) albo „kun 訓” (kunyomi) – nie tylko katakana/hiragana
+  const KIND = { on: ["on 音", "onyomi (音読み) – czytanie pochodzenia chińskiego"], kun: ["kun 訓", "kunyomi (訓読み) – czytanie japońskie"] };
+  const kindHTML = k => `<span class="ctx-kind ${k}" title="${KIND[k][1]}">${KIND[k][0]}</span>`;
+  // jedna linijka wyjaśnienia (okno znaku, zakładka Kanji w lekcji, lista kanji)
+  const legendHTML = () => `<p class="small muted ctx-leg">${kindHTML("on")} <b>onyomi</b> (音読み) – czytanie pochodzenia chińskiego, zwykle w słowach z kilku kanji: {先生|せんせい}. ${kindHTML("kun")} <b>kunyomi</b> (訓読み) – czytanie japońskie, zwykle gdy znak stoi sam albo z hiraganą: {先|さき}.</p>`.replace(/\{([^{}|]+)\|([^{}|]+)\}/g, (m, a, b) => `<span class="jp">${a}</span> „${b}”`);
 
   /* ---------- HTML ---------- */
   const rdHTML = x => {
     const m = x.r.match(/^([^()]*)\(([^)]*)\)(.*)$/);   // まな(ぶ): okurigana szarym
     const show = m ? `${esc(m[1])}<span class="ctx-oku">${esc(m[2])}</span>${esc(m[3])}` : esc(x.r);
-    return `<span class="ctx-rd"><span class="jp">${show}</span> <span class="ctx-rr">${esc(toRomaji(normR(x.r)))}</span></span>`;
+    return `<span class="ctx-rd">${kindHTML(x.kind)}<span class="jp">${show}</span> <span class="ctx-rr">${esc(toRomaji(normR(x.r)))}</span></span>`;
   };
   function readHTML(c, o = {}) {
     const R = readings(c); if (!R) return "";
     const on = R.rest.filter(x => x.kind === "on").map(x => x.r), kun = R.rest.filter(x => x.kind === "kun").map(x => x.r);
     return `<div class="ctx-main"><span class="small muted ctx-lab">Najczęściej czytasz:</span> <span class="ctx-chips">${R.main.map(rdHTML).join(`<span class="muted ctx-sep"> · </span>`)}</span></div>
-      ${R.rest.length && !o.noRest ? `<details class="ctx-more"><summary class="small">więcej czytań (${R.rest.length})</summary><div class="small">Rzadsze, spotkasz je w pojedynczych słowach: ${on.length ? `on: <span class="jp">${esc(on.join("・"))}</span>` : ""}${on.length && kun.length ? " · " : ""}${kun.length ? `kun: <span class="jp">${esc(kun.join("・"))}</span>` : ""}</div></details>` : ""}`;
+      ${R.rest.length && !o.noRest ? `<details class="ctx-more"><summary class="small">więcej czytań (${R.rest.length})</summary><div class="small">Rzadsze, spotkasz je w pojedynczych słowach:${on.length ? `<div class="ctx-mrow">${kindHTML("on")}<span class="jp">${esc(on.join("・"))}</span></div>` : ""}${kun.length ? `<div class="ctx-mrow">${kindHTML("kun")}<span class="jp">${esc(kun.join("・"))}</span></div>` : ""}</div></details>` : ""}`;
   }
   function wordsHTML(c, n) {
     const e = kanji(c); if (!e || !(e.words || []).length) return "";
@@ -38261,6 +38272,9 @@ window.CTX = (function () {
 .ctx-ex .pl{color:var(--fg2);font-size:14px}
 .ctx-ro{font-size:12.5px;color:var(--fg2);overflow-wrap:anywhere}
 .ctx-h{color:var(--fg2);font-weight:600}
+.ctx-kind{display:inline-block;font:700 11px/1.6 var(--ui);padding:0 6px;margin-right:5px;border-radius:6px;vertical-align:3px;white-space:nowrap;border:1px solid var(--line);color:var(--fg2)}
+.ctx-kind.on{background:var(--accent-soft);border-color:transparent;color:var(--fg)}
+.ctx-mrow{margin-top:4px}.ctx-leg{margin:6px 0}.ctx-rd + .ctx-sep{margin:0 2px}
 .ctx-main{margin:4px 0}.ctx-rd{white-space:nowrap}.ctx-rd .jp{font-size:19px;font-weight:600}.ctx-rr{font-size:12px;color:var(--fg2)}.ctx-oku{color:var(--fg2);font-weight:400}
 .ctx-more{margin:2px 0 6px}.ctx-more summary{cursor:pointer;color:var(--fg2)}
 .ctx-words li{padding:6px 10px}.ctx-words .jpl{font-size:18px}
@@ -38279,7 +38293,7 @@ tr.hasx td{border-bottom:none}
 .fb .ctx-exs{margin-top:8px}`;
   try { const el = document.createElement("style"); el.id = "ctx-css"; el.textContent = css; document.head.appendChild(el); } catch (e) { }
 
-  return { jp, romaji, polish, gloss, vocabEx, kanji, readings, readingsOf, top, allNorm, mainText, normR, readHTML, wordsHTML, exHTML, vocabExHTML, kanjiExHTML, _reset: () => { GL = null; } };
+  return { jp, romaji, polish, gloss, vocabEx, kanji, readings, readingsOf, top, allNorm, mainText, normR, readHTML, kindHTML, legendHTML, wordsHTML, exHTML, vocabExHTML, kanjiExHTML, _reset: () => { GL = null; } };
 })();
 
 /* ===================== kanji: oficjalne listy, kolejność kresek, pisanie palcem ===================== */
@@ -38308,7 +38322,8 @@ const kunStem = k => k.replace(/\(.*\)/, "").replace(/～/g, "");   // た(べ�
 function kReadLine(o) {
   const h = window.CTX ? CTX.readHTML(o.c) : "";
   if (h) return h;
-  return `on: <span class="jp">${esc(kOn(o).join("・") || "–")}</span> · kun: <span class="jp">${esc(kKun(o).join("・") || "–")}</span>`;
+  const K = k => window.CTX ? CTX.kindHTML(k) : k + ": ";
+  return `${K("on")}<span class="jp">${esc(kOn(o).join("・") || "–")}</span> · ${K("kun")}<span class="jp">${esc(kKun(o).join("・") || "–")}</span>`;
 }
 // przykładowe słowa: z lekcji, a jeśli znak jest spoza kursu, ze słówek kursu
 // (najpierw słowa z danych CTX_K – zawsze z tłumaczeniem; potem przykłady z lekcji z tłumaczeniem ze słowniczka)
@@ -38550,7 +38565,7 @@ function kanjiModal(c) {
   const inSrs = S.srs["k|" + c];
   const info = `<div class="kdet"><b class="kmean">${esc(kMean(o))}</b>
     <div class="pills">${o.jlpt ? `<span class="pill">N${o.jlpt}</span>` : ""}${o.strokes ? `<span class="pill">${kreski(o.strokes)}</span>` : ""}${o.grade && o.grade <= 6 ? `<span class="pill">${o.grade}. klasa szkoły</span>` : o.grade ? `<span class="pill">jōyō</span>` : ""}${o.course ? `<span class="pill">w kursie</span>` : ""}</div>
-    ${kReadLine(o)}</div>`;
+    ${kReadLine(o)}${window.CTX ? CTX.legendHTML() : ""}</div>`;
   const after = `<div class="kdet">
     ${cx ? CTX.wordsHTML(c, 5) + CTX.kanjiExHTML(c, { n: 2, title: "W zdaniu:" }) : ex.length ? `<ul class="ex-list">${ex.map(e => `<li>${sayBtn(e.jp)}<div class="txt"><div class="jpl">${ruby(e.jp)}</div>${e.pl ? `<div class="pl">${esc(e.pl)}</div>` : ""}</div></li>`).join("")}</ul>` : ""}
     ${mn ? `<div class="mn"><div>🧩 <b>Części:</b> ${esc(mn[0])}</div><div>💡 ${esc(mn[1])}</div></div>` : o.parts ? `<div class="mn">🧩 <b>Części:</b> <span class="jp">${esc([...o.parts].join(" + "))}</span></div>` : ""}
@@ -38579,8 +38594,8 @@ function kCard(o) {
 // czytania na kafelku: najważniejsze z CTX_K (gdy są), inaczej dwa pierwsze on i kun
 function kMainRd(o) {
   const R = window.CTX && CTX.readings(o.c);
-  if (R) return esc(R.main.map(x => x.r).join(" · "));
-  return esc(kOn(o).slice(0, 2).join("・")) + (o.kun ? " · " + esc(kKun(o).slice(0, 2).join("・")) : "");
+  if (R) return R.main.map(x => `<span class="ctx-kd">${x.kind}</span> ${esc(x.r)}`).join(" · ");
+  return `<span class="ctx-kd">on</span> ${esc(kOn(o).slice(0, 2).join("・"))}` + (o.kun ? ` · <span class="ctx-kd">kun</span> ${esc(kKun(o).slice(0, 2).join("・"))}` : "");
 }
 function kMatch(o, v, hv) {
   if (!v) return true;
@@ -38607,7 +38622,7 @@ function viewKanjiAll(tab, q) {
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Kanji</div><h1>Kanji 漢字</h1>
     <div class="tabs">${KTABS.map(([k, n]) => `<a class="tab ${k === tab ? "on" : ""}" href="#/kanji/${k}">${n}</a>`).join("")}</div>
     <p class="muted small">${tab === "kurs" ? `${total} znaków z lekcji kursu, w kolejności lekcji.` : `Oficjalna lista: ${jl.length} znaków poziomu JLPT ${tab.toUpperCase()}, od najczęściej używanych. ${KTAB_INFO[tab]}`}
-      Znasz (✓ w powtórkach): <b>${known}</b> z ${total}. Kliknij znak: zobaczysz animację kolejności kresek, napiszesz go palcem, poznasz czytania i historyjkę do zapamiętania.</p>
+      Znasz (✓ w powtórkach): <b>${known}</b> z ${total}. Kliknij znak: zobaczysz animację kolejności kresek, napiszesz go palcem, poznasz czytania i historyjkę do zapamiętania.</p>${window.CTX ? CTX.legendHTML() : ""}
     <input class="tinput kfind" placeholder="Znak, znaczenie, czytanie…" aria-label="Szukaj kanji: znak, znaczenie albo czytanie" value="${esc(q)}" autocomplete="off">
     <div class="kall">${groups.map((g, gi) => `<div class="kgroup" data-g="${gi}">${tab === "kurs" ? `<h2 class="lvh ${LOOK.lv(g.lv)}">${esc(g.title)} <span class="pill">${g.list.length}</span></h2>` : ""}
       <div class="card kqbar"><div class="row">
@@ -38900,7 +38915,7 @@ function viewTalk(id) {
     let timer = null, recScore = -1, heardTxt = "";
     const canSR = SREC_OK && navigator.onLine !== false, canRec = REC.ok && !REC.denied;
     box.innerHTML = `<div class="card yourturn"><div class="small muted">🎤 Twoja kolej – powiedz to na głos</div><b>${esc(s.you)}</b>
-      ${secs ? `<div class="tbar"><i style="animation-duration:${secs}s"></i></div>` : ""}
+      ${secs ? `<div class="recbar tbar"><i style="--rec-ms:${secs * 1000}ms"></i></div>` : ""}
       <div class="sarea"><div class="row" style="margin-top:10px">${canSR ? `<button class="btn pri ssay">🎤 Powiedz</button>` : ""}${canRec ? `<button class="btn ${canSR ? "" : "pri"} srec">🎙 Nagraj</button>` : ""}<button class="btn sshow">👀 Pokaż odpowiedzi</button></div>
       <p class="small muted">${canSR ? "Powiedz swoją kwestię – telefon sprawdzi, czy brzmi podobnie." : canRec ? "Nagraj się, a potem porównaj z lektorem." : "Powiedz swoją kwestię na głos, a potem sprawdź odpowiedzi."}</p></div>
       <div class="sres"></div></div>`;
@@ -38966,7 +38981,7 @@ function viewTalk(id) {
       }
       if (my !== token) { r.stop(); return; }
       recNow = r;
-      area.innerHTML = `<div class="yt"><span class="recdot"></span> Nagrywam – mów!</div><div class="tbar"><i style="animation-duration:10s"></i></div><button class="btn sm sstop" style="margin-top:8px">⏹ Stop</button>`;
+      area.innerHTML = `<div class="yt"><span class="recdot"></span> Nagrywam – mów!</div><div class="recbar tbar"><i style="--rec-ms:10000ms"></i></div><button class="btn sm sstop" style="margin-top:8px">⏹ Stop</button>`;
       let stopped = false;
       const fin = async () => {
         if (stopped || recNow !== r) return; stopped = true; recNow = null;
@@ -39387,6 +39402,7 @@ document.addEventListener("click", e => {
   const KEY = p => "nauka-japonskiego-ai:" + (p || "p0");
   const API = "https://generativelanguage.googleapis.com/v1beta/";
   const DEF_MODEL = "gemini-flash-latest";   // alias Google na aktualny model „flash”; przy 404 wybieramy model z listy
+  const LITE_MODEL = "gemini-flash-lite-latest";   // zapasowy: osobny darmowy limit, bywa dostępny, gdy „flash” nie jest
   const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
   const lsDel = k => { try { localStorage.removeItem(k); } catch (e) { } };
@@ -39584,6 +39600,7 @@ document.addEventListener("click", e => {
     quota: "Na dziś limit darmowych pytań się skończył. Odnowi się jutro – do tego czasu możesz skopiować pytanie do innego czatu AI.",
     minute: "Za dużo pytań w krótkim czasie. Odczekaj minutę i zapytaj jeszcze raz.",
     region: "Google nie udostępnia Gemini w miejscu, z którego się łączysz (albo dla tego konta). Możesz skopiować pytanie do innego czatu AI.",
+    precond: "Google odrzucił pytanie dla tego klucza (warunek konta lub projektu nie jest spełniony). Pomaga zwykle nowy klucz z Google AI Studio (aistudio.google.com). Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     safety: "Gemini nie odpowiedział, bo zadziałał filtr bezpieczeństwa Google. Spróbuj zapytać innymi słowami.",
     offline: "Brak połączenia z internetem. Możesz skopiować pytanie i zapytać później.",
     busy: "Gemini jest teraz przeciążony. Spróbuj jeszcze raz za chwilę.",
@@ -39593,22 +39610,30 @@ document.addEventListener("click", e => {
     cancel: "Zatrzymano.",
     other: "Nie udało się zapytać Gemini. Spróbuj jeszcze raz."
   };
-  const msgOf = code => (MSG[code] || MSG.other).replace("{origin}", (typeof location !== "undefined" && location.origin) || "");
+  // komunikat dla ucznia; przy błędach bez jasnej przyczyny dopisujemy krótko, co odpowiedział Google (łatwiej wtedy pomóc)
+  const msgOf = (code, detail) => (MSG[code] || MSG.other).replace("{origin}", (typeof location !== "undefined" && location.origin) || "") +
+    (detail && /^(other|precond|perm|model|busy)$/.test(code || "other") ? " (Google: " + detail + ")" : "");
   const aerr = (code, extra) => Object.assign(new Error("aihelp: " + code), { aih: code }, extra || {});
+  // błąd Google → kod komunikatu; ta sama ocena dla odpowiedzi HTTP i dla błędu, który przyszedł w strumieniu
+  function gClass(s, e) {
+    e = e || {};
+    const msg = String(e.message || ""), st = String(e.status || ""), det = JSON.stringify(e.details || []);
+    const detail = (s ? s + " " : "") + (st ? st + " " : "") + msg.replace(/\s+/g, " ").slice(0, 160);
+    const x = c => aerr(c, { detail: detail.trim() });
+    if (s === 429 || st === "RESOURCE_EXHAUSTED") return x(/per ?minute|PerMinute/i.test(msg + det) && !/per ?day|PerDay/i.test(msg + det) ? "minute" : "quota");
+    if (((s === 400 || st === "INVALID_ARGUMENT") && (/API_KEY_INVALID|API key/i.test(msg + det))) || s === 401 || st === "UNAUTHENTICATED") return x("key");
+    // klucz ograniczony do wybranych stron (Referer): podpowiadamy, co dopisać, zamiast „utwórz nowy klucz”
+    if (/API_KEY_HTTP_REFERRER_BLOCKED|referer|referrer/i.test(msg + det)) return x("referer");
+    if (/location is not supported/i.test(msg)) return x("region");
+    if (/FAILED_PRECONDITION/i.test(st + det)) return x("precond");
+    if (s === 403 || st === "PERMISSION_DENIED") return x("perm");
+    if (s === 404 || st === "NOT_FOUND") return x("model");
+    if (s >= 500 || /UNAVAILABLE|INTERNAL|DEADLINE_EXCEEDED/.test(st)) return x("busy");
+    return x("other");
+  }
   async function gErr(r) {
     let j = null; try { j = await r.json(); } catch (e) { }
-    const e = (Array.isArray(j) ? (j[0] || {}) : (j || {})).error || {};
-    const msg = String(e.message || ""), st = String(e.status || ""), det = JSON.stringify(e.details || []);
-    const s = r.status;
-    if (s === 429) return aerr(/per ?minute|PerMinute/i.test(msg + det) && !/per ?day|PerDay/i.test(msg + det) ? "minute" : "quota");
-    if ((s === 400 && (/API_KEY_INVALID|API key/i.test(msg + det))) || s === 401) return aerr("key");
-    // klucz ograniczony do wybranych stron (Referer): podpowiadamy, co dopisać, zamiast „utwórz nowy klucz”
-    if (/API_KEY_HTTP_REFERRER_BLOCKED|referer|referrer/i.test(msg + det)) return aerr("referer");
-    if (/location is not supported|FAILED_PRECONDITION/i.test(msg + st)) return aerr("region");
-    if (s === 403) return aerr("perm");
-    if (s === 404) return aerr("model");
-    if (s >= 500) return aerr("busy");
-    return aerr("other");
+    return gClass(r.status, (Array.isArray(j) ? (j[0] || {}) : (j || {})).error);
   }
   // limit czasu: brak odpowiedzi w T.first ms albo całość dłużej niż T.total ms
   async function gFetch(url, o, signal, onFirst) {
@@ -39689,17 +39714,32 @@ document.addEventListener("click", e => {
         }
         return { r, st };
       });
-    let model = cfg.model || cfg.auto || DEF_MODEL, res = await post(model);
-    if (!res.r.ok && res.r.status === 404) {
+    const tried = [], remember = m => { const c = load(cfg.prof); if (c.key === key) { c.auto = m; save(cfg.prof, c); } };
+    const ask = async m => { tried.push(m); const r = await post(m); return Object.assign(r, { err: r.r.ok ? null : await gErr(r.r) }); };
+    let model = cfg.model || cfg.auto || DEF_MODEL, res = await ask(model);
+    if (res.err && res.err.aih === "model") {
       // model wycofany albo zła nazwa: bierzemy aktualny „flash” z listy modeli tego klucza i pamiętamy go dla tej osoby
       const m = pickModel(await listModels(key, signal));
       if (!m || m === model) throw aerr("model");
       const c = load(cfg.prof); if (c.key === key) { c.auto = m; if (c.model === model) delete c.model; save(cfg.prof, c); }
-      model = m; res = await post(model);
+      model = m; res = await ask(model);
     }
-    if (!res.r.ok) throw await gErr(res.r);
+    // błąd, który przyszedł w strumieniu (HTTP 200), zanim padło choć słowo – oceniamy jak błąd HTTP
+    if (!res.err && res.st.err && !res.st.text) res.err = gClass(+res.st.err.code || 0, res.st.err);
+    // ten model nie odpowiada dla tego klucza (np. nowe klucze „AQ.”, darmowy projekt, limit tylko tego modelu):
+    // próbujemy aliasu Google, a potem wersji „lite” – zły klucz, brak sieci czy limit czasu nie zależą od modelu
+    if (res.err && !cfg.model && /^(other|precond|perm|model|busy|quota|minute)$/.test(res.err.aih)) {
+      for (const m of [DEF_MODEL, LITE_MODEL]) {
+        if (tried.includes(m)) continue;
+        const r2 = await ask(m);
+        if (!r2.err && r2.st.err && !r2.st.text) r2.err = gClass(+r2.st.err.code || 0, r2.st.err);
+        if (!r2.err) { if (/^(other|precond|perm|model)$/.test(res.err.aih)) remember(m); model = m; res = r2; break; }
+        if (/^(key|referer|offline|timeout|cancel)$/.test(r2.err.aih)) { res = r2; break; }
+      }
+    }
+    if (res.err) throw res.err;
     const st = res.st;
-    if (st.err) { if (st.text) return { text: st.text, cut: true }; throw aerr(+st.err.code === 429 ? "quota" : "other"); }
+    if (st.err) { if (st.text) return { text: st.text, cut: true }; throw gClass(+st.err.code || 0, st.err); }
     if (!st.text) throw aerr(st.block || /SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(st.finish) ? "safety" : "empty");
     return { text: st.text, cut: /MAX_TOKENS|SAFETY|PROHIBITED|BLOCKLIST|SPII|RECITATION/.test(st.finish), model };
   }
@@ -39709,7 +39749,7 @@ document.addEventListener("click", e => {
     try {
       const ms = await listModels(key);
       return { ok: true, auto: pickModel(ms), n: ms.length };
-    } catch (e) { return { ok: false, code: e.aih || "other", msg: msgOf(e.aih) }; }
+    } catch (e) { return { ok: false, code: e.aih || "other", msg: msgOf(e.aih, e.detail) }; }
   }
 
   /* ---------- Claude (claude.ai) ---------- */
@@ -40051,8 +40091,8 @@ document.addEventListener("click", e => {
       if (v.turns.length && v.turns[v.turns.length - 1].role === "user") v.turns.pop();
       const partial = shown || (e && e.text) || "";
       if (partial && code !== "cancel") v.view.push({ kind: "a", text: partial, who: p.name, cut: true });
-      const msg = e && e.msg ? e.msg : msgOf(code);
-      v.view.push({ kind: "err", text: msg, copy: /^(quota|minute|region|offline|busy|timeout|perm|referer|key|model|claude)$/.test(code || "") ? q : "" });
+      const msg = e && e.msg ? e.msg : msgOf(code, e && e.detail);
+      v.view.push({ kind: "err", text: msg, copy: /^(quota|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
       if (code !== "cancel" && cur === c && !P.ta.value) P.ta.value = q;
       if (e && e.off) P.p = null;
     } finally {
@@ -45867,14 +45907,39 @@ window.KONTO_CONFIG = window.KONTO_CONFIG || {
 // Każda karta (v| słówko, k| kanji, g| gramatyka, c| zwrot) staje się zadaniem z istniejących generatorów. Aplikacja sprawdza odpowiedź
 // i sama wystawia ocenę dla MEM.review: 1 źle / „Nie wiem”, 2 dobrze po podpowiedzi albo za drugim razem, 3 dobrze, 4 dobrze i szybko.
 // Tryb „🚋 Bez pisania” (S.settings.revMode = "droga") zamienia pisanie na fiszki z samooceną.
+const NEWCAP_CHOICES = [5, 10, 15, 20, 30, 50];
+// słówka i kanji ze wszystkich moich lekcji (otwartych albo zaliczonych przeze mnie, nie automatycznie), których nie ma jeszcze
+// w powtórkach ani w kolejce – od najstarszej lekcji
+function myLessonCards() {
+  const inQ = new Set((S.newq || []).map(e => e && e.k)), seen = new Set(), out = [];
+  LV.forEach(L => L.lessons.forEach(l => {
+    const st = S.lessons[l.id] || {};
+    if (!st.seen && !(st.done && !st.auto)) return;
+    lessonCards(l).forEach(e => { if (!S.srs[e.k] && !inQ.has(e.k) && !seen.has(e.k)) { seen.add(e.k); out.push(e); } });
+  }));
+  return out;
+}
+function myLessonsHTML() {
+  if (!LV.some(L => L.lessons.some(l => (S.lessons[l.id] || {}).seen))) return "";
+  const n = myLessonCards().length;
+  return `<p class="small rs-allw">${n ? `<button type="button" class="btn sm rs-all">➕ Dodaj słówka ze wszystkich moich lekcji (${n})</button><br><span class="muted">Trafią do powtórek od najstarszej lekcji, po ${newCap()} dziennie – dzienny limit zmienisz wyżej.</span>`
+    : `<span class="muted">✓ Słówka i kanji ze wszystkich Twoich lekcji są już w powtórkach albo czekają w kolejce.</span>`}</p>`;
+}
 function newqInfoHTML() {
   const q = (S.newq || []).length;
-  return `<p class="small muted">Nowe karty w kolejce: <b>${q}</b> · limit dzienny: <select class="ncap" aria-label="Limit nowych kart dziennie">${[5, 10, 15, 20, 30].map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select></p>`;
+  return `<p class="small muted">Nowe karty w kolejce: <b>${q}</b> · limit dzienny: <select class="ncap" aria-label="Limit nowych kart dziennie">${NEWCAP_CHOICES.map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select></p>${myLessonsHTML()}`;
 }
 document.addEventListener("change", e => {
   if (!e.target.matches || !e.target.matches(".ncap")) return;
   S.settings.newCap = +e.target.value; saveState();
   const n = releaseNew(); if (n) { toast(`Dodano do powtórek: ${kartN(n)}`); updateBadge(); }
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest(".rs-all"); if (!b) return;
+  const r = queueNew(myLessonCards(), { front: true });
+  const w = b.closest(".rs-allw");
+  if (w) w.innerHTML = `<span>✓ Dodano: ${kartN(r.now)} od dziś${r.later ? `, ${r.later} czeka w kolejce na kolejne dni` : ""}.</span>`;
+  updateBadge();
 });
 function viewReview() { return REV.view(); }
 function reviewSession(keys, o) { return REV.session(keys, o || {}); }
@@ -47424,10 +47489,16 @@ const allKanaChars = script => {
 const app = () => $("#app");
 function go(h) { location.hash = h; }
 window.addEventListener("hashchange", route);
+// nowy ekran otwiera się od góry (wcześniej zostawał w miejscu poprzedniego, np. „Czytanki” od razu na tekstach N2);
+// odświeżenie tego samego ekranu (zmiana ustawienia, synchronizacja) zostaje tam, gdzie jest. Ekrany, które same
+// przewijają się do swojego miejsca (mapa poziomu, Ustawienia → poziom/osoby/rytm), robią to już po tym.
+let routedHash = null;
 function route() {
   TTS.stop(); stopPlayers();
   SAY.length = 0;
-  const parts = location.hash.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
+  const here = location.hash.replace(/^#\/?/, "");
+  if (here !== routedHash) { routedHash = here; window.scrollTo(0, 0); }
+  const parts = here.split("/").map(decodeURIComponent);
   document.body.classList.toggle("hidepl", !!S.settings.hidepl);
   const [p, a, b] = parts;
   // tryb skupienia zdejmujemy przy każdej zmianie ekranu – włącza go dopiero quiz, powtórki albo pisanie (focusMode)
@@ -47813,7 +47884,7 @@ function learnKana(l) {
 document.addEventListener("click", e => {
   // link do strony, na której już jesteśmy (np. „Wróć” po ćwiczeniu): hashchange nie zajdzie, więc odświeżamy sami
   const a = e.target.closest('a[href^="#"]');
-  if (a && !e.defaultPrevented && a.getAttribute("href") === (location.hash || "#/")) { e.preventDefault(); route(); return; }
+  if (a && !e.defaultPrevented && a.getAttribute("href") === (location.hash || "#/")) { e.preventDefault(); routedHash = null; route(); return; }
   const c = e.target.closest("[data-ch]");
   if (c) {
     const l = LESSONS[location.hash.split("/")[2]]; if (!l || !l.chars) return;
@@ -47882,7 +47953,7 @@ function flashcards(root, cards, back) {
 
 function kanjiTab(l) {
   const MN = (window.KANJIDB || {}).mn || {};
-  return `<p class="small muted">Animacja pokazuje <b>kolejność kresek</b>. Stuknij znak: zobaczysz go w dużym oknie i napiszesz palcem. Wyróżnione czytania spotkasz najczęściej – od nich zacznij; rzadsze są pod „więcej czytań”. Słowa i zdanie pokazują znak w użyciu. 💡 to historyjka, która pomaga zapamiętać znak.</p>
+  return `<p class="small muted">Animacja pokazuje <b>kolejność kresek</b>. Stuknij znak: zobaczysz go w dużym oknie i napiszesz palcem. Wyróżnione czytania spotkasz najczęściej – od nich zacznij; rzadsze są pod „więcej czytań”. Słowa i zdanie pokazują znak w użyciu. 💡 to historyjka, która pomaga zapamiętać znak.</p>${window.CTX ? CTX.legendHTML() : ""}
     <div class="row" style="margin-bottom:12px"><button class="btn sm kq">⚡ Quiz kanji</button><button class="btn sm kw">✍️ Pisanie z pamięci</button><a class="btn sm" href="#/kanji">漢 Wszystkie kanji</a></div>
     <div class="kxl">${l.kanji.map((k, i) => kanjiRowHTML(k, i, MN)).join("")}</div>`;
 }
@@ -47893,7 +47964,7 @@ function kanjiRowHTML(k, i, MN) {
   const words = e ? CTX.wordsHTML(k[0], 5) : exs.length ? `<ul class="ex-list ctx-words">${exs.map(x => `<li>${sayBtn(x.jp)}<div class="txt"><span class="jpl">${ruby(x.jp)}</span> <span class="ctx-ro">${esc(toRomaji(reading(x.jp)))}</span>${x.pl ? `<div class="pl">${esc(x.pl)}</div>` : ""}</div></li>`).join("")}</ul>` : "";
   return `<div class="card kx"><div class="kc kxt" data-k="${i}" role="button" tabindex="0" aria-label="Karta znaku ${esc(k[0])}"><div class="k ka" data-anim="${k[0]}" data-size="76" data-tap="0"></div></div>
     <div class="kxb"><div class="m">${esc(k[3])}</div>
-      ${CTX.readHTML(k[0]) || `<div class="small">on: <span class="jp">${esc(k[1] || "–")}</span> · kun: <span class="jp">${esc(k[2] || "–")}</span></div>`}
+      ${CTX.readHTML(k[0]) || `<div class="small">${CTX.kindHTML("on")}<span class="jp">${esc(k[1] || "–")}</span> · ${CTX.kindHTML("kun")}<span class="jp">${esc(k[2] || "–")}</span></div>`}
       ${words}${e ? CTX.kanjiExHTML(k[0], { n: 1, title: "W zdaniu:" }) : ""}
       ${MN[k[0]] && S.settings.kmn !== false ? `<div class="kmn">💡 ${esc(MN[k[0]][1])}</div>` : ""}</div></div>`;
 }
@@ -47991,7 +48062,7 @@ function dialogPlayer(root, d) {
   function waitNext(t, ms) {
     return new Promise(res => {
       const b = document.createElement("button"); b.className = "btn pri"; b.textContent = "Dalej →"; b.style.marginTop = "8px";
-      if (ms) subs.insertAdjacentHTML("beforeend", `<div class="tbar"><i style="animation-duration:${ms}ms"></i></div>`);
+      if (ms) subs.insertAdjacentHTML("beforeend", `<div class="recbar tbar"><i style="--rec-ms:${ms}ms"></i></div>`);
       subs.appendChild(b);
       let done = false; const fin = () => { if (done) return; done = true; clearInterval(iv); clearTimeout(to); res(); };
       b.onclick = fin;
@@ -48338,7 +48409,7 @@ function viewSettings(sub) {
     ${voiceCardHTML()}
     ${window.PWA_MODE ? `<p class="small" style="margin:0">${navigator.serviceWorker && navigator.serviceWorker.controller ? "✓ Kurs jest zapisany w telefonie i działa bez internetu." : "⏳ Zapisuję kurs w telefonie… zostaw go chwilę otwartego z internetem."}</p>` : ""}
     <div><b>Tempo mowy:</b> <span id="rv">${S.settings.rate}</span><br><input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="${S.settings.rate}" style="width:100%;max-width:320px"></div>
-    <div><b>Nowe karty w powtórkach dziennie:</b> <select class="ncap" aria-label="Limit nowych kart dziennie">${[5, 10, 15, 20, 30].map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select><div class="small muted">Słówka, kanji, gramatyka i zwroty ponad limit czekają w kolejce na kolejne dni (teraz: ${(S.newq || []).length}).</div></div>
+    <div><b>Nowe karty w powtórkach dziennie:</b> <select class="ncap" aria-label="Limit nowych kart dziennie">${NEWCAP_CHOICES.map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select><div class="small muted">Słówka, kanji, gramatyka i zwroty ponad limit czekają w kolejce na kolejne dni (teraz: ${(S.newq || []).length}).</div>${myLessonsHTML()}</div>
     <div><b>Próg zaliczenia testów:</b> <select id="passm" aria-label="Próg zaliczenia testów">${PASS_CHOICES.map(v => `<option value="${v}" ${PASS === v ? "selected" : ""}>${v}%</option>`).join("")}</select><div class="small muted">Od tego wyniku zaliczasz test lekcji, egzamin poziomu, czytanki i rozmowy. Wyższy próg to pewniejsza wiedza, niższy – szybsze tempo.</div></div>
     <label><input type="checkbox" id="auto" ${S.settings.autoplay ? "checked" : ""}> Automatycznie czytaj zdania w ćwiczeniach</label>
     <label><input type="checkbox" id="rom" ${S.settings.romaji ? "checked" : ""}> Pokazuj romaji przy słówkach</label>
