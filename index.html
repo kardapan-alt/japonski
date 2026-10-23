@@ -4,7 +4,7 @@
 <!-- kolor paska telefonu: tło strony w kolorze osoby (src/look.js nadpisuje przed malowaniem; tu domyślna Sakura) -->
 <meta name="theme-color" content="#fef0ec" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#24191c" media="(prefers-color-scheme: dark)"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Japoński">
 <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADF0lEQVR4nOzcTW4URxiA4Z7xHzaIfXZBkdCsLLHiLJyH03ABDsICJRvkM1hAwJLHcbLIKm9oCaZVbZ5HljeuhWW//qp6PKrj97vdBP/leIIgDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgiYMkDpI4SOIgjRXH2fPnv7x+Pf1s9vurV6+m8YwVx/bi4vzycvrZ3N5OQ7KtkMRBEgdJHCRxkMQxgKOjaUjiGIBHWVZHHKT1xbG/vv7j5ctpJU6fPfvt7dtpnUwOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJgyQOkjhI4iCJg7S+OLZPn/765s20EpuTk28vcnnLD/TQ7ip1eQvJ5CCZHKyOOEjiIIljAA6kJAdSVkccJPeQHpZ7SHmYxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJHGQxEESB0kcJPeQHpZ7SJfmHtJl2FYGYHKQTA5WRxwkcZDEMQAHUpID6SybzcQwxopj1uuJLGWwOGbsvndfvvz+4sW0Eu4h/XHmHM2224lFrG9ybMSxlMHiOJ7x/YhjKbYV0lg/6FmT437Z6enE4Q32VzhzKhx77W4JY8WxPTubtezRo4nDGyyO8/NZy548mTi8wc4cFxdzlh09fjxxeGNt3jP3i+28hvhOg8Uxb1vZiGMRg70INvPMIY5FDDY5Zj6tzGtoNbzZZ46ZI+GhTQ5v9pljM3NyPLCnFZNjjn9/6/vPn/efPv398fHj5uTkflTcf+n+8+afx5kVbSt3X7/++e7dNxbt99OQNu93u2kY55eXt9fXN1dX/7PmbLe7u7m5+fBh4sDGioOh+A8WSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIHSRwkcZDEQRIH6S8AAAD//3q4M0EAAAAGSURBVAMAiR5VNNbzQQEAAAAASUVORK5CYII=">
-<meta name="description" content="Kurs japońskiego od zera do poziomu N1: kana, gramatyka, słówka, kanji, scenki z głosem i ćwiczenia.">
+<meta name="description" content="Kurs japońskiego od zera: wymowa, kana, gramatyka N5–N1, słówka, kanji, scenki z głosem i ćwiczenia.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23d62828'/%3E%3Ctext x='50' y='72' font-size='64' text-anchor='middle' fill='white'%3E日%3C/text%3E%3C/svg%3E">
 <script>
 /* ===================== 🎨 Wygląd: kolor ucznia (silnik koloru i paleta) =====================
@@ -741,6 +741,9 @@ h4{margin:1em 0 .3em}
 .ib.rec{background:var(--badbg)}
 .ib.rec.live{background:var(--bad);color:var(--on-bad);animation:pulse 1s infinite}
 @keyframes pulse{50%{transform:scale(1.1)}}
+.ib.recplay{background:var(--accent-soft);color:var(--accent-ink)}   /* ▶ Ty, potem lektor – po nagraniu 🎙 (src/mic.js) */
+mark.mic-d{background:var(--badbg);color:var(--badtext);border-radius:3px;padding:0 1px}   /* 🎤 czym usłyszane różni się od wzoru */
+.mic-res .mic-w{margin-top:4px}.rs-cmp{margin-top:10px}.rs-self{margin-top:6px}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;background:var(--bg3);font-size:12.5px;font-weight:600;color:var(--fg2)}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .stat{background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px}
@@ -1130,6 +1133,9 @@ table.voc td.a{width:124px}
 .lvt b{font:750 15.5px/1.3 var(--head);overflow-wrap:anywhere}
 .lvd{display:none;flex-basis:100%}
 .lvhere{display:inline-block;padding:1px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.7}
+/* 🗺 cel części i czas przy 15 min dziennie (content/roadmap.js): zawsze widoczne, także na telefonie */
+.lvg,.lvtm{flex-basis:100%;font-size:13px;line-height:1.4}
+.lvg{font-weight:650;color:var(--fg)}
 .lvp{grid-area:p;display:flex;align-items:center;gap:10px;min-width:0}
 .lvp .prog{flex:1;margin:0;height:8px}
 .lvn{font-size:12.5px;font-weight:650;color:var(--fg2);white-space:nowrap}
@@ -1193,6 +1199,33 @@ table.voc td.a{width:124px}
 .fhow{display:grid;gap:14px}
 .fhowi{display:flex;gap:12px;align-items:flex-start}
 .fhowe{flex:none;width:34px;height:34px;border-radius:var(--r-xs);background:var(--bg3);display:grid;place-items:center;font-size:18px}
+/* 🗺 strona poziomu: cel części i czas (src/app.js viewLevel) */
+.lvgoal{margin:4px 0 2px;font-weight:700;line-height:1.4;color:var(--fg)}
+.lvtime{margin:0 0 8px}
+/* ✅ „Potrafię…” (src/mapa.js): lista do odhaczania, wiersz co najmniej 44 px */
+.cando{margin-top:18px}
+.cdhead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 10px}
+.cdhead h2{margin:0}
+.cdlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.cdi{display:flex;align-items:center;gap:0 8px;padding:2px 4px 2px 12px;border-radius:var(--r-xs);background:var(--bg3);transition:background .2s}
+.cdi label{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 0;cursor:pointer;line-height:1.4;overflow-wrap:anywhere}
+.cdi input{flex:none;width:22px;height:22px;margin:0;accent-color:var(--ok)}
+.cdi.on{background:var(--okbg)}
+.cdgo{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0 8px;color:var(--accent-ink);font-weight:650;text-decoration:none}
+/* telefon: sama strzałka (pole 44 px), podpis „Przećwicz” od 520 px */
+@media (max-width:519px){.cdgot{display:none}.cdgo{font-size:18px}}
+.cdgo:hover{text-decoration:underline}
+.cdmore{margin:12px 0 0}
+/* 🗺 mapa drogi (#/mapa) */
+.rmab p{margin:.25em 0}
+.rmms{list-style:none;margin:0;padding:14px 16px;display:grid;gap:12px}
+.rmms li{display:grid;grid-template-columns:minmax(0,1fr);gap:2px}
+.rmms b{color:var(--accent-ink)}
+@media (min-width:700px){.rmms li{grid-template-columns:10em minmax(0,1fr);gap:12px;align-items:baseline}}
+.rmpart.here{box-shadow:var(--shadow),0 0 0 2px var(--accent-line)}
+.rmpart .num.lvb{width:auto;min-width:52px;height:52px;border-radius:var(--r-sm);font-size:15px}
+.rmpart .lvhere{margin-left:0}
+.rmout{margin-top:14px}
 .fset{margin:14px 0;display:grid;gap:12px;scroll-margin-top:72px}
 .fset select{font-size:16px;padding:4px 6px;border-radius:var(--r-xs)}
 .fset .small{margin-top:4px}
@@ -2230,7 +2263,7 @@ const SPK = (function () {
     }
     return null;
   }
-  return { text, kanji, dict: D, reset() { dict = null; for (const k in kunCache) delete kunCache[k]; } };
+  return { text, kanji, dict: D, fits, reset() { dict = null; for (const k in kunCache) delete kunCache[k]; } };   // fits – też dla sędziego mowy (src/mic.js)
 })();
 // tekst do przeczytania syntezatorem (zawsze to, co wyżej – TTS.speak robi to sam, więc każde wywołanie jest bezpieczne)
 function sayText(s) { return SPK.text(s); }
@@ -2264,21 +2297,17 @@ function srecErrText(e) {
   const er = e && e.error;
   return er === "not-allowed" ? "Zezwól stronie na użycie mikrofonu." : er === "network" ? "Sprawdzanie wymowy potrzebuje internetu – powtarzaj na głos ze wzorem 🔊." : er === "service-not-allowed" || er === "language-not-supported" ? (IOS ? "Włącz Dyktowanie: Ustawienia → Ogólne → Klawiatura." : "Ta przeglądarka nie obsługuje rozpoznawania mowy po japońsku.") : er === "audio-capture" ? "Mikrofon jest zajęty albo niedostępny." : "Nic nie rozpoznano – spróbuj jeszcze raz, mów wyraźnie.";
 }
-async function checkSpeech(target, btn) {
+// 🎤 przy zdaniu: wynik sędziego mowy (src/mic.js) w komunikacie; o – {me: kto mówi, alts: inne dobre odpowiedzi}; zwraca wynik albo nic
+async function checkSpeech(target, btn, o) {
   if (!SREC_OK) { toast("Rozpoznawanie mowy działa w Chrome i Edge (komputer, Android) i w Safari w karcie przeglądarki (z włączonym dyktowaniem). W aplikacji z ikony na iPhonie nagraj się 🎙 i porównaj z lektorem.", 6000); return; }
   if (navigator.onLine === false) { toast("Sprawdzanie wymowy 🎤 potrzebuje internetu. Bez sieci słuchaj 🔊 i powtarzaj na głos.", 4500); return; }
   TTS.stop();
   btn && btn.classList.add("live");
   try {
-    const alts = await listenOnce();
-    const t1 = normAnswer(plain(target)), t2 = normAnswer(reading(target));
-    let best = 0, heard = alts[0];
-    for (const a of alts) { const n = normAnswer(a); const s = Math.max(similarity(n, t1), similarity(n, t2)); if (s > best) { best = s; heard = a; } }
-    const pct = Math.round(best * 100);
-    const msg = pct >= 85 ? "🎉 Świetnie!" : pct >= 60 ? "👍 Prawie dobrze" : "🔁 Spróbuj jeszcze raz";
-    toast(`${msg} (${pct}%)<br><span class="jp">Rozpoznano: ${esc(heard)}</span>`, 4000);
-    if (pct >= 85) addXP(2);
-    return pct;
+    const r = MIC.judge(target, await listenOnce(), o);
+    MIC.toast(MIC.toastHTML(r), r.ok ? 4000 : 6000);   // kolejna próba zastępuje poprzedni wynik
+    if (r.ok) addXP(2);
+    return r;
   } catch (e) {
     toast(srecErrText(e), 4500);
   } finally { btn && btn.classList.remove("live"); }
@@ -2286,12 +2315,18 @@ async function checkSpeech(target, btn) {
 // przyciski 🔊 / 🎤 w HTML – dane trzymamy w rejestrze
 const SAY = [];
 function sayBtn(text, o = {}) { SAY.push({ text, o }); return `<button class="ib" title="Posłuchaj" data-say="${SAY.length - 1}">🔊</button>`; }
-function recBtn(text) { SAY.push({ text }); return SREC_OK ? `<button class="ib rec" title="Powiedz i sprawdź wymowę" data-rec="${SAY.length - 1}">🎤</button>` : ""; }
+// 🎤 sprawdza mowę; bez rozpoznawania mowy (aplikacja z ikony na iPhonie, Firefox) 🎙 nagrywa do porównania z lektorem (S-10);
+// o.me – kto mówi (kwestia ze scenki), o.alts – inne dobre odpowiedzi, o.noRec – bez 🎙 (ekran ma własne nagrywanie)
+function recBtn(text, o) {
+  SAY.push({ text, m: o }); const i = SAY.length - 1;
+  return SREC_OK ? `<button class="ib rec" title="Powiedz i sprawdź wymowę" data-rec="${i}">🎤</button>`
+    : !(o && o.noRec) && MIC.canRec() ? `<button class="ib rec" title="Nagraj się i porównaj z lektorem" aria-label="Nagraj się i porównaj z lektorem" data-rec="${i}">🎙</button>` : "";
+}
 document.addEventListener("click", e => {
   const b = e.target.closest("[data-say]");
   if (b) { const it = SAY[+b.dataset.say]; if (it) (it.o.raw ? TTS.speak(it.text, it.o) : say(it.text, it.o)); return; }
   const r = e.target.closest("[data-rec]");
-  if (r) { const it = SAY[+r.dataset.rec]; if (it) checkSpeech(it.text, r); return; }
+  if (r) { const it = SAY[+r.dataset.rec]; if (it) (MIC.recFallback() && !(it.m && it.m.noRec) ? MIC.recInline(r, it.text) : checkSpeech(it.text, r, it.m)); return; }
   const h = e.target.closest(".pl.hid");
   if (h) h.classList.remove("hid");
 });
@@ -2467,6 +2502,370 @@ document.addEventListener("click", e => {
   const WM = { norm, parse, check };
   if (typeof module !== "undefined" && module.exports) module.exports = WM; else root.WM = WM;
 })(this);
+
+/* ===================== 🎤 jeden sędzia mowy: rozpoznany tekst kontra wzór i typowe błędy ===================== */
+// Każde miejsce, które ocenia mowę (rozmowy, „Powiedz to…” w powtórkach, „Gram rolę”, 🎤 przy zdaniach, Powtarzaj), pyta MIC.judge.
+// Porównujemy kanę: kanji z rozpoznawania → czytanie (furigana z treści kursu, słownik lektora SPK, liczby 3時 / 三時 / さんじ),
+// katakana → hiragana, długie samogłoski (ー, おう, えい), bez interpunkcji i spacji. Wzór ma warianty dobre (inny zapis,
+// odpowiedzi z treści, bez 私は, じゃ/では, に/へ przy kierunku) i typowe błędy: partykuła zamieniona albo pominięta,
+// -san przy własnym imieniu, brak です/ます, złe odpowiedzi z treści (z ich wyjaśnieniem). Bliżej błędu niż wzoru → ✗ z podpowiedzią.
+// Progi: tests/mic.test.js (ponad 60 par wzór – rozpoznany tekst). Sędzia tylko podpowiada: samoocena ucznia zawsze wygrywa.
+const MIC = (function () {
+  const OK = 0.85, NEAR = 0.6, ERR = 0.75, PART = 0.75, KJ_OK = 0.7;   // KJ_OK: różnią się tylko kanji, których nie umiemy przeczytać
+  const PARTS = "はがをにでへとも";
+  const KJ = /[一-鿿々〆]/, KJS = /^[一-鿿々〆]+$/, NUMK = /[〇一二三四五六七八九十百千万]/, KD = "〇一二三四五六七八九";
+  const DROP = /[\s。、．，.,!?！？「」『』・〜～…:：;；()（）"'“”„\-]/g, SMALL = /[ぁぃぅぇぉゃゅょゎっーァィゥェォャュョヮッ]/;
+  const RUBY_G = /\{([^{}|]+)\|([^{}|]+)\}/g;
+  const meName = () => (typeof S !== "undefined" && S && S.me && S.me.jp) || "ダニエル";
+
+  /* ---------- liczby ---------- */
+  function kanjiNum(n) {
+    if (n === 0) return "〇";
+    if (n >= 1e8) return String(n).split("").map(d => KD[+d]).join("");
+    const man = Math.floor(n / 10000), r = n % 10000, part = (d, u) => d ? (d > 1 ? KD[d] : "") + u : "";
+    return (man ? kanjiNum(man) + "万" : "") + part(Math.floor(r / 1000), "千") + part(Math.floor(r / 100) % 10, "百") + part(Math.floor(r / 10) % 10, "十") + (r % 10 ? KD[r % 10] : "");
+  }
+  function numVal(s) {
+    let total = 0, sect = 0, cur = 0;
+    for (const c of s) {
+      const d = KD.indexOf(c);
+      if (d >= 0) { cur = cur * 10 + d; continue; }
+      const u = c === "十" ? 10 : c === "百" ? 100 : c === "千" ? 1000 : 0;
+      if (u) { sect += (cur || 1) * u; cur = 0; continue; }
+      if (c === "万") { total += ((sect + cur) || 1) * 10000; sect = 0; cur = 0; }
+    }
+    return total + sect + cur;
+  }
+  // cyfry → kanji (3時 → 三時, 1,000円 → 千円, 3:30 → 三時半); 090 – cyfra po cyfrze
+  function digits(s) {
+    return String(s).replace(/[０-９：]/g, c => c === "：" ? ":" : String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/(\d),(?=\d{3})/g, "$1")
+      .replace(/(\d{1,2}):(\d{2})/g, (m, h, mm) => h + "時" + (mm === "00" ? "" : mm === "30" ? "半" : +mm + "分"))
+      .replace(/\d+/g, d => d.length > 1 && d[0] === "0" ? d.split("").map(x => KD[+x]).join("") : kanjiNum(+d));
+  }
+  // liczba (+ licznik) → kana, przez czytania z ćwiczeń liczb (src/drills.js); [czytanie, ile znaków licznika zjedzono]
+  const CNTK = { "本": "hon", "枚": "mai", "冊": "satsu", "台": "dai", "匹": "hiki", "個": "ko", "杯": "hai" };
+  function numKana(n, c) {
+    if (typeof numR !== "function" || n > 9999999) return null;
+    const f = a => a && a[0], small = n >= 1 && n <= 10;
+    try {
+      if (c === "時") return [n >= 1 && n <= 12 && typeof hourR === "function" ? f(hourR(n)) : f(numR(n)) + "じ", 1];
+      if (c === "分" && n >= 1 && n <= 59 && typeof minR === "function") return [f(minR(n)), 1];
+      if (c === "円" && typeof yenR === "function") return [f(yenR(n)), 1];
+      if ((c === "歳" || c === "才") && n >= 1 && n <= 99 && typeof ageR === "function") return [f(ageR(n)), 1];
+      if (c === "月" && n >= 1 && n <= 12 && typeof MONTHS !== "undefined") return [MONTHS[n], 1];
+      if (c === "日" && n >= 1 && n <= 31 && typeof dayR === "function") return [f(dayR(n)), 1];
+      if (c === "人" && small && typeof cntR === "function") return [f(cntR("nin", n)), 1];
+      if (c === "つ" && n >= 1 && n <= 9 && typeof CNT !== "undefined") return [CNT.tsu.r[n - 1], 1];
+      if (CNTK[c] && small && typeof cntR === "function") return [f(cntR(CNTK[c], n)), 1];
+      if (c === "年") return [f(numR(n)).replace(/よん$/, "よ") + "ねん", 1];
+      return [f(numR(n)), 0];
+    } catch (e) { return null; }
+  }
+
+  /* ---------- kanji z rozpoznawania → kana ---------- */
+  let KMAP = null;
+  // kanji → czytania (najczęstsze pierwsze); klucz „kanji|następna kana” rozróżnia 来ます (き) i 来る (く)
+  function addK(m, k, r, nx) {
+    r = K2H(String(r || "").replace(/^!/, ""));
+    if (!k || !r || !KJS.test(k) || KJ.test(r)) return;
+    [nx ? k + "|" + nx : "", k].forEach(key => { if (!key) return; const a = m.get(key) || []; if (!a.includes(r) && a.length < 3) a.push(r); m.set(key, a); });
+  }
+  function harvest(m, s) { if (typeof s !== "string" || s.indexOf("{") < 0) return; let x; RUBY_G.lastIndex = 0; while ((x = RUBY_G.exec(s))) addK(m, x[1], x[2], s[x.index + x[0].length]); }
+  function kmap() {
+    if (KMAP) return KMAP;
+    const m = new Map();
+    // furigana z treści kursu (lekcje, zwroty, rozmowy)
+    const deep = (v, d) => { if (!v || d > 9) return; if (typeof v === "string") return harvest(m, v); if (Array.isArray(v)) return v.forEach(x => deep(x, d + 1)); if (typeof v === "object") for (const k in v) deep(v[k], d + 1); };
+    deep(window.LEVELS, 0); deep(window.PHRASES, 0); deep(window.TALKS, 0);
+    // słownik lektora: słowo z okuriganą → czytanie rdzenia (食べる → 食: た)
+    try { SPK.dict().forEach((r, w) => { const x = /^([一-鿿々〆]+)([ぁ-ゖ]*)$/.exec(w); if (x && r.endsWith(x[2])) addK(m, x[1], r.slice(0, r.length - x[2].length), x[2][0]); }); } catch (e) { }
+    // zapis z rozpoznawania słów, które kurs pisze kaną (下さい, 美味しい, 沢山…); z kaną po znaku – tylko przed nią (下|さ, nie samo 下)
+    LEX.forEach(([k, r, nx]) => { const key = nx ? k + "|" + nx : k, a = m.get(key) || []; if (!a.includes(r)) a.push(r); m.set(key, a); });
+    if (window.LEVELS) KMAP = m;
+    return m;
+  }
+  const LEX = [["下", "くだ", "さ"], ["美味", "おい", "し"], ["有難", "ありがと", "う"], ["御免", "ごめん"], ["今日", "こんにち", "は"], ["今晩", "こんばん", "は"], ["早", "はよ", "う"],
+    ["御座", "ござ", "い"], ["一寸", "ちょっと"], ["沢山", "たくさん"], ["綺麗", "きれい"], ["奇麗", "きれい"], ["何処", "どこ"], ["何故", "なぜ"], ["貴方", "あなた"], ["煙草", "たばこ"],
+    ["御飯", "ごはん"], ["馳走", "ちそう"], ["林檎", "りんご"], ["迄", "まで"], ["良", "い", "い"], ["皆", "みんな"]];
+  // znak spoza treści kursu: czytania z bazy kanji – kun pasujące do okurigany (済み → す), samo kun (猫 → ねこ), on (液 → えき),
+  // reszta kun, na końcu formy po innym słowie (～ず(み)); rest – kana po znaku
+  let KDB = null; const DBR = new Map();
+  function dbR(c, rest) {
+    const key = c + "|" + rest; if (DBR.has(key)) return DBR.get(key);
+    if (!KDB) { const rows = (window.KANJIDB || {}).rows; if (!rows) return null; KDB = new Map(rows.map(r => [r[0], r])); }
+    const row = KDB.get(c), P = [], sp = s => String(s || "").split("・").map(x => x.trim()).filter(Boolean);
+    if (row) {
+      sp(row[6]).forEach(k => {
+        const af = /^[～〜\-]/.test(k), w = k.replace(/[～〜\-－]/g, ""), x = /^([^(]+)(?:\(([^)]*)\))?/.exec(w); if (!x) return;
+        let fit = false; try { fit = !!x[2] && SPK.fits(w, rest); } catch (e) { }
+        P.push([(af ? 4 : 0) + (!x[2] ? 1 : fit ? 0 : 3), K2H(x[1])]);
+      });
+      sp(row[5]).forEach(o => P.push([2, K2H(o)]));
+    }
+    const out = []; P.sort((a, b) => a[0] - b[0]).forEach(([, r]) => { if (r && !KJ.test(r) && !out.includes(r)) out.push(r); });
+    const r = out.length ? out : null; DBR.set(key, r); return r;
+  }
+  // kilka możliwych odczytań (najwyżej 8), np. 人 = ひと / じん
+  function kanaOf(s, loc) {
+    const M = kmap(), get = (w, nx) => { for (const mp of [loc, M]) { if (!mp) continue; const r = mp.get(w + "|" + nx) || mp.get(w); if (r) return r; } return null; };
+    let out = [""];
+    const push = rs => { const n = []; out.forEach(o => rs.slice(0, 3).forEach(r => n.push(o + r))); out = n.slice(0, 8); };
+    for (let i = 0; i < s.length;) {
+      if (!KJ.test(s[i])) { push([s[i]]); i++; continue; }
+      let j = i; while (j < s.length && KJ.test(s[j])) j++;
+      let hit = null;
+      for (let n = j - i; n >= 1 && !hit; n--) { const r = get(s.substr(i, n), s[i + n] || ""); if (r) hit = [r, n]; }
+      let nn = 0; while (i + nn < s.length && NUMK.test(s[i + nn])) nn++;
+      if (nn && (!hit || nn > hit[1])) {
+        const r = numKana(numVal(s.substr(i, nn)), s[i + nn] || "");
+        if (r && r[0]) { push([r[0]]); i += nn + r[1]; continue; }
+      }
+      if (hit) { push(hit[0]); i += hit[1]; } else { push(dbR(s[i], (/^[ぁ-ゖ]*/.exec(s.slice(i + 1, i + 8)) || [""])[0]) || [s[i]]); i++; }   // bez czytania zostaje kanji
+    }
+    return out;
+  }
+
+  /* ---------- porównanie ---------- */
+  // disp – zapis do pokazania (cyfry → kanji, bez interpunkcji i spacji), cmp – do porównania (hiragana, długie samogłoski):
+  // cmp zmienia znak w znak, więc różnice znalezione w cmp zaznaczamy w disp
+  const disp = s => digits(plain(String(s == null ? "" : s))).replace(/[Ａ-Ｚａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(DROP, "");
+  const cmp = d => longVowels(K2H(d).toLowerCase().replace(/(こんにち|こんばん)わ/g, "$1は").replace(/づ/g, "ず").replace(/ぢ/g, "じ"));
+  const norm = s => cmp(disp(s));
+  // wzór na kawałki: {kanji|czytanie} albo pojedynczy znak
+  function toks(m) {
+    const out = []; let i = 0;
+    while (i < m.length) {
+      if (m[i] === "{") { const x = /^\{([^{}|]+)\|([^{}|]+)\}/.exec(m.slice(i, i + 80)); if (x) { out.push({ k: x[1], r: x[2].replace(/^!/, ""), s: x[0] }); i += x[0].length; continue; } }
+      out.push({ c: m[i], s: m[i] }); i++;
+    }
+    return out;
+  }
+  const CACHE = new Map();
+  function form(m) {
+    let c = CACHE.get(m); if (c) return c;
+    const T = toks(m), kd = disp(reading(m));
+    // kf – które znaki czytania wzoru pochodzą ze słowa z furiganą (to słowo rozpoznawanie zapisze znanym kanji)
+    const pc = T.map(t => [disp(t.k ? t.r : t.c), !!t.k]), kf = [];
+    if (pc.map(p => p[0]).join("") === kd) pc.forEach(([p, f]) => { for (let i = 0; i < p.length; i++) kf.push(f); });
+    c = { T, kd, kana: cmp(kd), kf, nk: T.map(t => t.k ? norm(t.k) : "") };
+    if (CACHE.size > 3000) CACHE.clear();
+    CACHE.set(m, c); return c;
+  }
+  // podobieństwo: zapis z kanji tam, gdzie rozpoznawanie też ma kanji (H.T), albo cała kana (H.TK – kanji z rozpoznawania zamienione na kanę)
+  function score(m, H) {
+    const c = form(m), gd = disp(c.T.map((t, i) => t.k ? (c.nk[i] && H.T.includes(c.nk[i]) ? t.k : t.r) : t.c).join(""));
+    let b = { s: similarity(H.T, cmp(gd)), x: H.T, xd: H.hd, y: cmp(gd), yd: gd };
+    H.TK.forEach((x, i) => { if (b.s < 1) { const s = similarity(x, c.kana); if (s > b.s) b = { s, x, xd: H.TKd[i], y: c.kana, yd: c.kd }; } });
+    return b;
+  }
+  // które znaki usłyszanego (hx) i wzoru (ty) się różnią – ścieżka odległości edycyjnej
+  function diff(x, y) {
+    const m = x.length, n = y.length, d = Array.from({ length: m + 1 }, (_, i) => [i].concat(Array(n).fill(0)));
+    for (let j = 1; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
+    const hx = Array(m).fill(false), ty = Array(n).fill(false);
+    for (let i = m, j = n; i > 0 || j > 0;) {
+      if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1)) { if (x[i - 1] !== y[j - 1]) hx[i - 1] = ty[j - 1] = true; i--; j--; }
+      else if (i > 0 && d[i][j] === d[i - 1][j] + 1) { hx[i - 1] = true; i--; }
+      else { ty[j - 1] = true; j--; }
+    }
+    return { hx, ty };
+  }
+  const mark = (s, f) => [...s].map((c, i) => f[i] ? `<mark class="mic-d">${esc(c)}</mark>` : esc(c)).join("").replace(/<\/mark><mark class="mic-d">/g, "");
+
+  /* ---------- partykuły we wzorze ---------- */
+  const KN = ["これ", "それ", "あれ", "どれ", "ここ", "そこ", "あそこ", "どこ", "わたし", "あなた", "だれ", "なに", "なん", "いま", "きょう", "あした", "きのう", "みんな", "ぼく"];
+  // okurigana, nie partykuła: {上|あ}がる (kun あ(がる))
+  function okuri(k, r, c) {
+    if (k.length !== 1) return false;
+    const kun = [];
+    try { ALL_KANJI.forEach(({ k: x }) => { if (x[0] === k) kun.push(x[2]); }); } catch (e) { }
+    const row = ((window.KANJIDB || {}).rows || []).find(x => x[0] === k); if (row) kun.push(row[6]);
+    return kun.join("・").split("・").some(x => { const m = /^([^(]+)\(([^)]+)\)/.exec(x.trim()); return m && K2H(m[1]) === K2H(r) && K2H(m[2])[0] === c; });
+  }
+  function isPart(T, j) {
+    const t = T[j]; if (!t || !t.c || !PARTS.includes(t.c)) return false;
+    const nx = T[j + 1], nc = nx ? (nx.c || nx.k[0]) : "";
+    if (SMALL.test(nc) || (t.c === "で" && /[すし]/.test(nc))) return false;   // です, でした, でしょう
+    const pv = T[j - 1]; if (!pv) return false;
+    if (pv.k) return !okuri(pv.k, pv.r, t.c);
+    if (/[ァ-ヺー]/.test(pv.c)) return true;   // po katakanie: トイレは, コーヒーを
+    if (/[はも]/.test(t.c) && isPart(T, j - 1)) return true;   // には, では, にも, とも
+    // po słowie pisanym kaną (これは, わたしも, ゆかさんと): przed nim początek, kanji albo nie-hiragana
+    let b = ""; for (let i = j - 1; i >= 0 && T[i].c && b.length < 6; i--) b = T[i].c + b;
+    if (/(さん|くん|ちゃん|さま)$/.test(b)) return true;   // po imieniu z grzecznościową końcówką: ゆかさんと
+    return KN.some(w => { if (!b.endsWith(w)) return false; const p = b.length - w.length - 1; return p < 0 || !/[ぁ-ゖ]/.test(b[p]); });
+  }
+  // に przed czasownikiem ruchu można zamienić na へ (学校に行きます = 学校へ行きます)
+  const motion = (T, j) => { const n = T[j + 1]; if (!n) return false; const s = n.k ? n.k : T.slice(j + 1, j + 4).map(x => x.c || "").join(""); return /^[行来帰戻]/.test(s) || /^(いき|いく|いっ|きま|くる|かえ|もど)/.test(s); };
+  const join = (T, j, q) => T.map((t, i) => i === j ? q : t.s).join("");
+  const rd = m => form(m).kana;
+
+  // warianty dobre: wzór, odpowiedzi z treści, inny poprawny zapis
+  function goods(t, alts, cb) {
+    const out = [], seen = new Set(), badK = new Set(cb.map(b => rd(b.jp)));
+    const add = (m, gen) => { const k = rd(m); if (!k || seen.has(k) || (gen && badK.has(k))) return; seen.add(k); out.push(m); };
+    [t].concat(alts || []).forEach(m => add(m, 0));
+    for (let i = 0; i < out.length && i < 24; i++) {
+      const m = out[i];
+      if (/では/.test(m)) add(m.replace(/では/g, "じゃ"), 1);
+      if (/じゃ/.test(m)) add(m.replace(/じゃ/g, "では"), 1);
+      if (/[（(][^（()）]*[）)]/.test(m)) add(m.replace(/[（(][^（()）]*[）)]/g, ""), 1);
+      const w = /^([「『]?)(\{私\|わたし\}|私|わたし)は/.exec(m); if (w) add(w[1] + m.slice(w[0].length), 1);   // bez 私は
+      const T = toks(m);
+      T.forEach((x, j) => { if ((x.c === "へ" || (x.c === "に" && motion(T, j))) && isPart(T, j)) add(join(T, j, x.c === "へ" ? "に" : "へ"), 1); });
+    }
+    return out;
+  }
+  // typowe błędy; e.hint – krótko, e.fb – wyjaśnienie złej odpowiedzi z treści
+  function errs(G, me, cb) {
+    const out = [], seen = new Map(), okK = new Set(G.map(rd));
+    const add = (m, hint, fb) => {
+      const k = rd(m); if (!k || okK.has(k)) return;
+      const e = seen.get(k); if (e) { if (!e.hint && hint) e.hint = hint; if (!e.fb && fb) e.fb = fb; return; }
+      const x = { m, hint: hint || "", fb: fb || "" }; seen.set(k, x); out.push(x);
+    };
+    cb.forEach(o => add(o.jp, "", o.fb));
+    G.forEach(m => {
+      const T = toks(m);
+      T.forEach((t, j) => {
+        if (!isPart(T, j)) return;
+        add(join(T, j, ""), `Zabrakło ${t.c}`);
+        for (const q of PARTS) if (q !== t.c) add(join(T, j, q), `Tu pasuje ${t.c}, nie ${q}`);
+      });
+      if (me) for (let i = m.indexOf(me); i >= 0; i = m.indexOf(me, i + 1)) {
+        const after = m.slice(i + me.length);
+        if (!/^(さん|くん|ちゃん|さま|様|せんせい|\{先生)/.test(after)) add(m.slice(0, i + me.length) + "さん" + after, "Do własnego imienia nie dodajemy -san");
+      }
+      const re = /(ませんでした|でした|ました|です|ます)(?=[かねよ]?(?:[。！？!?…」』]|$))/g; let x;
+      while ((x = re.exec(m))) if (x[1] !== "ませんでした") add(m.slice(0, x.index) + m.slice(x.index + x[1].length), `Zabrakło ${x[1]} – grzecznie mówimy …${x[1]}`);
+    });
+    return out;
+  }
+  function localMap(list) { const m = new Map(); list.forEach(s => harvest(m, s)); return m; }
+
+  const HEAD = { ok: "✓ Brzmi dobrze", near: "≈ Prawie", far: "✗ Inaczej niż wzór – porównaj", part: "✗ Tylko początek – dokończ zdanie" };
+  const words = (v, s, kj) => v === "err" ? "Prawie jak wzór, ale z typowym błędem." : v === "part" ? "Tylko początek zdania." : s >= 1 ? "Dokładnie jak wzór." : kj && v === "ok" ? "Jak wzór – inny jest tylko zapis kanji." : s >= OK ? "Bardzo blisko wzoru – różnica w jednym miejscu." : s >= NEAR ? "Blisko, ale część brzmi inaczej." : s >= 0.3 ? "Sporo różnic względem wzoru." : "Zupełnie inaczej niż wzór.";
+  // target – wzór (z furiganą), heard – tekst albo lista wersji z rozpoznawania (pierwsza najpewniejsza);
+  // o.alts – inne dobre odpowiedzi z treści, o.bad – złe odpowiedzi z treści [{jp, fb}], o.me – imię mówiącego (domyślnie ucznia)
+  function judge(target, heard, o) {
+    o = o || {};
+    const list = (Array.isArray(heard) ? heard : [heard]).map(x => String(x == null ? "" : x)).filter(x => norm(x));
+    const cb = (o.bad || []).filter(b => b && b.jp), alts = (o.alts || []).filter(Boolean);
+    const G = goods(String(target || ""), alts, cb), E = errs(G, o.me === undefined ? meName() : o.me, cb);
+    const loc = localMap([target].concat(alts, cb.map(b => b.jp)));
+    let best = null;
+    list.forEach(h => {
+      const hd = disp(h), TKd = kanaOf(hd, loc), H = { hd, T: cmp(hd), TKd, TK: TKd.map(cmp) };
+      let g = null; G.forEach(m => { const b = score(m, H); if (!g || b.s > g.s) g = Object.assign(b, { m }); });
+      let e = null; if (g.s < 1) E.forEach(x => { const b = score(x.m, H); if (!e || b.s > e.s) e = Object.assign(b, { e: x }); });
+      const top = Math.max(g.s, e ? e.s : 0);
+      if (!best || top > best.top) best = { top, g, e, h, H };
+    });
+    // sama cisza albo interpunkcja: nic do pokazania ani do oceny
+    if (!best) return { v: "none", ok: false, sim: 0, pct: 0, heard: "", hint: "", fb: "", head: "Nic nie rozpoznano", words: "Spróbuj jeszcze raz – mów wyraźnie, blisko mikrofonu.", cls: "soft", g: 0, err: "", heardHTML: "–", diff: "" };
+    const g = best.g, st = g.s, e = best.e && best.e.s > st && best.e.s >= ERR ? best.e : null;
+    const K = form(g.m).kana, H = best.H;
+    const part = [H.T].concat(H.TK).some(x => x.length >= 2 && x.length <= PART * K.length && K.startsWith(x));
+    const D = st < 1 ? diff(g.x, g.y) : null;
+    // różnica tylko w kanji bez znanego czytania (np. 嬉しい), w miejscu, które wzór pisze kaną – nadal dobrze;
+    // znak z czytaniem (猫 = ねこ) albo inne słowo w miejscu słowa z furiganą ({犬|いぬ}) to już różnica
+    const kjOnly = st < 1 && H.TK.some(x => {
+      if (!KJ.test(x) || similarity(x, K) < KJ_OK) return false;
+      const d = diff(x, K), nh = d.hx.filter(Boolean).length, kf = form(g.m).kf;
+      return nh > 0 && d.hx.every((f, i) => !f || KJ.test(x[i])) && d.ty.every((f, j) => !f || !kf[j]) && d.ty.filter(Boolean).length <= 3 * nh;
+    });
+    const v = e ? "err" : st >= 1 || (st >= KJ_OK && kjOnly) ? "ok" : part ? "part" : st >= NEAR ? "near" : "far";
+    const hint = e ? e.e.hint : "", dh = D && !kjOnly && (v !== "far") ? `<span class="jp">${mark(g.yd, D.ty)}</span>` : "";
+    return { v, ok: v === "ok", sim: st, pct: Math.round(100 * st), heard: best.h, hint, fb: e ? e.e.fb : "", head: e ? "✗ " + (hint || "To nie ta odpowiedź") : HEAD[v],
+      words: words(v, st, kjOnly), cls: v === "ok" ? "ok" : v === "near" ? "soft" : "bad", g: v === "ok" ? 2 : v === "near" ? 1 : 0, err: e ? e.e.m : "",
+      heardHTML: dh ? `<span class="jp">${mark(g.xd, D.hx)}</span>` : `<span class="jp">${esc(best.h)}</span>`, diff: dh };
+  }
+  // blok z wynikiem: nagłówek, co rozpoznano (różnice zaznaczone), wzór z zaznaczeniem, jak blisko (słowami), wyjaśnienie z treści;
+  // hide – bez wzoru (powtórka: odpowiedź widać dopiero po „Pokaż odpowiedź”, kolejna próba to nadal przypominanie, nie czytanie)
+  function html(r, extra, soft, hide) {
+    return `<div class="fb ${r.cls}${soft && r.cls !== "soft" ? " soft" : ""} mic-res"><div class="h">${esc(r.head)}</div><div class="small">🎤 Rozpoznano: ${r.heardHTML}</div>${r.diff && !hide ? `<div class="small">Wzór: ${r.diff}</div>` : ""}
+      <div class="small mic-w">${esc(r.words)}</div>${r.fb ? `<div class="small">💡 ${ruby(esc(r.fb))}</div>` : ""}${extra || ""}</div>`;
+  }
+  const toastHTML = r => `<b>${esc(r.head)}</b><br>Rozpoznano: ${r.heardHTML}${r.diff ? `<br>Wzór: ${r.diff}` : ""}<br>${esc(r.words)}${r.ok ? "" : " Spróbuj jeszcze raz."}${r.fb ? `<br>💡 ${ruby(esc(r.fb))}` : ""}`;
+  // opis dla 💬 Zapytaj
+  const how = r => `powiedziane na głos; 🎤 rozpoznano „${r.heard}” – ${r.words}${r.hint ? " (" + r.hint + ")" : ""}`;
+  const SELF = "Mikrofon tu nie ocenia – posłuchaj siebie i lektora i oceń szczerze: te same słowa i partykuły, długie samogłoski, małe っ?";
+
+  /* ---------- 🎙 nagraj się i porównaj (tam, gdzie nie ma rozpoznawania mowy: aplikacja z ikony na iPhonie, bez sieci) ---------- */
+  const RI = { r: null, btn: null, wait: null, text: "", timer: 0, tok: 0, ptok: 0, audio: null, url: "", play: null };
+  const canRec = () => typeof REC !== "undefined" && REC.ok && !REC.denied;
+  // jeden komunikat mikrofonu naraz (też wynik 🎤 przy zdaniu) – nowy zastępuje poprzedni (na telefonie nie piętrzą się nad zdaniem); pełna rada tylko za pierwszym razem
+  let RT = null, told = false;
+  function riToast(m, ms) { if (RT) RT.remove(); toast(m, ms); const bx = document.getElementById("toasts"); RT = bx && bx.lastElementChild; }
+  function riAudioStop() { RI.ptok++; if (RI.audio) RI.audio.pause(); }
+  function riBtn(b, live) {
+    if (!b) return;
+    if (!b.dataset.ico) { b.dataset.ico = b.textContent; b.dataset.tt = b.title; }
+    b.classList.toggle("live", live); b.textContent = live ? "⏹" : b.dataset.ico; b.title = live ? "Zatrzymaj nagranie" : b.dataset.tt;
+  }
+  // wyjście z ekranu w trakcie nagrania: odrzucamy próbę
+  function riAbort() { clearTimeout(RI.timer); RI.tok++; const r = RI.r; RI.r = null; riBtn(RI.btn, false); riBtn(RI.wait, false); RI.wait = null; if (r) r.stop(); riAudioStop(); }
+  window.addEventListener("hashchange", riAbort);
+  function riCompare(text) {
+    const t = ++RI.ptok, a = RI.audio; if (!a) return;
+    TTS.stop();
+    new Promise(res => { a.onended = res; a.onerror = res; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(res); })
+      .then(() => sleep(300)).then(() => { if (t === RI.ptok) say(text); });
+  }
+  async function riFinish(tok) {
+    if (tok !== RI.tok || !RI.r) return;
+    clearTimeout(RI.timer);
+    const r = RI.r, btn = RI.btn, text = RI.text; RI.r = null;
+    riBtn(btn, false);
+    const b = await r.stop();
+    if (tok !== RI.tok || !btn.isConnected) return;
+    if (!b || b.size < 200) { riToast("Nagranie wyszło puste – spróbuj jeszcze raz, mów bliżej mikrofonu.", 3500); return; }
+    if (RI.url) URL.revokeObjectURL(RI.url);
+    RI.url = URL.createObjectURL(b);
+    if (!RI.audio) RI.audio = new Audio();
+    RI.audio.src = RI.url;
+    // ▶ obok 🎙: najpierw Ty, potem lektor (poprzednie nagranie znika)
+    let pb = btn.nextElementSibling;
+    if (!pb || !pb.classList.contains("recplay")) { pb = document.createElement("button"); pb.type = "button"; pb.className = "ib recplay"; pb.textContent = "▶"; btn.after(pb); }
+    if (RI.play && RI.play !== pb) RI.play.remove();
+    RI.play = pb; pb.title = "Porównaj: Ty, potem lektor"; pb.setAttribute("aria-label", pb.title);
+    pb.onclick = e => { e.stopPropagation(); riCompare(text); };
+    riToast(told ? "▶ Ty, potem lektor – oceń szczerze." : "▶ Ty, potem lektor. " + SELF, told ? 3000 : 6000); told = true;
+    if (!IOS) riCompare(text);   // iPhone odtwarza nagranie tylko po dotknięciu
+  }
+  const DENIED = () => IOS ? "Brak dostępu do mikrofonu. Możesz go włączyć w Ustawieniach iPhone’a (Safari → Mikrofon)." : "Brak dostępu do mikrofonu. Możesz go włączyć w ustawieniach strony (ikona obok adresu → Uprawnienia → Mikrofon).";
+  async function recInline(btn, text) {
+    if (RI.wait === btn) { RI.tok++; RI.wait = null; riBtn(btn, false); return; }   // drugie dotknięcie, zanim mikrofon ruszył: rezygnacja
+    if (RI.r) { const same = RI.btn === btn; await riFinish(RI.tok); if (same) return; }
+    if (!canRec()) { riToast(REC.denied ? DENIED() : "Ta przeglądarka nie pozwala nagrywać dźwięku – posłuchaj 🔊 i powtarzaj na głos.", REC.denied ? 6000 : 4000); return; }
+    riAudioStop(); TTS.stop();
+    const tok = ++RI.tok;
+    riBtn(btn, true); RI.wait = btn;
+    let r;
+    // rezygnacja albo nowsze nagranie w międzyczasie: ten przycisk wraca do 🎙, o ile nie nagrywa znowu
+    const stale = () => { if (RI.wait !== btn && !(RI.r && RI.btn === btn)) riBtn(btn, false); };
+    try { r = await REC.start(); }
+    catch (e) {
+      if (tok !== RI.tok) { stale(); return; }
+      RI.wait = null; riBtn(btn, false);
+      if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) { REC.denied = true; riToast(DENIED(), 6000); }
+      else riToast("Mikrofon jest teraz zajęty albo niedostępny. Spróbuj jeszcze raz za chwilę.", 4500);
+      return;
+    }
+    if (tok !== RI.tok) { r.stop(); stale(); return; }
+    RI.wait = null;
+    if (!btn.isConnected) { r.stop(); return; }
+    Object.assign(RI, { r, btn, text });
+    riToast("🎙 Nagrywam – powiedz to na głos. ⏹ kończy nagranie.", 2500);
+    RI.timer = setTimeout(() => riFinish(tok), Math.min(15000, 3500 + reading(text).length * 450));
+  }
+  // 🎤 bez rozpoznawania albo bez sieci: zamiast oceny nagranie do porównania
+  // (też po odmowie dostępu – wtedy komunikat o uprawnieniach, nie o rozpoznawaniu mowy)
+  const recFallback = () => typeof REC !== "undefined" && REC.ok && (!SREC_OK || navigator.onLine === false);
+
+  return { judge, norm, kanaOf, digits, html, toastHTML, toast: riToast, how, SELF, recInline, recFallback, canRec, OK, NEAR, ERR, PART, KJ_OK, _goods: (t, a) => goods(t, a, []), _errs: (t, me) => errs(goods(t, [], []), me, []) };
+})();
 
 </script>
 <script>
@@ -2769,14 +3168,14 @@ LEVELS.push({
  "id": "n5a",
  "title": "N5 · część 1",
  "short": "N5·1",
- "desc": "Pierwsze kroki w japońskim: przedstawianie się, liczby i godziny, czasowniki w formie ます, te-forma, przymiotniki i opisywanie siebie oraz otoczenia. Poznajesz też pierwsze 58 znaków kanji.",
+ "desc": "Pierwsze kroki w japońskim: przedstawianie się, liczby i godziny, czasowniki w formie ます, te-forma, przymiotniki i opisywanie siebie oraz otoczenia. Poznajesz też pierwsze 58 znaków kanji. Scenki dzieją się na uczelni i w akademiku, ale te same zdania przydadzą się w podróży, w pracy i w rozmowie z sąsiadami.",
  "furigana": true,
  "lessons": [
   {
    "id": "n5a-1",
    "title": "Przedstawianie się: はじめまして i X は Y です",
    "goal": "Po tej lekcji umiesz powiedzieć, jak masz na imię, skąd jesteś i kim jesteś – i wiesz, jak to wymówić.",
-   "intro": "<p>Twoje pierwsze japońskie zdania! Nauczysz się tylko <b>trzech rzeczy</b>: jak się przywitać przy poznaniu, jak powiedzieć „jestem…” i „nie jestem…”.</p>\n<p><b>Duże znaki</b> (np. {私|わたし}) to <b>kanji</b> – na razie nie musisz ich znać. Małe znaki nad nimi (<b>furigana</b>) mówią, jak je czytać. Kanji zaczniemy w lekcji 3.</p>\n<p><b>Partykuła</b> to małe słówko po wyrazie, które mówi, jaką rolę ten wyraz pełni w zdaniu – jak polska końcówka (kot-a, kot-em). W tej lekcji poznasz partykułę は.</p>\n<div class=\"hint\">🗣 <b>Wymowa w tej lekcji – przeczytaj, zanim zaczniesz:</b><br>\n• <b>は</b> jako partykuła czyta się <b>„wa”</b> (nie „ha”): {私|わたし}は = „łatasi ła”.<br>\n• <b>です</b> czyta się <b>„des”</b> – „u” na końcu prawie znika.<br>\n• <b>じん</b> (人, „osoba z…”) = „dzin”: ポーランド{人|じん} = „poorandodzin”.<br>\n• <b>よろしく</b> = „jorosiku”, <b>おねがいします</b> = „onegaisimas”.<br>\n• <b>さん</b> dodajesz do cudzego imienia (jak „pan/pani”), nigdy do swojego.</div>\n<p>Przy każdym przykładzie jest 🔊 (normalnie), 🐢 (wolno) i zapis „czytaj po polsku”. Słuchaj i powtarzaj na głos każde zdanie co najmniej 3 razy.</p>",
+   "intro": "<p>Twoje pierwsze japońskie zdania! Nauczysz się tylko <b>trzech rzeczy</b>: jak się przywitać przy poznaniu, jak powiedzieć „jestem…” i „nie jestem…”. Scenki dzieją się na uczelni, ale te same zdania przydadzą się w podróży, w pracy i przy poznawaniu sąsiadów.</p>\n<p><b>Duże znaki</b> (np. {私|わたし}) to <b>kanji</b> – na razie nie musisz ich znać. Małe znaki nad nimi (<b>furigana</b>) mówią, jak je czytać. Kanji zaczniemy w lekcji 3.</p>\n<p><b>Partykuła</b> to małe słówko po wyrazie, które mówi, jaką rolę ten wyraz pełni w zdaniu – jak polska końcówka (kot-a, kot-em). W tej lekcji poznasz partykułę は.</p>\n<div class=\"hint\">🗣 <b>Wymowa w tej lekcji – przeczytaj, zanim zaczniesz:</b><br>\n• <b>は</b> jako partykuła czyta się <b>„wa”</b> (nie „ha”): {私|わたし}は = „łatasi ła”.<br>\n• <b>です</b> czyta się <b>„des”</b> – „u” na końcu prawie znika.<br>\n• <b>じん</b> (人, „osoba z…”) = „dzin”: ポーランド{人|じん} = „poorandodzin”.<br>\n• <b>よろしく</b> = „jorosiku”, <b>おねがいします</b> = „onegaisimas”.<br>\n• <b>さん</b> dodajesz do cudzego imienia (jak „pan/pani”), nigdy do swojego.</div>\n<p>Przy każdym przykładzie jest 🔊 (normalnie), 🐢 (wolno) i zapis „czytaj po polsku”. Słuchaj i powtarzaj na głos każde zdanie co najmniej 3 razy.</p>",
    "vocab": [
     [
      "私",
@@ -3568,7 +3967,7 @@ LEVELS.push({
    "id": "n5a-2",
    "title": "Liczby, godziny i wiek",
    "goal": "Po tej lekcji potrafisz liczyć do 10 000, podać godzinę, swój wiek i rok studiów.",
-   "intro": "Japońskie liczby są bardzo logiczne – zbudujesz je jak z klocków: 23 to „dwa-dziesięć-trzy”. Trzeba tylko zapamiętać kilka „wygodniejszych w wymowie” wyjątków, np. 300 czy 8000. Potem dodamy liczniki: <b>じ</b> (godzina), <b>ふん／ぷん</b> (minuta), <b>さい</b> (lata życia) i <b>ねんせい</b> (rok studiów). Poznasz też pierwsze kanji: cyfry od 1 do 10 i znak 時.",
+   "intro": "Japońskie liczby są bardzo logiczne – zbudujesz je jak z klocków: 23 to „dwa-dziesięć-trzy”. Trzeba tylko zapamiętać kilka „wygodniejszych w wymowie” wyjątków, np. 300 czy 8000. Potem dodamy liczniki: <b>じ</b> (godzina), <b>ふん／ぷん</b> (minuta), <b>さい</b> (lata życia) i <b>ねんせい</b> (rok studiów – przyda się głównie na studiach, w podróży ważniejsze są godziny i ceny). Poznasz też pierwsze kanji: cyfry od 1 do 10 i znak 時.",
    "vocab": [
     [
      "ゼロ・れい",
@@ -8361,7 +8760,7 @@ LEVELS.push({
   id: "n4",
   title: "N4 · część 2",
   short: "N4",
-  desc: "Forma prosta w mowie potocznej, zdania względne, plany, doświadczenia, obowiązki, możliwości, rady, dawanie i otrzymywanie oraz liczniki. Po tym poziomie swobodnie rozmawiasz z przyjaciółmi i opowiadasz o sobie po japońsku.",
+  desc: "Forma prosta w mowie potocznej, zdania względne, plany, doświadczenia, obowiązki, możliwości, rady, dawanie i otrzymywanie oraz liczniki. Po tym poziomie prostymi zdaniami opowiadasz o sobie, o tym, co było, i o planach, a z przyjaciółmi rozmawiasz na luzie. Te zdania przydadzą się też w podróży i w pracy, nie tylko na studiach.",
   furigana: true,
   lessons: [
 {
@@ -9398,7 +9797,7 @@ LEVELS.push({
   id: "d3",
   title: "N4+ · część 3",
   short: "N4+",
-  desc: "Grzeczne prośby, tryby warunkowe (～ば, ～と, ～たら), „podobno” i „chyba”, czasowniki przechodnie i nieprzechodnie, strona bierna i sprawcza, pytania zależne oraz japońska grzeczność keigo. Po tym poziomie radzisz sobie w kuchni, w szkole, w sklepie i w rozmowie z nauczycielem czy szefem.",
+  desc: "Grzeczne prośby, tryby warunkowe (～ば, ～と, ～たら), „podobno” i „chyba”, czasowniki przechodnie i nieprzechodnie, strona bierna i sprawcza, pytania zależne oraz japońska grzeczność keigo. Po tym poziomie grzecznie prosisz w sklepie, w szkole czy w pracy i rozumiesz uprzejme formy obsługi – w mówieniu to mniej więcej granica A1 i A2. Scenki są z życia studentów, ale te same zdania przydadzą się w podróży i w pracy.",
   furigana: true,
   lessons: [
 {
@@ -10487,7 +10886,7 @@ LEVELS.push({
   id: "n3",
   title: "N3 · Średniozaawansowany",
   short: "N3",
-  desc: "Gramatyka JLPT N3: strona bierna i kauzatyw, tryby warunkowe, keigo, domysły i zasłyszane informacje, aspekt i przyczyny. Po tym poziomie radzisz sobie w codziennej pracy w japońskiej firmie, u lekarza czy przy wynajmie mieszkania i rozumiesz proste wiadomości.",
+  desc: "Gramatyka JLPT N3: strona bierna i kauzatyw, tryby warunkowe, keigo, domysły i zasłyszane informacje, aspekt i przyczyny. To przegląd gramatyki N3, a nie pełny kurs do egzaminu: po nim rozpoznajesz te konstrukcje w tekstach i rozmowach, np. w pracy, u lekarza czy przy wynajmie mieszkania. Do egzaminu i do swobodnej rozmowy potrzeba jeszcze dużo czytania, słuchania i rozmów z ludźmi.",
   furigana: true,
   lessons: [
 {
@@ -11685,7 +12084,7 @@ LEVELS.push({
   id: "n2",
   title: "N2 · Zaawansowany",
   short: "N2",
-  desc: "Konstrukcje typowe dla JLPT N2: niuanse wniosku, ustępstwa, gradacji i konieczności, język gazet i biznesowych e-maili. Po tym poziomie czytasz proste artykuły i prowadzisz rzeczową rozmowę w pracy.",
+  desc: "Konstrukcje typowe dla JLPT N2: niuanse wniosku, ustępstwa, gradacji i konieczności, język gazet i biznesowych e-maili. To przegląd gramatyki N2, a nie pełny kurs do egzaminu: po nim rozpoznajesz te konstrukcje w artykułach i w mailach służbowych.",
   furigana: false,
   lessons: [
 {
@@ -14268,9 +14667,9 @@ __PRO_LESSONS.push({
 LEVELS.push({
   order: 5,
   id: "n1",
-  title: "N1 · Biegłość",
+  title: "N1 · Najtrudniejsza gramatyka",
   short: "N1",
-  desc: "Najtrudniejsze konstrukcje JLPT N1: styl pisany, wyłączność, cel, ustępstwo, ocena i pozostałości klasycznego japońskiego, a do tego 四字熟語 i przysłowia. Po tym poziomie czytasz prasę, eseje i oficjalne przemówienia oraz rozumiesz, kiedy forma brzmi książkowo.",
+  desc: "Najtrudniejsze konstrukcje JLPT N1: styl pisany, wyłączność, cel, ustępstwo, ocena i pozostałości klasycznego japońskiego, a do tego 四字熟語 i przysłowia. To przegląd gramatyki N1, a nie pełny kurs do egzaminu: po nim rozpoznajesz te konstrukcje w prasie i esejach i wiesz, kiedy forma brzmi książkowo.",
   furigana: false,
   lessons: __N1_LESSONS
 });
@@ -18391,6 +18790,244 @@ window.KITDRILLS = Object.assign(window.KITDRILLS || {}, {
       opts: ["{三|!みっ}つ{目|め}ですか。", "{二|!ふた}つ{目|め}ですか。", "{四|!よっ}つ{目|め}ですか。", "{六|!むっ}つ{目|め}ですか。"], a: 0,
       ex: "Nieznajoma: „Na Shibuyę? Ten pociąg jest dobry. To trzecia stacja.” みっつめ = trzecia. Echo z ですか potwierdza, gdzie wysiąść.",
       why: ["Tak: みっつめ = trzecia.", "ふたつめ = druga.", "よっつめ = czwarta.", "むっつめ = szósta, łatwo pomylić z みっつめ."] }
+  ]
+});
+
+// ===================== 8–10. W podróży: droga, stacja i pociąg, daty (ocena kursu, punkt 11) =====================
+// drill: podpis przycisku ćwiczenia ze słuchu – zadania w KITDRILLS[id sytuacji] (src/kit.js viewSit)
+SITS.push(
+  { id: "droga", icon: "🧭", title: "Pytanie o drogę", kit: 1, order: 6.5, life: "", drill: "🧭 Ćwicz: wskazówki ze słuchu",
+    intro: "Japończycy chętnie wskazują drogę, a często po prostu odprowadzają kawałek. Zacznij od すみません, zapytaj o cel i powtórz wskazówkę, żeby się upewnić. Pomaga mapa w telefonie: pokaż ją i poproś o wskazanie drogi na mapie.",
+    roleplay: {
+      role: "starsza pani przy przystanku autobusowym w Kioto, życzliwa i cierpliwa, mówi powoli i pokazuje kierunek ręką",
+      setting: "Wieczorem szukam swojego hotelu w Kioto. Adres mam w telefonie, ale mapa się gubi. Zagaduję starszą panią na przystanku.",
+      goals: ["zapytać, jak dojść do hotelu", "zapytać, czy to daleko i ile minut pieszo", "upewnić się, czy skręcić w prawo, czy w lewo", "poprosić o pokazanie drogi na mapie", "podziękować"],
+      twists: ["pani mówi, że pieszo to daleko, i radzi wziąć autobus", "pani proponuje, że odprowadzi mnie kawałek", "we wskazówce pada punkt orientacyjny: konbini na rogu i drugie światła"],
+      style: "u" } },
+  { id: "pociag", icon: "🚆", title: "Stacja i pociąg", kit: 1, order: 6.6, life: "", drill: "🚆 Ćwicz: komunikaty i odpowiedzi",
+    intro: "Kolej w Japonii jest punktualna i dobrze oznaczona, a na dużych stacjach napisy są też po angielsku. Z tymi zwrotami kupisz bilet, znajdziesz tor i upewnisz się, że pociąg zatrzyma się tam, gdzie trzeba. Najwygodniej jeździć z kartą IC przykładaną do bramki.",
+    roleplay: {
+      role: "pracownik okienka z biletami na dużej stacji w Tokio, uprzejmy i rzeczowy",
+      setting: "Rano na dużej stacji w Tokio chcę dojechać do Kamakury. Podchodzę do okienka z biletami.",
+      goals: ["kupić bilet do Kamakury", "zapytać, z którego toru odjeżdża pociąg", "zapytać, czy i gdzie trzeba się przesiąść", "zapytać, o której jest następny pociąg", "zapytać, gdzie doładować kartę IC"],
+      twists: ["najbliższy pociąg jest pospieszny i nie zatrzymuje się na potrzebnej stacji", "trzeba się przesiąść w połowie drogi", "pracownik pyta, czy bilet w jedną stronę, czy w obie"],
+      style: "u" } },
+  { id: "daty", icon: "📅", title: "Daty i miesiące", kit: 1, order: 6.7, life: "", drill: "📅 Ćwicz: daty ze słuchu",
+    intro: "Daty przydają się przy rezerwacji hotelu, biletu albo stolika, a urodziny to częsty temat rozmowy. Miesiące są proste: liczba + がつ (いちがつ to styczeń). Dni miesiąca do 10. i kilka dalszych mają własne nazwy, więc najlepiej osłuchać je na głos.",
+    roleplay: {
+      role: "recepcjonistka w małym hotelu w Hakone, przyjmuje rezerwację przez telefon",
+      setting: "Dzwonię do małego hotelu w Hakone, żeby zarezerwować pokój dla dwóch osób na dwie noce w maju.",
+      goals: ["podać datę przyjazdu i wyjazdu", "powiedzieć, ile osób", "zapytać o cenę", "potwierdzić daty, powtarzając je", "podziękować i się pożegnać"],
+      twists: ["w wybrany dzień nie ma wolnych pokoi i recepcjonistka proponuje inny termin", "to „Złoty Tydzień”, więc cena jest wyższa", "recepcjonistka prosi o datę urodzenia do formularza"],
+      style: "u" } }
+);
+
+// ===================== 8. Pytanie o drogę =====================
+PHRASES.push(
+  { id: "dr-01", sit: "droga", kit: 1, kind: "say", jp: "すみません、ちょっといいですか。", w: "すみません、 ちょっと いい です か。", pl: "Przepraszam, mogę o coś zapytać?", style: "u",
+    use: "Grzeczny początek rozmowy z nieznajomym na ulicy. Zaraz potem pytanie." },
+  { id: "dr-02", sit: "droga", kit: 1, kind: "say", jp: "{駅|えき}はどこですか。", w: "えき は どこ です か。", pl: "Gdzie jest stacja?", style: "u",
+    use: "Pytasz przechodnia, gdzie jest stacja. Zamiast えき wstaw cel: ホテル, トイレ, バスてい (przystanek).", alt: ["{駅|えき}はどちらですか。"] },
+  { id: "dr-03", sit: "droga", kit: 1, kind: "say", jp: "この{近|ちか}くにコンビニはありますか。", w: "この ちかく に コンビニ は あります か。", pl: "Czy w pobliżu jest konbini?", style: "u",
+    use: "Pytasz, czy gdzieś blisko jest sklep konbini. Zamiast コンビニ: やっきょく (apteka), ぎんこう (bank)." },
+  { id: "dr-04", sit: "droga", kit: 1, kind: "say", jp: "このホテルに{行|い}きたいんですが…。", w: "この ホテル に いきたいん です が…。", pl: "Chcę dojść do tego hotelu…", style: "u",
+    use: "Pokazujesz adres hotelu i mówisz, że chcesz tam dojść. Niedokończone zdanie brzmi grzecznie, a resztę dopowie rozmówca." },
+  { id: "dr-05", sit: "droga", kit: 1, kind: "say", jp: "{地図|ちず}で{教|おし}えていただけますか。", w: "ちず で おしえて いただけます か。", pl: "Proszę mi pokazać na mapie.", style: "u",
+    use: "Prosisz, żeby ktoś pokazał drogę na mapie – w telefonie albo na papierowej. Tak najłatwiej o wskazówkę bez długich wyjaśnień." },
+  { id: "dr-06", sit: "droga", kit: 1, kind: "say", jp: "ここから{遠|とお}いですか。", w: "ここ から とおい です か。", pl: "Czy to daleko stąd?", style: "u",
+    use: "Pytasz, czy cel jest daleko. Odpowiedź: ちかい です (blisko) albo とおい です (daleko)." },
+  { id: "dr-07", sit: "droga", kit: 1, kind: "say", jp: "{歩|ある}いて{何分|!なんぷん}ぐらいですか。", w: "あるいて なんぷん ぐらい です か。", pl: "Ile to minut pieszo?", style: "u",
+    use: "Pytasz, ile minut zajmie dojście. Odpowiedź usłyszysz w minutach: ごふん (5), じゅっぷん (10), にじゅっぷん (20)." },
+  { id: "dr-08", sit: "droga", kit: 1, kind: "say", jp: "まっすぐですね。", w: "まっすぐ です ね。", pl: "Czyli prosto, tak?", style: "u",
+    use: "Upewniasz się, że trzeba iść prosto: powtarzasz wskazówkę z ね. Tak samo: みぎ です ね (w prawo), ひだり です ね (w lewo)." },
+  { id: "dr-09", sit: "droga", kit: 1, kind: "say", jp: "{右|みぎ}ですか、{左|ひだり}ですか。", w: "みぎ です か、 ひだり です か。", pl: "W prawo czy w lewo?", style: "u",
+    use: "Wskazówka umknęła i pytasz, w którą stronę skręcić. Możesz też pokazać ręką i zapytać: こっち です か (w tę stronę?)." },
+  { id: "dr-10", sit: "droga", kit: 1, kind: "say", jp: "{二|ふた}つ{目|め}の{信号|しんごう}ですね。", w: "ふたつめ の しんごう です ね。", pl: "Na drugich światłach, tak?", style: "u",
+    use: "Upewniasz się, że skręt jest na drugich światłach. しんごう to światła, かど to róg; ひとつめ – pierwsze, ふたつめ – drugie, みっつめ – trzecie." },
+  { id: "dr-11", sit: "droga", kit: 1, kind: "say", jp: "{分|わ}かりました。ありがとうございます。", w: "わかりました。 ありがとう ございます。", pl: "Jasne, dziękuję bardzo.", style: "u",
+    use: "Na koniec dziękujesz za wskazanie drogi. Gdy ktoś odprowadzi Cię kawałek, podziękuj jeszcze raz przy rozstaniu." },
+  { id: "dr-h01", sit: "droga", kit: 1, kind: "hear", jp: "まっすぐ{行|い}って、{右|みぎ}に{曲|ま}がってください。", w: "まっすぐ いって、 みぎ に まがって ください。", pl: "Proszę iść prosto, a potem skręcić w prawo.", style: "u",
+    use: "Najczęstsza wskazówka: kierunek i skręt.", reply: ["dr-08", "dr-11"],
+    note: "まがって = skręć. W lewo: ひだり に まがって." },
+  { id: "dr-h02", sit: "droga", kit: 1, kind: "hear", jp: "{二|ふた}つ{目|め}の{信号|しんごう}を{左|ひだり}です。", w: "ふたつめ の しんごう を ひだり です。", pl: "Na drugich światłach w lewo.", style: "u",
+    use: "Wskazówka z punktem orientacyjnym: światła, róg, konbini.", reply: ["dr-10", "dr-11"],
+    note: "を przy しんごう albo かど wskazuje miejsce, w którym się skręca." },
+  { id: "dr-h03", sit: "droga", kit: 1, kind: "hear", jp: "ちょっと{遠|とお}いですよ。", w: "ちょっと とおい です よ。", pl: "To dość daleko.", style: "u",
+    use: "Rozmówca uprzedza, że pieszo będzie długo.", reply: ["dr-07"],
+    note: "Wtedy zapytaj, ile minut pieszo, albo o autobus: バス は あります か." },
+  { id: "dr-h04", sit: "droga", kit: 1, kind: "hear", jp: "{歩|ある}いて{五分|ごふん}ぐらいです。", w: "あるいて ごふん ぐらい です。", pl: "Około pięciu minut pieszo.", style: "u",
+    use: "Odpowiedź na pytanie, czy daleko.", reply: ["dr-11"] }
+);
+
+// ===================== 9. Stacja i pociąg =====================
+PHRASES.push(
+  { id: "pc-01", sit: "pociag", kit: 1, kind: "say", jp: "{京都|きょうと}までの{切符|きっぷ}を{一枚|いちまい}ください。", w: "きょうと まで の きっぷ を いちまい ください。", pl: "Poproszę jeden bilet do Kioto.", style: "u",
+    use: "Kupujesz w okienku jeden bilet do Kioto. Dwa bilety: にまい. Zamiast きょうと wstaw swoją stację." },
+  { id: "pc-02", sit: "pociag", kit: 1, kind: "say", jp: "{東京|とうきょう}{行|ゆ}きは{何番線|!なんばんせん}ですか。", w: "とうきょう ゆき は なんばんせん です か。", pl: "Z którego toru jedzie pociąg do Tokio?", style: "u",
+    use: "Pytasz, z którego toru odjeżdża pociąg do Tokio. ばんせん to numer toru, a tablice nad peronami podają go też po angielsku (Track)." },
+  { id: "pc-03", sit: "pociag", kit: 1, kind: "say", jp: "この{電車|でんしゃ}は{新宿|しんじゅく}に{止|と}まりますか。", w: "この でんしゃ は しんじゅく に とまります か。", pl: "Czy ten pociąg zatrzymuje się na Shinjuku?", style: "u",
+    use: "Przed wejściem upewniasz się, że pociąg stanie na Shinjuku. Pociągi pospieszne (かいそく, きゅうこう, とっきゅう) omijają mniejsze stacje." },
+  { id: "pc-04", sit: "pociag", kit: 1, kind: "say", jp: "どこで{乗|の}り{換|か}えますか。", w: "どこ で のりかえます か。", pl: "Gdzie mam się przesiąść?", style: "u",
+    use: "Pytasz, na której stacji zmienić pociąg. Przesiadka to のりかえ, a drogę na inną linię wskazują na stacji kolorowe tablice." },
+  { id: "pc-05", sit: "pociag", kit: 1, kind: "say", jp: "{次|つぎ}の{電車|でんしゃ}は{何時|!なんじ}ですか。", w: "つぎ の でんしゃ は なんじ です か。", pl: "O której jest następny pociąg?", style: "u",
+    use: "Pytasz o godzinę odjazdu kolejnego pociągu. Na rozkładach i tablicach godziny są w zapisie 24-godzinnym." },
+  { id: "pc-06", sit: "pociag", kit: 1, kind: "say", jp: "{切符|きっぷ}の{買|か}い{方|!かた}が{分|わ}かりません。", w: "きっぷ の かいかた が わかりません。", pl: "Nie wiem, jak kupić bilet.", style: "u",
+    use: "Stoisz przy automacie i nie wiesz, jak kupić bilet. Pomoże pracownik w okienku obok albo przycisk wezwania obsługi na automacie." },
+  { id: "pc-07", sit: "pociag", kit: 1, kind: "say", jp: "チャージしたいんですが…。", w: "チャージ したいん です が…。", pl: "Chcę doładować kartę…", style: "u",
+    use: "Mówisz, że chcesz doładować kartę IC. Kartą IC (np. Suica, ICOCA) płacisz za przejazd, przykładając ją do bramki. Doładujesz ją gotówką w automacie z biletami albo w konbini." },
+  { id: "pc-08", sit: "pociag", kit: 1, kind: "say", jp: "この{席|せき}、{空|あ}いていますか。", w: "この せき、 あいて います か。", pl: "Czy to miejsce jest wolne?", style: "u",
+    use: "Pytasz, czy możesz usiąść obok – w pociągu, w poczekalni albo w barze. Odpowiedź: どうぞ (proszę, wolne)." },
+  { id: "pc-09", sit: "pociag", kit: 1, kind: "say", jp: "{乗|の}り{過|す}ごしました。", w: "のりすごしました。", pl: "[[Przegapiłem|Przegapiłam]] swoją stację.", style: "u",
+    use: "Pociąg minął Twoją stację i mówisz o tym przy bramce albo w okienku. Zwykle dopłacasz różnicę i wracasz pociągiem w drugą stronę." },
+  { id: "pc-h01", sit: "pociag", kit: 1, kind: "hear", jp: "まもなく、{一番線|いちばんせん}に{電車|でんしゃ}が{参|まい}ります。", w: "まもなく、 いちばんせん に でんしゃ が まいります。", pl: "Za chwilę na tor 1 wjedzie pociąg.", style: "k",
+    use: "Komunikat na peronie.", reply: [],
+    note: "まいります to grzecznościowe „przyjeżdża”. Stań wtedy za żółtą linią." },
+  { id: "pc-h02", sit: "pociag", kit: 1, kind: "hear", jp: "{次|つぎ}は{新宿|しんじゅく}です。", w: "つぎ は しんじゅく です。", pl: "Następna stacja: Shinjuku.", style: "u",
+    use: "Komunikat w pociągu przed każdą stacją.", reply: [],
+    note: "Nazwa stacji pada też po angielsku i świeci na ekranie nad drzwiami." },
+  { id: "pc-h03", sit: "pociag", kit: 1, kind: "hear", jp: "{三番線|さんばんせん}です。", w: "さんばんせん です。", pl: "Z toru 3.", style: "u",
+    use: "Odpowiedź na pytanie, z którego toru.", reply: ["dr-11"] },
+  { id: "pc-h04", sit: "pociag", kit: 1, kind: "hear", jp: "{渋谷|しぶや}で{乗|の}り{換|か}えてください。", w: "しぶや で のりかえて ください。", pl: "Proszę przesiąść się na stacji Shibuya.", style: "u",
+    use: "Odpowiedź na pytanie o przesiadkę.", reply: ["dr-11"] },
+  { id: "pc-h05", sit: "pociag", kit: 1, kind: "hear", jp: "この{電車|でんしゃ}は{止|と}まりませんよ。", w: "この でんしゃ は とまりません よ。", pl: "Ten pociąg tam się nie zatrzymuje.", style: "u",
+    use: "Odpowiedź, gdy pociąg pospieszny omija Twoją stację.", reply: ["pc-05"],
+    note: "Poczekaj na pociąg osobowy (かくえき ていしゃ albo ふつう), który staje na każdej stacji." }
+);
+
+// ===================== 10. Daty i miesiące =====================
+PHRASES.push(
+  { id: "dt-01", sit: "daty", kit: 1, kind: "say", jp: "{今日|きょう}は{何月何日|!なんがつなんにち}ですか。", w: "きょう は なんがつ なんにち です か。", pl: "Którego jest dzisiaj?", style: "u",
+    use: "Pytasz, którego jest dzisiaj. なんがつ – który miesiąc, なんにち – który dzień." },
+  { id: "dt-02", sit: "daty", kit: 1, kind: "say", jp: "{今日|きょう}は{四月|しがつ}{一日|ついたち}です。", w: "きょう は しがつ ついたち です。", pl: "Dziś jest pierwszy kwietnia.", style: "u",
+    use: "Mówisz, że dziś jest 1 kwietnia. Data po japońsku: najpierw miesiąc, potem dzień.",
+    note: "Uwaga na trzy miesiące: しがつ (kwiecień, nie よんがつ), しちがつ (lipiec), くがつ (wrzesień, nie きゅうがつ)." },
+  { id: "dt-03", sit: "daty", kit: 1, kind: "say", jp: "{明日|あした}は{何日|!なんにち}ですか。", w: "あした は なんにち です か。", pl: "Którego jest jutro?", style: "u",
+    use: "Pytasz, którego jest jutro. きょう – dziś, あした – jutro, きのう – wczoraj." },
+  { id: "dt-04", sit: "daty", kit: 1, kind: "say", jp: "お{誕生日|たんじょうび}はいつですか。", w: "おたんじょうび は いつ です か。", pl: "Kiedy masz urodziny?", style: "u",
+    use: "Pytasz kogoś o urodziny. O cudze urodziny pytasz z お przed たんじょうび, o swoich mówisz bez お." },
+  { id: "dt-05", sit: "daty", kit: 1, kind: "say", jp: "{誕生日|たんじょうび}は{七月|しちがつ}{二十日|はつか}です。", w: "たんじょうび は しちがつ はつか です。", pl: "Moje urodziny są dwudziestego lipca.", style: "u",
+    use: "Mówisz, kiedy masz urodziny (tu 20 lipca – wstaw swoją datę). 20. dzień miesiąca to はつか – nieregularnie, jak dni do 10." },
+  { id: "dt-06", sit: "daty", kit: 1, kind: "say", jp: "{三月|さんがつ}{三日|みっか}から{五日|いつか}まで{泊|と}まります。", w: "さんがつ みっか から いつか まで とまります。", pl: "Nocuję od trzeciego do piątego marca.", style: "u",
+    use: "W hotelu mówisz, na które noce zostajesz: od 3 do 5 marca. から – od, まで – do." },
+  { id: "dt-07", sit: "daty", kit: 1, kind: "say", jp: "{十月|じゅうがつ}{十日|とおか}に{予約|よやく}したいんですが…。", w: "じゅうがつ とおか に よやく したいん です が…。", pl: "Chcę zrobić rezerwację na dziesiątego października…", style: "u",
+    use: "Rezerwujesz hotel, stolik albo bilet na 10 października. Data + に – „na ten dzień”." },
+  { id: "dt-08", sit: "daty", kit: 1, kind: "say", jp: "{一月|いちがつ}、{二月|にがつ}、{三月|さんがつ}、{四月|しがつ}、{五月|ごがつ}、{六月|ろくがつ}", w: "いちがつ、 にがつ、 さんがつ、 しがつ、 ごがつ、 ろくがつ", pl: "styczeń, luty, marzec, kwiecień, maj, czerwiec", style: "u",
+    use: "Wymieniasz miesiące od stycznia do czerwca: liczba + がつ. Kwiecień to しがつ, a nie よんがつ." },
+  { id: "dt-09", sit: "daty", kit: 1, kind: "say", jp: "{七月|しちがつ}、{八月|はちがつ}、{九月|くがつ}、{十月|じゅうがつ}、{十一月|じゅういちがつ}、{十二月|じゅうにがつ}", w: "しちがつ、 はちがつ、 くがつ、 じゅうがつ、 じゅういちがつ、 じゅうにがつ", pl: "lipiec, sierpień, wrzesień, październik, listopad, grudzień", style: "u",
+    use: "Wymieniasz miesiące od lipca do grudnia. Lipiec to しちがつ, wrzesień – くがつ." },
+  { id: "dt-10", sit: "daty", kit: 1, kind: "say", jp: "{一日|ついたち}、{二日|ふつか}、{三日|みっか}、{四日|よっか}、{五日|いつか}", w: "ついたち、 ふつか、 みっか、 よっか、 いつか", pl: "1., 2., 3., 4. i 5. dzień miesiąca", style: "u",
+    use: "Wymieniasz dni miesiąca od 1. do 5. – mają własne nazwy. 1. to ついたち, a nie いちにち (いちにち = jeden dzień)." },
+  { id: "dt-11", sit: "daty", kit: 1, kind: "say", jp: "{六日|むいか}、{七日|なのか}、{八日|ようか}、{九日|ここのか}、{十日|とおか}", w: "むいか、 なのか、 ようか、 ここのか、 とおか", pl: "6., 7., 8., 9. i 10. dzień miesiąca", style: "u",
+    use: "Wymieniasz dni miesiąca od 6. do 10. Dalej już regularnie: じゅういちにち (11.), じゅうににち (12.)… Wyjątki: じゅうよっか (14.), はつか (20.), にじゅうよっか (24.)." },
+  { id: "dt-12", sit: "daty", kit: 1, kind: "say", jp: "お{誕生日|たんじょうび}おめでとうございます！", w: "おたんじょうび おめでとう ございます！", pl: "Wszystkiego najlepszego z okazji urodzin!", style: "u",
+    use: "Składasz komuś życzenia urodzinowe. Przyjaciołom wystarczy たんじょうび おめでとう！" },
+  { id: "dt-h01", sit: "daty", kit: 1, kind: "hear", jp: "{何日|!なんにち}のご{予約|よやく}ですか。", w: "なんにち の ごよやく です か。", pl: "Na który dzień rezerwacja?", style: "k",
+    use: "Pytanie w hotelu albo w restauracji.", reply: ["dt-07"] },
+  { id: "dt-h02", sit: "daty", kit: 1, kind: "hear", jp: "{来月|らいげつ}の{十四日|じゅうよっか}はどうですか。", w: "らいげつ の じゅうよっか は どう です か。", pl: "Może czternastego w przyszłym miesiącu?", style: "u",
+    use: "Propozycja terminu spotkania.", reply: ["re-10"],
+    note: "じゅうよっか (14.) brzmi podobnie jak よっか (4.). W razie wątpliwości powtórz datę z ですか." },
+  { id: "dt-h03", sit: "daty", kit: 1, kind: "hear", jp: "{五月|ごがつ}{五日|いつか}は、こどもの{日|ひ}です。", w: "ごがつ いつか は、 こども の ひ です。", pl: "Piąty maja to Dzień Dziecka.", style: "u",
+    use: "Ciekawostka o świętach.", reply: ["re-04"],
+    note: "To święto w „Złotym Tygodniu” (koniec kwietnia – początek maja), gdy pociągi i hotele są pełne." }
+);
+
+// ===================== Ćwiczenia ze słuchu: droga, pociąg, daty (KITDRILLS[id sytuacji]) =====================
+window.KITDRILLS = Object.assign(window.KITDRILLS || {}, {
+  droga: [
+    { t: "listen", skill: "Zwroty", sub: "droga", q: "Pytasz o drogę do stacji. Gdzie trzeba skręcić?",
+      lines: [["f", "{駅|えき}ですか。この{道|みち}をまっすぐ{行|い}って、"], ["f", "{二|ふた}つ{目|め}の{信号|しんごう}を{右|みぎ}に{曲|ま}がってください。"]],
+      opts: ["Na drugich światłach w prawo", "Na pierwszych światłach w prawo", "Na drugich światłach w lewo", "Nigdzie – cały czas prosto"], a: 0,
+      ex: "Przechodzień: „Stacja? Proszę iść tą ulicą prosto, a na drugich światłach skręcić w prawo.” ふたつめ = drugie, しんごう = światła, みぎ = prawo.",
+      why: ["Tak: ふたつめ の しんごう, potem みぎ.", "Pierwsze to ひとつめ, a padło ふたつめ.", "ひだり to lewo, a padło みぎ.", "Prosto tylko na początku, potem jest skręt."] },
+    { t: "listen", skill: "Zwroty", sub: "droga", q: "Szukasz konbini. Gdzie jest najbliższe?",
+      lines: [["m", "コンビニですか。"], ["m", "あの{角|かど}を{左|ひだり}に{曲|ま}がると、すぐありますよ。"]],
+      opts: ["Za tamtym rogiem w lewo, od razu", "Za tamtym rogiem w prawo", "Prosto, aż do świateł", "Daleko, trzeba jechać autobusem"], a: 0,
+      ex: "Przechodzień: „Konbini? Jak skręcisz za tamtym rogiem w lewo, od razu jest.” かど = róg, ひだり = lewo, すぐ = zaraz, od razu.",
+      why: ["Tak: かど, ひだり i すぐ.", "Padło ひだり (lewo), a nie みぎ (prawo).", "O światłach (しんごう) nie było mowy.", "すぐ znaczy „od razu”, więc to blisko."] },
+    { t: "listen", skill: "Zwroty", sub: "droga", q: "Pytasz, czy to daleko. Ile minut pieszo?",
+      lines: [["f", "ここから{歩|ある}いて{十分|じゅっぷん}ぐらいです。"], ["f", "タクシーなら{三分|さんぷん}ですよ。"]],
+      opts: ["Około 10 minut", "Około 3 minut", "Około 30 minut", "Około godziny"], a: 0,
+      ex: "Przechodzień: „Stąd pieszo jakieś 10 minut. Taksówką 3 minuty.” あるいて = pieszo, じゅっぷん = 10 minut.",
+      why: ["Tak: あるいて じゅっぷん.", "3 minuty (さんぷん) to taksówką, a nie pieszo.", "30 minut to さんじゅっぷん, a padło じゅっぷん.", "Godzina to いちじかん – nie padło."] },
+    { t: "listen", skill: "Zwroty", sub: "droga", q: "Pytasz o hotel. Jak go rozpoznać?",
+      lines: [["m", "ホテルですか。あの{銀行|ぎんこう}の{隣|となり}です。"], ["m", "{白|しろ}い{建物|たてもの}ですよ。"]],
+      opts: ["Biały budynek obok banku", "Biały budynek naprzeciwko banku", "Czerwony budynek obok banku", "Biały budynek za stacją"], a: 0,
+      ex: "Przechodzień: „Hotel? Obok tamtego banku. To biały budynek.” となり = obok, ぎんこう = bank, しろい = biały.",
+      why: ["Tak: ぎんこう の となり, しろい.", "Naprzeciwko to むかい, a padło となり (obok).", "Czerwony to あかい, a padło しろい.", "O stacji nie było mowy."] },
+    { t: "listen", skill: "Zwroty", sub: "droga", q: "Pokazujesz mapę w telefonie. Którędy do muzeum?",
+      lines: [["f", "ええと、{今|いま}ここですね。"], ["f", "{美術館|びじゅつかん}は、この{橋|はし}を{渡|わた}って、すぐ{右|みぎ}です。"]],
+      opts: ["Przez most i od razu w prawo", "Przed mostem w prawo", "Przez most i dalej prosto", "Z powrotem do stacji"], a: 0,
+      ex: "Przechodzień: „Hm, jesteśmy tutaj. Muzeum: przez ten most i zaraz w prawo.” はし を わたって = przez most, すぐ みぎ = zaraz w prawo.",
+      why: ["Tak: najpierw most, potem みぎ.", "Skręt jest dopiero za mostem (わたって).", "Za mostem jest skręt w prawo, a nie prosto.", "O stacji nie było mowy."] },
+    { t: "listen", skill: "Zwroty", sub: "droga", q: "Przechodzień nie zna drogi. Co radzi?",
+      lines: [["m", "すみません、このへんはちょっと{分|わ}からないんです。"], ["m", "あそこの{交番|こうばん}で{聞|き}いてみてください。"]],
+      opts: ["Zapytać na posterunku policji", "Zapytać w konbini", "Wrócić na stację", "Pojechać taksówką"], a: 0,
+      ex: "Przechodzień: „Przepraszam, słabo znam tę okolicę. Proszę zapytać na tamtym posterunku.” こうばん to mała budka policji: wskażą drogę i pokażą ją na mapie.",
+      why: ["Tak: こうばん to posterunek policji.", "O konbini nie było mowy.", "O stacji nie było mowy.", "O taksówce nie było mowy."] }
+  ],
+  pociag: [
+    { t: "listen", skill: "Zwroty", sub: "pociag", q: "Komunikat na peronie. Z którego toru odjedzie pociąg do Osaki?",
+      lines: [["f", "まもなく、{五番線|ごばんせん}に{大阪|おおさか}{行|ゆ}きが{参|まい}ります。"], ["f", "{黄色|きいろ}い{線|せん}の{内側|うちがわ}までお{下|さ}がりください。"]],
+      opts: ["Z toru 5", "Z toru 2", "Z toru 9", "Z toru 4"], a: 0,
+      ex: "Komunikat: „Za chwilę na tor 5 wjedzie pociąg do Osaki. Prosimy odsunąć się za żółtą linię.” ごばんせん = tor 5, おおさか ゆき = w kierunku Osaki.",
+      why: ["Tak: ごばんせん.", "Tor 2 to にばんせん.", "Tor 9 to きゅうばんせん.", "Tor 4 to よんばんせん."] },
+    { t: "listen", skill: "Zwroty", sub: "pociag", q: "Pytasz w okienku, jak dojechać do Mitaki. Gdzie się przesiąść?",
+      lines: [["m", "{三鷹|みたか}ですか。"], ["m", "{新宿|しんじゅく}で{中央線|ちゅうおうせん}に{乗|の}り{換|か}えてください。"]],
+      opts: ["Na stacji Shinjuku, na linię Chūō", "Na stacji Shibuya, na linię Chūō", "Na stacji Shinjuku, na linię Yamanote", "Nigdzie, to pociąg bez przesiadki"], a: 0,
+      ex: "Pracownik: „Do Mitaki? Proszę przesiąść się na Shinjuku na linię Chūō.” のりかえて = przesiąść się.",
+      why: ["Tak: しんじゅく, ちゅうおうせん.", "Padło しんじゅく, a nie しぶや.", "Padło ちゅうおうせん, a nie やまのてせん.", "のりかえて ください to właśnie przesiadka."] },
+    { t: "listen", skill: "Zwroty", sub: "pociag", q: "Pytasz, czy ten pociąg zatrzyma się na następnej stacji.",
+      lines: [["f", "これは{特急|とっきゅう}ですから、{次|つぎ}の{駅|えき}には{止|と}まりません。"], ["f", "{後|あと}の{普通|ふつう}{電車|でんしゃ}に{乗|の}ってください。"]],
+      opts: ["Nie – trzeba poczekać na pociąg osobowy", "Tak, zatrzymuje się", "Nie – trzeba przesiąść się na autobus", "Tak, ale tylko na żądanie"], a: 0,
+      ex: "Pasażerka: „To ekspres (とっきゅう), więc na następnej stacji się nie zatrzymuje. Proszę wsiąść do późniejszego osobowego.” ふつう でんしゃ staje na każdej stacji.",
+      why: ["Tak: とまりません, a potem ふつう でんしゃ.", "とまりません znaczy „nie zatrzymuje się”.", "O autobusie nie było mowy.", "Nie ma tu mowy o zatrzymaniu na żądanie."] },
+    { t: "listen", skill: "Zwroty", sub: "pociag", q: "Pytasz o następny pociąg. O której odjeżdża?",
+      lines: [["m", "{次|つぎ}の{電車|でんしゃ}は{十時|じゅうじ}{十五分|じゅうごふん}です。"], ["m", "その{次|つぎ}は{十時|じゅうじ}{半|はん}ですね。"]],
+      opts: ["O 10:15", "O 10:50", "O 10:30", "O 11:15"], a: 0,
+      ex: "Pracownik: „Następny pociąg o 10:15. Kolejny o 10:30.” じゅうごふん = 15 minut, はん = wpół (:30).",
+      why: ["Tak: じゅうじ じゅうごふん.", "50 minut to ごじゅっぷん, a padło じゅうごふん.", "10:30 (じゅうじ はん) to dopiero kolejny pociąg.", "Padło じゅうじ (10), a nie じゅういちじ (11)."] },
+    { t: "listen", skill: "Zwroty", sub: "pociag", q: "Komunikat w pociągu. Gdzie wysiąść, żeby przesiąść się na linię Ginza?",
+      lines: [["f", "{次|つぎ}は{上野|うえの}、{上野|うえの}です。"], ["f", "{銀座線|ぎんざせん}はお{乗|の}り{換|か}えです。"]],
+      opts: ["Na następnej stacji, Ueno", "Na stacji Ginza", "Dopiero na końcu linii", "Na poprzedniej stacji"], a: 0,
+      ex: "Komunikat: „Następna stacja: Ueno. Przesiadka na linię Ginza.” おのりかえ = przesiadka.",
+      why: ["Tak: つぎ は うえの, tam jest przesiadka.", "Ginza to nazwa linii (ぎんざせん), a nie stacji, na której trzeba wysiąść.", "O końcu linii nie było mowy.", "つぎ znaczy „następna”."] },
+    { t: "listen", skill: "Zwroty", sub: "pociag", q: "Bramka nie przepuszcza Cię z kartą IC. Co mówi pracownik?",
+      lines: [["m", "{残高|ざんだか}が{足|た}りませんね。"], ["m", "あちらの{機械|きかい}でチャージしてください。"]],
+      opts: ["Za mało pieniędzy na karcie – doładować w automacie", "Karta jest zepsuta – trzeba kupić nową", "Bramka nie działa – iść do innej", "Bilet jest na inną linię"], a: 0,
+      ex: "Pracownik: „Brakuje środków na karcie. Proszę doładować w tamtym automacie.” ざんだか = saldo, たりません = nie wystarcza, チャージ = doładowanie.",
+      why: ["Tak: ざんだか が たりません, potem チャージ.", "Nikt nie mówi, że karta jest zepsuta.", "Bramka działa – na karcie jest za mało pieniędzy.", "O innej linii nie było mowy."] }
+  ],
+  daty: [
+    { t: "listen", skill: "Zwroty", sub: "daty", q: "Recepcja hotelu potwierdza rezerwację. Na jakie dni?",
+      lines: [["f", "ご{予約|よやく}は{八月|はちがつ}{四日|よっか}から{二泊|にはく}ですね。"], ["f", "チェックアウトは{六日|むいか}です。"]],
+      opts: ["Od 4 do 6 sierpnia", "Od 8 do 10 kwietnia", "Od 4 do 6 października", "Od 14 do 16 sierpnia"], a: 0,
+      ex: "Recepcja: „Rezerwacja od 4 sierpnia na dwie noce, tak? Wymeldowanie szóstego.” はちがつ = sierpień, よっか = 4., むいか = 6.",
+      why: ["Tak: はちがつ よっか – むいか.", "Miesiąc to はちがつ (sierpień), a dzień よっか (4.).", "Październik to じゅうがつ – nie padło.", "14. to じゅうよっか, a padło samo よっか."] },
+    { t: "listen", skill: "Zwroty", sub: "daty", q: "Koleżanka mówi, kiedy ma urodziny. Kiedy?",
+      lines: [["f", "{私|わたし}の{誕生日|たんじょうび}は{十二月|じゅうにがつ}{二十日|はつか}です。"], ["f", "クリスマスの{前|まえ}ですよ。"]],
+      opts: ["20 grudnia", "2 grudnia", "20 lutego", "12 grudnia"], a: 0,
+      ex: "Koleżanka: „Moje urodziny są 20 grudnia. Tuż przed świętami.” はつか = 20. (nieregularnie), じゅうにがつ = grudzień.",
+      why: ["Tak: じゅうにがつ はつか.", "2. to ふつか – podobne, ale padło はつか.", "Luty to にがつ, a padło じゅうにがつ.", "12. to じゅうににち – nie padło."] },
+    { t: "listen", skill: "Zwroty", sub: "daty", q: "Znajomy proponuje termin spotkania. Którego dnia?",
+      lines: [["m", "{来週|らいしゅう}の{土曜日|どようび}、{九日|ここのか}はどうですか。"], ["m", "{午後|!ごご}は{空|あ}いていますか。"]],
+      opts: ["W sobotę, 9.", "W sobotę, 5.", "W niedzielę, 9.", "W sobotę, 4."], a: 0,
+      ex: "Znajomy: „Może w sobotę w przyszłym tygodniu, dziewiątego? Masz wolne popołudnie?” どようび = sobota, ここのか = 9.",
+      why: ["Tak: どようび, ここのか.", "5. to いつか.", "Niedziela to にちようび, a padło どようび.", "4. to よっか."] },
+    { t: "listen", skill: "Zwroty", sub: "daty", q: "W kasie potwierdzają bilet na shinkansen. Którego dnia jedziesz?",
+      lines: [["m", "{十一月|じゅういちがつ}{一日|ついたち}、{朝|あさ}{八時|はちじ}の{新幹線|しんかんせん}ですね。"], ["m", "お{席|せき}は{窓側|まどがわ}です。"]],
+      opts: ["1 listopada", "11 listopada", "1 lipca", "7 listopada"], a: 0,
+      ex: "Kasjer: „1 listopada, shinkansen o ósmej rano, tak? Miejsce przy oknie.” ついたち = 1. dzień miesiąca, じゅういちがつ = listopad.",
+      why: ["Tak: じゅういちがつ ついたち.", "11. to じゅういちにち, a padło ついたち.", "Lipiec to しちがつ, a padło じゅういちがつ.", "7. to なのか – nie padło."] },
+    { t: "listen", skill: "Zwroty", sub: "daty", q: "Pytasz o termin festiwalu. Kiedy jest?",
+      lines: [["f", "お{祭|まつ}りは{七月|しちがつ}{十四日|じゅうよっか}と{十五日|じゅうごにち}です。"], ["f", "{夜|よる}は{花火|はなび}もありますよ。"]],
+      opts: ["14 i 15 lipca", "4 i 5 lipca", "14 i 15 kwietnia", "17 i 18 lipca"], a: 0,
+      ex: "Znajoma: „Festiwal jest 14 i 15 lipca. Wieczorem będą też fajerwerki.” じゅうよっか = 14., しちがつ = lipiec (しがつ to kwiecień).",
+      why: ["Tak: しちがつ じゅうよっか と じゅうごにち.", "4. to よっか – padło じゅうよっか (14.).", "Kwiecień to しがつ, a padło しちがつ.", "17. to じゅうしちにち – nie padło."] },
+    { t: "listen", skill: "Zwroty", sub: "daty", q: "Recepcja pyta, do kiedy zostajesz. Wyjazd jest dwudziestego czwartego. Co odpowiesz?",
+      lines: [["f", "チェックインですね。"], ["f", "いつまでご{滞在|たいざい}ですか。"]],
+      opts: ["{二十四日|にじゅうよっか}までです。", "{二十日|はつか}までです。", "{十四日|じゅうよっか}までです。", "{四日|よっか}までです。"], a: 0,
+      ex: "Recepcja: „Zameldowanie, tak? Do kiedy potrwa pobyt?” 24. to にじゅうよっか: dwadzieścia + よっか (jak 4.).",
+      why: ["Tak: にじゅうよっか = 24.", "はつか to 20.", "じゅうよっか to 14.", "よっか to 4."] }
   ]
 });
 
@@ -23857,6 +24494,93 @@ PAIRS.push({
   ]
 });
 
+// 🗺 Mapa drogi (ocena kursu, punkt 11): cel każdej części prostymi słowami, realistyczny czas i lista „Potrafię…” (src/mapa.js).
+// Etykiety tylko do wyświetlania – id poziomów, lekcji i kart bez zmian. Czas: szacunek z symulacji kursu przy 15 minutach
+// dziennie (codziennie), nie pomiar; total – od zera do końca części. cando[].id to stały klucz w S.cando (po wydaniu nie zmieniać,
+// nowe zdania – nowe id); href – gdzie to przećwiczyć. Zdania w 1. osobie, bez form rodzajowych (Potrafię…, Rozumiem…).
+window.ROADMAP = {
+  parts: {
+    kana: { name: "Start", goal: "czytać oba alfabety i wymawiać japońskie dźwięki", time: "ok. 1,5 miesiąca", total: "",
+      cando: [
+        { id: "kana-1", pl: "Potrafię przeczytać na głos każdy znak hiragany.", href: "#/kana/hira" },
+        { id: "kana-2", pl: "Potrafię przeczytać słowa zapisane katakaną, np. コーヒー albo ホテル.", href: "#/kana/kata" },
+        { id: "kana-3", pl: "Słyszę różnicę między krótkim i długim dźwiękiem (おばさん – おばあさん).", href: "#/lesson/wym-3" },
+        { id: "kana-4", pl: "Potrafię się przywitać, podziękować i przeprosić.", href: "#/lesson/zwroty" },
+        { id: "kana-5", pl: "Potrafię poprosić o powtórzenie i o wolniejsze mówienie.", href: "#/przetrwanie/ratunek" },
+        { id: "kana-6", pl: "Potrafię napisać swoje imię katakaną.", href: "#/kana/kata" }
+      ] },
+    n5a: { name: "Część 1", goal: "A1, proste sytuacje w podróży", time: "ok. 2 miesiące", total: "ok. 3,5 miesiąca",
+      cando: [
+        { id: "n5a-1", pl: "Potrafię się przedstawić: imię, skąd jestem i czym się zajmuję.", href: "#/przetrwanie/powitania" },
+        { id: "n5a-2", pl: "Potrafię podać i zrozumieć godzinę, cenę i numer telefonu.", href: "#/liczby" },
+        { id: "n5a-3", pl: "Potrafię podać datę, np. urodzin albo rezerwacji.", href: "#/przetrwanie/daty" },
+        { id: "n5a-4", pl: "Potrafię kupić coś w sklepie i zapytać o cenę.", href: "#/przetrwanie/konbini" },
+        { id: "n5a-5", pl: "Potrafię zamówić jedzenie i poprosić o rachunek.", href: "#/przetrwanie/jedzenie" },
+        { id: "n5a-6", pl: "Potrafię zapytać o drogę i zrozumieć prostą odpowiedź.", href: "#/przetrwanie/droga" },
+        { id: "n5a-7", pl: "Potrafię kupić bilet i zapytać, z którego toru odjeżdża pociąg.", href: "#/przetrwanie/pociag" },
+        { id: "n5a-8", pl: "Potrafię opowiedzieć prostymi zdaniami o swoim dniu i weekendzie.", href: "#/lesson/n5a-4" }
+      ] },
+    n4: { name: "Część 2", goal: "pewne A1 i pierwsze kroki w A2: rozmowy o sobie i planach", time: "ok. 2,5 miesiąca", total: "ok. 6 miesięcy",
+      cando: [
+        { id: "n4-1", pl: "Potrafię rozmawiać z przyjaciółmi na luzie, formą prostą.", href: "#/lesson/n4-1" },
+        { id: "n4-2", pl: "Potrafię opowiedzieć, co było wczoraj albo w weekend.", href: "#/lesson/n4-2" },
+        { id: "n4-3", pl: "Potrafię opowiedzieć o swoich doświadczeniach i planach na wakacje.", href: "#/lesson/n4-3" },
+        { id: "n4-4", pl: "Potrafię powiedzieć, czego chcę i co muszę zrobić.", href: "#/lesson/n4-4" },
+        { id: "n4-5", pl: "Potrafię powiedzieć, co umiem, a czego jeszcze nie.", href: "#/lesson/n4-5" },
+        { id: "n4-6", pl: "Potrafię policzyć rzeczy i osoby przy zakupach i w restauracji (ひとつ, ふたり).", href: "#/lesson/n4-6" },
+        { id: "n4-7", pl: "Potrafię zaproponować wspólne wyjście i umówić się na dzień i godzinę.", href: "#/lesson/n4-7" }
+      ] },
+    d3: { name: "Część 3", goal: "granica A1 i A2: grzeczne prośby, plany „jeśli…” i keigo do rozumienia", time: "ok. 2 miesiące", total: "ok. 8 miesięcy",
+      cando: [
+        { id: "d3-1", pl: "Potrafię grzecznie o coś poprosić – kolegę, nauczyciela albo obsługę.", href: "#/lesson/d3-1" },
+        { id: "d3-2", pl: "Potrafię przekazać, co ktoś powiedział („podobno…”).", href: "#/lesson/d3-2" },
+        { id: "d3-3", pl: "Potrafię powiedzieć „jeśli…, to…” przy planach i radach.", href: "#/lesson/d3-4" },
+        { id: "d3-4", pl: "Potrafię opowiedzieć, co mi się przydarzyło, np. zgubę albo kradzież.", href: "#/lesson/d3-4" },
+        { id: "d3-5", pl: "Rozumiem grzeczne formy, których używają sprzedawcy, recepcja i obsługa (keigo).", href: "#/lesson/d3-6" },
+        { id: "d3-6", pl: "Potrafię się grzecznie przedstawić w oficjalnej sytuacji, np. w pracy.", href: "#/lesson/d3-7" }
+      ] },
+    n3: { name: "N3", goal: "rozpoznawać gramatykę N3 w tekstach i rozmowach (przegląd, a nie pełny kurs do egzaminu)", time: "ok. 2–3 miesiące", total: "",
+      cando: [
+        { id: "n3-1", pl: "Rozpoznaję stronę bierną i sprawczą, gdy ją słyszę albo czytam.", href: "#/lesson/n3-1" },
+        { id: "n3-2", pl: "Potrafię wybrać właściwe „jeśli” (ば, たら, と, なら).", href: "#/lesson/n3-3" },
+        { id: "n3-3", pl: "Potrafię przekazać zasłyszaną informację i ostrożnie coś przypuszczać.", href: "#/lesson/n3-6" },
+        { id: "n3-4", pl: "Potrafię przez telefon grzecznie się przedstawić i o coś poprosić.", href: "#/lesson/n3-4" },
+        { id: "n3-5", pl: "Potrafię podać przyczynę i skutek kilkoma zdaniami.", href: "#/lesson/n3-9" }
+      ] },
+    n2: { name: "N2", goal: "rozpoznawać styl gazet i maili służbowych (przegląd gramatyki N2)", time: "ok. 2 miesiące", total: "",
+      cando: [
+        { id: "n2-1", pl: "Rozpoznaję konstrukcje typowe dla wiadomości i oficjalnych komunikatów.", href: "#/lesson/n2-4" },
+        { id: "n2-2", pl: "Potrafię powiedzieć „chociaż” i „mimo że” na kilka sposobów.", href: "#/lesson/n2-2" },
+        { id: "n2-3", pl: "Potrafię opisać zmianę: „coraz bardziej”, „wraz z…”.", href: "#/lesson/n2-3" },
+        { id: "n2-4", pl: "Potrafię napisać krótki, uprzejmy e-mail służbowy według wzoru.", href: "#/lesson/n2-8" },
+        { id: "n2-5", pl: "Rozumiem główną myśl krótkiej notki prasowej.", href: "#/lesson/n2-8" }
+      ] },
+    n1: { name: "N1", goal: "rozpoznawać styl książkowy i oficjalny (przegląd gramatyki N1)", time: "ok. 1,5 miesiąca", total: "",
+      cando: [
+        { id: "n1-1", pl: "Rozpoznaję konstrukcje stylu pisanego i książkowego.", href: "#/lesson/n1-2" },
+        { id: "n1-2", pl: "Rozumiem formalne granice czasu i wyłączność w ogłoszeniach (をもって, ならでは).", href: "#/lesson/n1-1" },
+        { id: "n1-3", pl: "Rozumiem ustępstwo i warunek w stylu pisanym (といえども, たところで).", href: "#/lesson/n1-4" },
+        { id: "n1-4", pl: "Rozumiem najczęstsze idiomy yojijukugo i przysłowia z kursu.", href: "#/lesson/n1-6" },
+        { id: "n1-5", pl: "Potrafię ocenić, czy forma brzmi oficjalnie, książkowo czy potocznie.", href: "#/lesson/n1-6" }
+      ] },
+    pro: { name: "PRO", goal: "rozumieć japoński z życia: skróty, onomatopeje, Kansai i internet", time: "ok. 1,5 miesiąca", total: "",
+      cando: [
+        { id: "pro-1", pl: "Rozumiem potoczne skróty z rozmów (～ちゃう, ～てる, じゃん).", href: "#/lesson/pro-1" },
+        { id: "pro-2", pl: "Rozpoznaję najczęstsze onomatopeje (ドキドキ, ペラペラ).", href: "#/lesson/pro-2" },
+        { id: "pro-3", pl: "Potrafię grzecznie odmówić i złagodzić prośbę w pracy.", href: "#/lesson/pro-3" },
+        { id: "pro-4", pl: "Rozumiem podstawy dialektu Kansai (～へん, ほんま, おおきに).", href: "#/lesson/pro-4" },
+        { id: "pro-5", pl: "Rozumiem popularny slang z internetu i skrócone nagłówki prasowe.", href: "#/lesson/pro-5" }
+      ] }
+  },
+  // kamienie milowe od zera (przy 15 minutach dziennie, codziennie; przy 5 dniach w tygodniu – mniej więcej o 40–50% dłużej)
+  milestones: [
+    { when: "ok. 1,5 miesiąca", pl: "Czytasz hiraganę i katakanę i wymawiasz japońskie dźwięki." },
+    { when: "ok. 5–6 miesięcy", pl: "A1: przedstawiasz się, robisz zakupy, zamawiasz jedzenie, pytasz o drogę i o pociąg – wyuczonymi zdaniami, razem z Zestawem przetrwania." },
+    { when: "ok. 8 miesięcy", pl: "Koniec części 3: rozumiesz sporo gramatyki, a mówisz mniej więcej na granicy A1 i A2." },
+    { when: "ok. 18–24 miesięcy", pl: "Pewne A2 w mówieniu: proste, swobodne rozmowy o codzienności, pracy, rodzinie i planach. Tylko z regularnymi rozmowami z ludźmi i słuchaniem prawdziwych nagrań." }
+  ]
+};
+
 window.EXPL = window.EXPL || {};
 Object.assign(EXPL, {
   // ===== d3-1 Grzeczne prośby i tryb warunkowy ～ば =====
@@ -27893,7 +28617,7 @@ window.CTX_M = {
 "兵":[["ヘイ"],"",""],
 "具":[["グ"],"グ",""],
 "典":[["テン"],"",""],
-"内":[["ナイ"],"ナイ",""],
+"内":[["ナイ"],"ナイ","うち"],
 "冷":[["ひ(やす)","レイ"],"レイ","ひ(やす)"],
 "処":[["ショ"],"ショ",""],
 "刀":[["トウ"],"",""],
@@ -28010,7 +28734,7 @@ window.CTX_M = {
 "幾":[["キ"],"",""],
 "底":[["テイ"],"",""],
 "府":[["フ"],"フ",""],
-"座":[["ザ","すわ(る)"],"ザ","すわ(る)"],
+"座":[["ザ"],"ザ","すわ(る)"],
 "庫":[["コ"],"コ",""],
 "庭":[["テイ"],"",""],
 "康":[["コウ"],"コウ",""],
@@ -28107,7 +28831,7 @@ window.CTX_M = {
 "標":[["ヒョウ"],"ヒョウ",""],
 "権":[["ケン"],"ケン",""],
 "横":[["よこ"],"",""],
-"橋":[["キョウ"],"",""],
+"橋":[["はし"],"",""],
 "機":[["キ"],"キ",""],
 "欠":[["ケツ","か(く)"],"ケツ","か(く)"],
 "次":[0,"ジ","つぎ"],
@@ -37546,7 +38270,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-23 07:43";
+window.APP_VERSION = "2026-10-23 12:00";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -39024,7 +39748,7 @@ function viewTalk(id) {
   const speakStep = (s, res, my) => {
     const okO = s.options.find(o => o.ok) || s.options[0];
     const secs = +S.settings.talkTimer || 0;
-    let timer = null, recScore = -1, heardTxt = "";
+    let timer = null, mic = null;   // mic – wynik sędziego mowy (src/mic.js): tylko podpowiedź, ocenia uczeń
     const canSR = SREC_OK && navigator.onLine !== false, canRec = REC.ok && !REC.denied;
     box.innerHTML = `<div class="card yourturn"><div class="small muted">🎤 Twoja kolej – powiedz to na głos</div><b>${esc(s.you)}</b>
       ${secs ? `<div class="recbar tbar"><i style="--rec-ms:${secs * 1000}ms"></i></div>` : ""}
@@ -39043,13 +39767,15 @@ function viewTalk(id) {
       const order = s.options.map((o, k) => k).sort((a, b) => (s.options[b].ok ? 1 : 0) - (s.options[a].ok ? 1 : 0));
       area.innerHTML = extra || "";
       // 💬 Zapytaj: możliwe odpowiedzi są już na ekranie – AI może je omawiać wprost
-      if (window.AIHelp) AIHelp.answered($(".yourturn", box), recScore >= 0.8 ? true : null, "", { how: heardTxt ? `powiedziane na głos; 🎤 rozpoznano „${heardTxt}” (podobieństwo ${Math.round(recScore * 100)}%)` : "kwestia powiedziana na głos albo w myślach, bez sprawdzenia przez aplikację; teraz uczeń widzi możliwe odpowiedzi" });
+      if (window.AIHelp) AIHelp.answered($(".yourturn", box), mic && mic.ok ? true : null, "", { how: mic ? MIC.how(mic) : "kwestia powiedziana na głos albo w myślach, bez sprawdzenia przez aplikację; teraz uczeń widzi możliwe odpowiedzi" });
+      // 🎤 podpowiada (wyróżniony przycisk), ale ocenia uczeń: „✗ Jeszcze nie” zostaje „nie”, nawet gdy mikrofon usłyszał dobrze
+      const sug = mic ? mic.g : 2;
       out.innerHTML = `<div class="small muted" style="margin-top:10px">Tak można było odpowiedzieć:</div><div class="opts">${optsHTML(s, order, true)}</div>
-        <div class="small" style="margin-top:10px"><b>Jak poszło?</b></div>
-        <div class="row sgrade"><button class="btn" data-g="0">✗ Jeszcze nie</button><button class="btn" data-g="1">≈ Prawie</button><button class="btn pri" data-g="2">✓ Udało się</button></div>`;
+        <div class="small" style="margin-top:10px"><b>Jak poszło?</b>${mic ? ` <span class="muted">Ocena należy do Ciebie – 🎤 tylko podpowiada${mic.v === "far" ? ", a zna tylko zdania z kursu (inne poprawne zdanie oceń samodzielnie)" : ""}.</span>` : ""}</div>
+        <div class="row sgrade">${[["0", "✗ Jeszcze nie"], ["1", "≈ Prawie"], ["2", "✓ Udało się"]].map(([g, t]) => `<button class="btn ${+g === sug ? "pri" : ""}" data-g="${g}">${t}</button>`).join("")}</div>`;
       box.scrollIntoView({ block: "end", behavior: LOOK.smooth() });
       $$(".sgrade button", out).forEach(b => b.onclick = () => {
-        const g = +b.dataset.g, ok = g === 2 || recScore >= 0.8;
+        const g = +b.dataset.g, ok = g === 2;
         spoke++; if (ok) spokeOK++;
         noteStat({ skill: "Mówienie", sub: id }, ok);
         ctok++; cleanup(); res(okO);
@@ -39060,20 +39786,14 @@ function viewTalk(id) {
       cancelTimer(); TTS.stop(); sb.classList.add("live"); sb.disabled = true;
       try {
         const alts = await listenOnce();
-        if (my !== token) return;
-        let best = 0, heard = alts[0] || "";
-        for (const a of alts) {
-          const n = normAnswer(a);
-          for (const o of s.options.filter(o => o.ok)) {
-            const v = Math.max(similarity(n, normAnswer(reading(o.jp))), similarity(n, normAnswer(plain(o.jp))));
-            if (v > best) { best = v; heard = a; }
-          }
-        }
-        recScore = best; heardTxt = heard;
-        const msg = best >= 0.8 ? `<div class="fb ok"><div class="h">✓ Brzmi dobrze</div>` : best >= 0.55 ? `<div class="fb soft"><div class="h">≈ Prawie</div>` : `<div class="fb bad"><div class="h">Nie rozpoznano</div>`;
-        reveal(`${msg}<div class="small jp">Rozpoznano: ${esc(heard)}</div></div>`);
+        if (my !== token || !sb.isConnected) return;   // w międzyczasie „👀 Pokaż odpowiedzi” albo już ocena – spóźniony wynik nic nie zmienia
+        // wzór i inne dobre odpowiedzi; złe odpowiedzi z wyjaśnieniem – gdy rozpoznany tekst jest bliżej nich, ✗ z tym wyjaśnieniem
+        const oks = s.options.filter(o => o.ok);
+        mic = MIC.judge(okO.jp, alts, { alts: oks.filter(o => o !== okO).map(o => o.jp), bad: s.options.filter(o => !o.ok).map(o => ({ jp: o.jp, fb: o.fb })) });
+        if (mic.v === "none") { mic = null; sb.classList.remove("live"); sb.disabled = false; toast(srecErrText(), 4500); return; }   // sama cisza: jeszcze raz, bez odsłaniania
+        reveal(MIC.html(mic));
       } catch (e) {
-        if (my !== token) return;
+        if (my !== token || !sb.isConnected) return;
         sb.classList.remove("live"); sb.disabled = false;
         toast(srecErrText(e), 4500);
       }
@@ -40422,12 +41142,14 @@ function viewPair(id) {
   // słowa o tym samym czytaniu (np. 降る/振る) nie nadają się do „Które słowo słyszysz?”
   const reads = p.words.map(w => w[1]), uniq = p.words.filter(w => reads.filter(r => r === w[1]).length === 1);
   const same = new Set(reads).size === 1, nEx = p.exercises.length + uniq.length;
+  // 🎤: drugie słowo z pary (o innym brzmieniu) to typowa pomyłka – sędzia mowy (src/mic.js) pokaże ✗ z wyjaśnieniem zamiast „≈ Prawie”
+  const confused = w => p.words.filter(x => x[1] !== w[1]).map(x => ({ jp: wm(x), fb: `To ${wm(x)} (${toRomaji(x[1])}) – ${x[2]}.` }));
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/level/${L.id}">${esc(lvCrumb(L))}</a> › <a href="#/pary">Mylące pary</a></div>
     <div class="card lvtop ${LOOK.lv(L.id)}"><div class="small muted">🔀 ${esc(PAIR_KIND[p.kind] || "")}</div><h1>${esc(p.title)}</h1>
       <div class="pairw">${p.words.map(w => `<div class="pw"><div class="pwj">${ruby(wm(w))}</div>
         <div class="small"><b>czytaj „${esc(toPolish(w[1], w[0]))}”</b>${toRomaji(w[1]) !== toPolish(w[1], w[0]) ? ` <span class="muted">· ${esc(toRomaji(w[1]))}</span>` : ""}</div>
         <div class="pwm">${esc(w[2])}</div>
-        <div class="row" style="gap:4px;justify-content:center">${sayBtn(w[1], { raw: true })}${slowBtn(w[1])}${sylBtn(w[1])}${recBtn(wm(w))}</div></div>`).join("")}</div>
+        <div class="row" style="gap:4px;justify-content:center">${sayBtn(w[1], { raw: true })}${slowBtn(w[1])}${sylBtn(w[1])}${recBtn(wm(w), { bad: confused(w) })}</div></div>`).join("")}</div>
       <div class="row" style="justify-content:center;margin-top:10px"><button class="btn sm diff">${same ? "👂 Posłuchaj – brzmią tak samo" : "👂 Posłuchaj różnicy"}</button></div>
       ${uniq.length < p.words.length ? `<div class="small muted" style="text-align:center;margin-top:6px">${same ? "Te słowa brzmią identycznie" : "Część tych słów brzmi identycznie"} – rozróżnisz je po zapisie kanji i po tym, co jest w zdaniu.</div>` : ""}
       <div style="margin-top:12px">${ruby(p.explain)}</div>
@@ -41722,7 +42444,7 @@ function shadowSession(items, kind) {
         <div class="jp shjp">${ruby(x.jp)}</div>
         <div class="small muted">czytaj „${esc(x.raw ? toPolish(r, plain(x.jp)) : plSentence(x.jp))}”</div>
         <div class="shpl">${esc(x.pl || "")}</div>
-        <div class="row shctl" style="justify-content:center;margin-top:12px"><button class="btn lis">🔊 Posłuchaj</button><button class="btn slow">🐢 Wolno</button>${recBtn(x.raw ? x.say : x.jp)}</div>
+        <div class="row shctl" style="justify-content:center;margin-top:12px"><button class="btn lis">🔊 Posłuchaj</button><button class="btn slow">🐢 Wolno</button>${recBtn(x.raw ? x.say : x.jp, { noRec: true })}</div>
         <div class="shrec"></div>
       </div></div>`;
     const box = $(".shrec");
@@ -42115,6 +42837,7 @@ function switchProfile(id) {
   if (window.GhSync) GhSync.cancel();   // GitHub: odczyty dla poprzedniej osoby przerwane, ostatnie odpowiedzi tej osoby jeszcze się wysyłają
   PROF.cur = id; PROF_PICKED = true; saveProfiles(); STORE = profStore(id);
   loadState(); applyTheme(); backfillGrammarSRS(); migrateMist();
+  if (typeof newqSort === "function") newqSort();   // kolejka nowych kart tej osoby w kolejności kursu (zapis przy najbliższej zmianie)
   if (typeof memProfileChanged === "function") memProfileChanged();   // etap 1: dziennik odpowiedzi tej osoby
   if (window.LVL) LVL.boot();   // zaliczenia automatyczne z poziomu tej osoby (src/lvl.js)
   // powrót do pierwszej osoby: połącz z kontem i wyślij to, co czekało
@@ -42423,6 +43146,21 @@ function spkMerge(x, y) {
   Object.keys(o).sort().reverse().slice(60).forEach(d => delete o[d]);
   return o;
 }
+/* ✅ S.cando = {id: {v, t}} – „Potrafię…” z mapy drogi (src/mapa.js): v 1 zaznaczone, 0 odznaczone; t – chwila zmiany (ms).
+   Dla każdego zdania wygrywa nowszy t, więc odznaczenie też dociera na inne urządzenia. Remis – v 0: poprzednia wersja łączyła
+   cando przez mergeLoose (v i t osobno, każde większe), więc z odznaczenia {0, t} i starszego {1, t0} robiła {1, t}; przy remisie
+   wygrywa wtedy prawdziwe odznaczenie. Dawny zapis datą („RRRR-MM-DD”): przy dwóch datach wcześniejsza, wpis {v, t} wygrywa
+   z datą. Śmieci i __proto__ pomijane. */
+function candoMerge(x, y) {
+  const o = {}, okE = e => isObj(e) && (e.v === 0 || e.v === 1) && +e.t > 0 && isFinite(+e.t);
+  for (const src of [x, y]) if (isObj(src)) for (const id of Object.keys(src)) {
+    const e = src[id], m = Object.prototype.hasOwnProperty.call(o, id) ? o[id] : undefined;
+    if (id === "__proto__" || id.length > 40) continue;
+    if (okE(e)) { if (!isObj(m) || +e.t > m.t || (+e.t === m.t && e.v < m.v)) o[id] = { v: e.v, t: +e.t }; }
+    else if (typeof e === "string" && DATE_RE.test(e)) { if (m === undefined || (typeof m === "string" && e < m)) o[id] = e; }
+  }
+  return o;
+}
 // czas karty: ostatnia powtórka; karta jeszcze niepowtarzana – chwila dodania (due nowej karty = czas dodania)
 function lvlCardT(c) {
   if (!isObj(c)) return 0;
@@ -42500,13 +43238,24 @@ function mergeState(a, b) {
   }
   if (has("me")) o.me = a.me && a.me.jp && a.me.g ? a.me : (b.me && b.me.jp ? b.me : a.me);
   if (a.start || b.start) o.start = !a.start ? b.start : !b.start ? a.start : (a.start < b.start ? a.start : b.start);
-  for (const f of ["kit", "cando", "life"]) if (has(f)) o[f] = mergeLoose(a[f] || {}, b[f] || {});
+  for (const f of ["kit", "life"]) if (has(f)) o[f] = mergeLoose(a[f] || {}, b[f] || {});
+  if (has("cando")) o.cando = candoMerge(a.cando, b.cando);   // ✅ „Potrafię…”: nowszy wpis dla każdego zdania
   if (has("tipsSeen")) o.tipsSeen = Object.assign({}, isObj(b.tipsSeen) ? b.tipsSeen : {}, isObj(a.tipsSeen) ? a.tipsSeen : {});
   if (has("v")) o.v = nmax(a.v, b.v);
   if (has("gsrs")) o.gsrs = nmax(a.gsrs, b.gsrs);
   if (has("mistDone")) o.mistDone = (a.mistDone || "") > (b.mistDone || "") ? a.mistDone : b.mistDone;
-  const seen = new Set();
-  if (has("newq")) o.newq = (a.newq || []).concat(b.newq || []).filter(e => e && e.k && !(o.srs || {})[e.k] && !seen.has(e.k) && seen.add(e.k));
+  // kolejka nowych kart: suma bez powtórek i bez kart już w powtórkach; ta sama karta – późniejszy dzień nauki d (czeka do jutra);
+  // potem kolejność kursu (flowNewqSort, src/rhythm.js), więc wynik nie zależy od strony łączenia
+  if (has("newq")) {
+    const q = new Map();
+    for (const e of [].concat(Array.isArray(a.newq) ? a.newq : [], Array.isArray(b.newq) ? b.newq : [])) {
+      if (!isObj(e) || !e.k || (o.srs || {})[e.k]) continue;
+      const p = q.get(e.k);
+      if (!p) q.set(e.k, e); else if (typeof e.d === "string" && e.d > (p.d || "")) q.set(e.k, Object.assign({}, p, { d: e.d }));
+    }
+    o.newq = [...q.values()];
+    if (typeof flowNewqSort === "function" && typeof lessonCards === "function") o.newq = flowNewqSort(o.newq, l => lessonCards(l, true));
+  }
   if (has("settings")) o.settings = a.settings || b.settings;
   if (has("sel")) o.sel = lvlSelMerge(a.sel, b.sel);
   if (has("spk")) o.spk = spkMerge(a.spk, b.spk);   // 🗣 Mówienie: dni ze skończoną rozmową, scenką we dwoje, „Powtarzaj”
@@ -42932,7 +43681,7 @@ function viewKit() {
   const K = KIT();
   S.kit = S.kit || {};
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Zestaw przetrwania</div><h1>🛟 Zestaw przetrwania</h1>
-    <p class="muted">Gotowe zdania, które przydają się od pierwszego dnia w Japonii: przedstawienie się, prośba o powtórzenie, konbini, restauracja, pomoc. Nie trzeba znać gramatyki – wystarczy nauczyć się ich na pamięć jak całości. Każde zdanie ma nagranie i polski zapis wymowy.</p>
+    <p class="muted">Gotowe zdania, które przydają się od pierwszego dnia w Japonii: przedstawienie się, prośba o powtórzenie, konbini, restauracja, droga, pociąg, daty, pomoc. Nie trzeba znać gramatyki – wystarczy nauczyć się ich na pamięć jak całości. Każde zdanie ma nagranie i polski zapis wymowy.</p>
     <input type="search" id="kq" class="bigsearch" aria-label="Szukaj zwrotu" placeholder="Szukaj zwrotu po polsku lub japońsku…">
     <div id="kres"></div>
     <div class="lesson-list" id="klist">${K.sits.map(s => {
@@ -42955,7 +43704,7 @@ function kitSearch(s) {
 }
 function kitRowSay(p) {
   const jp = persona(p.jp), alt = (p.alt || []).map(a => persona(a));
-  return `<div class="kitrow"><div class="kitb">${sayBtn(kitSay(p), { raw: true })}${slowBtn(kitSay(p))}${recBtn(jp)}</div>
+  return `<div class="kitrow"><div class="kitb">${sayBtn(kitSay(p), { raw: true })}${slowBtn(kitSay(p))}${recBtn(jp, { alts: alt })}</div>
     <div class="kitt"><div class="jp kjp">${ruby(jp)} <span class="pill st-${p.style || "u"}">${esc(STYLE_NAME[p.style] || "")}</span></div>${kitPron(p)}
     <div><b>${esc(persona(p.pl))}</b></div>${p.use ? `<div class="small muted">${esc(persona(p.use))}</div>` : ""}
     ${alt.length ? `<div class="small">Też: ${alt.map(a => `<span class="jp">${ruby(a)}</span>`).join(" · ")}</div>` : ""}</div></div>`;
@@ -42975,7 +43724,8 @@ function viewSit(id) {
   if (!st.seen) { st.seen = today(); saveState(); }
   const says = kitSays(id), hears = kitHears(id);
   const life = s.life && typeof LIFE_BY !== "undefined" ? LIFE_BY[s.life] : null;
-  const drill = { reakcje: ["aizuchi", "🗣 Ćwicz reakcje"], ratunek: ["ratunek", "🛟 Ćwicz ratunek"] }[id];
+  // ćwiczenie ze słuchu: dawne sytuacje mają własny klucz w KITDRILLS, nowe – drill (podpis) i KITDRILLS[id sytuacji]
+  const drill = { reakcje: ["aizuchi", "🗣 Ćwicz reakcje"], ratunek: ["ratunek", "🛟 Ćwicz ratunek"] }[id] || (s.drill ? [id, s.drill] : null);
   const D = drill && (window.KITDRILLS || {})[drill[0]];
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/przetrwanie">Zestaw przetrwania</a> › ${esc(s.title)}</div>
     <div class="card lvtop lv-life"><h1>${s.icon || ""} ${esc(s.title)}</h1><p>${esc(persona(s.intro || ""))}</p>
@@ -46254,9 +47004,11 @@ function myLessonsHTML() {
   return `<p class="small rs-allw">${n ? `<button type="button" class="btn sm rs-all">➕ Dodaj słówka ze wszystkich moich lekcji (${n})</button><br><span class="muted">Trafią do powtórek od najstarszej lekcji, po ${newCap()} dziennie – dzienny limit zmienisz wyżej.</span>`
     : `<span class="muted">✓ Słówka i kanji ze wszystkich Twoich lekcji są już w powtórkach albo czekają w kolejce.</span>`}</p>`;
 }
+// zasada kolejki nowych kart jednym zdaniem (Powtórki i Ustawienia; kolejność: queueNew/releaseNew w src/app.js)
+const NEWQ_RULE = "Nowe karty wchodzą do powtórek od najstarszej lekcji (słówka razem z kanji i gramatyką tej lekcji), a karty z dzisiejszej lekcji – od jutra.";
 function newqInfoHTML() {
   const q = (S.newq || []).length;
-  return `<p class="small muted">Nowe karty w kolejce: <b>${q}</b> · limit dzienny: <select class="ncap" aria-label="Limit nowych kart dziennie">${NEWCAP_CHOICES.map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select></p>${myLessonsHTML()}`;
+  return `<p class="small muted">Nowe karty w kolejce: <b>${q}</b> · limit dzienny: <select class="ncap" aria-label="Limit nowych kart dziennie">${NEWCAP_CHOICES.map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select></p><p class="small muted rs-rule">${NEWQ_RULE}</p>${myLessonsHTML()}`;
 }
 document.addEventListener("change", e => {
   if (!e.target.matches || !e.target.matches(".ncap")) return;
@@ -46265,9 +47017,11 @@ document.addEventListener("change", e => {
 });
 document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest(".rs-all"); if (!b) return;
-  const r = queueNew(myLessonCards(), { front: true });
+  // lekcja otwarta albo przerabiana dziś (st.t – src/lvl.js touch): jej karty też dopiero od jutra (D1-3)
+  const d0 = new Date().setHours(0, 0, 0, 0), d = today();
+  const r = queueNew(myLessonCards().map(e => +((S.lessons[e.card.l] || {}).t) >= d0 ? Object.assign({}, e, { d }) : e));
   const w = b.closest(".rs-allw");
-  if (w) w.innerHTML = `<span>✓ Dodano: ${kartN(r.now)} od dziś${r.later ? `, ${r.later} czeka w kolejce na kolejne dni` : ""}.</span>`;
+  if (w) w.innerHTML = `<span>✓ Dodano: ${kartN(r.now)} od dziś${r.later ? `, ${r.later} ${plN(r.later, "czeka", "czekają", "czeka")} w kolejce na kolejne dni` : ""}.</span>`;
   updateBadge();
 });
 function viewReview() { return REV.view(); }
@@ -46419,7 +47173,7 @@ window.REV = (function () {
     if (kind === "listen" && noVoice()) kind = "choose";
     if (kind === "listen") return { kind, it: Object.assign({ t: "listen", label: "Co to znaczy?", jp: P(p.jp), say: kitSay(p), opts: [P(p.pl), ...others(p, allSay, "pl", 3)], a: 0, ex: use }, base) };
     if (kind === "choose") return { kind, it: Object.assign({ t: "mc", label: "Jak to powiesz?", q: `Jak powiesz: „${P(p.pl)}”?`, opts: [P(p.jp), ...others(p, allSay, "jp", 3)], a: 0, say: kitSay(p), ex: use, trA: P(p.pl) }, base) };
-    return { kind: "say", say: { label: "Jak to powiesz?", pl: P(p.pl), jp: P(p.jp), speak: kitSay(p), sub: "💬 " + (STYLE_NAME[p.style] || "zwrot") + (use ? " · " + use : ""), ex: "", skill: "Mówienie" } };
+    return { kind: "say", say: { label: "Jak to powiesz?", pl: P(p.pl), jp: P(p.jp), alt: (p.alt || []).map(P), speak: kitSay(p), sub: "💬 " + (STYLE_NAME[p.style] || "zwrot") + (use ? " · " + use : ""), ex: "", skill: "Mówienie" } };
   }
   // zadanie dla karty; prefer = ten sam rodzaj co poprzednio (powtórne pytanie w tej samej sesji)
   function build(k, prefer) {
@@ -46479,10 +47233,12 @@ window.REV = (function () {
     if (!due.length) return idle();
     const p = plan();
     let keys = p.order(due.slice()).filter(k => S.srs[k] && !orphan(k));
-    if (p.capped) return enough(keys);
+    if (p.capped) return enough(keys, p);
     if (+p.budget > 0) keys = keys.slice(0, +p.budget);
     session(keys, { msg: p.msg || "", gentle: !!p.gentle });
   }
+  // „Mimo to jeszcze N” po planie na dziś: dodatek, który niczego nie blokuje (M-3)
+  function more10(keys, gentle) { session(keys.slice(0, 10), { gentle: !!gentle }); }
   // jutro: tyle, ile zmieści dzienny plan (reszta zaległości rozłoży się na kolejne dni)
   function tomorrowTxt() {
     const t = dueKeys(dayStart(Date.now(), 2) - 1).length;
@@ -46490,13 +47246,16 @@ window.REV = (function () {
     if (!t) return "Na jutro nic nie czeka.";
     return cap && t > cap ? `Jutro w planie około ${kartN(cap)} – resztę rozłożę na kolejne dni.` : `Jutro ${plN(t, "czeka", "czekają", "czeka")} ${kartN(t)}.`;
   }
-  // po przerwie dzienny limit już wykorzystany
-  function enough(keys) {
+  // „teraz czas na lekcję” tylko, gdy jest następna lekcja (po całym kursie – same powtórki)
+  const lessonNow = () => { try { return !!nextLesson(); } catch (e) { return false; } };
+  // plan powtórek na dziś już zrobiony (po przerwie 40 kart, zwykle dzienny plan): reszta czeka, dalej lekcja
+  function enough(keys, p) {
+    const gentle = !p || p.gentle;
     app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Powtórki</div><h1>Powtórki 🔁</h1>
       <div class="card rs-enough"><p><b>✅ Dobra robota – na dziś wystarczy.</b></p>
-        <p class="small muted">Po przerwie wracamy spokojnie: pozostałe karty rozłożę na kolejne dni. ${tomorrowTxt()}</p>
+        <p class="small muted">${gentle ? "Po przerwie wracamy spokojnie: pozostałe karty rozłożę na kolejne dni." : `Plan powtórek na dziś jest zrobiony. Pozostałe karty (${keys.length}) poczekają na kolejne dni${lessonNow() ? " – teraz czas na lekcję" : ""}.`} ${tomorrowTxt()}</p>
         <div class="row"><a class="btn pri" href="#/">Wróć do planu</a><button class="btn rs-anyway">Mimo to jeszcze ${kartN(Math.min(10, keys.length))}</button></div></div>`;
-    $(".rs-anyway").onclick = () => session(keys.slice(0, 10), { gentle: true });
+    $(".rs-anyway").onclick = () => more10(keys, gentle);
   }
   // dodatkowe karty: tylko te, których dziś jeszcze nie było (powtarzanie tego samego kilka razy dziennie niewiele daje)
   const extraKeys = () => { const now = Date.now(); return byRetr(Object.keys(S.srs).filter(k => !orphan(k) && !(S.srs[k].due <= now) && !doneToday(S.srs[k]))); };
@@ -46516,9 +47275,10 @@ window.REV = (function () {
           <div class="prog pok"><i style="width:${Math.round(100 * stable / Math.max(1, all.length))}%"></i></div>
           <p class="small muted">Karta jest utrwalona, gdy pamiętasz ją co najmniej 3 tygodnie bez powtórki.</p></div>
         ${extraKeys().length ? `<div class="row"><button class="btn rs-extra">Powtórz mimo to ${kartN(Math.min(10, extraKeys().length))}</button></div>` : `<p class="small muted">Wszystkie karty były już dziś powtórzone – wrócą, gdy przyjdzie ich pora.</p>`}`
+        : (S.newq || []).length ? `<p><b>🗓 Pierwsze powtórki jutro.</b> Karty z Twoich lekcji czekają w kolejce (${kartN(S.newq.length)}) – karty z dzisiejszej lekcji wchodzą do powtórek od następnego dnia.</p>${nextLessonBtn()}`
         : `<p>Nie masz jeszcze nic w powtórkach. Słówka trafią tu same, gdy przejdziesz lekcje ze słówkami, a gramatyka – gdy zrobisz ćwiczenia z lekcji.</p>${nextLessonBtn()}`}
         <p class="small muted rs-karta">Karta to jedno słówko, znak kanji, punkt gramatyki albo zwrot, który wraca w powtórkach.</p>
-        ${all.length ? newqInfoHTML() : myLessonsHTML()}</div>`;
+        ${all.length ? newqInfoHTML() : (S.newq || []).length ? `<p class="small muted rs-rule">${NEWQ_RULE}</p>` : myLessonsHTML()}</div>`;
     const b = $(".rs-extra"); if (b) b.onclick = extra;
   }
 
@@ -46531,7 +47291,7 @@ window.REV = (function () {
     const root = app();
     const S0 = st = { q: keys.map(k => ({ k })), pos: 0, uniq: keys.length, done: 0, good: 0, pts: 0, ended: false, log: [], o, cur: null };
     const onLeave = () => {
-      window.removeEventListener("hashchange", onLeave); dropKey();
+      window.removeEventListener("hashchange", onLeave); dropKey(); recKill();
       if (!S0.ended) {
         S0.ended = true;
         // Start zdążył się już narysować (router działa przed tym słuchaczem) – rysujemy go jeszcze raz z nowymi punktami
@@ -46565,7 +47325,7 @@ window.REV = (function () {
     };
 
     function next() {
-      TTS.stop();
+      TTS.stop(); recKill();
       if (S0.ended) return;
       if (S0.pos >= S0.q.length) return finish();
       focusMode(true);
@@ -46677,32 +47437,34 @@ window.REV = (function () {
         if (window.AIHelp) AIHelp.answered(card, null, "", { how: AIHelp.SELF });   // samoocena, nie „Nie wiem”
       };
     }
-    // „Powiedz to po japońsku”: polskie zdanie → na głos albo w myślach → odpowiedź z nagraniem → samoocena (albo 🎤, które ocenia samo)
+    // „Powiedz to po japońsku”: polskie zdanie → na głos albo w myślach → odpowiedź z nagraniem → samoocena;
+    // 🎤 (sędzia mowy, src/mic.js): dokładnie jak wzór – ocena sama, typowy błąd albo różnica – podpowiedź i ponowna próba;
+    // bez rozpoznawania mowy (aplikacja z ikony na iPhonie, bez sieci) 🎙 nagrywa: Ty, potem lektor, i uczciwa samoocena (S-10)
     function sayCard(card, cur) {
-      const s = cur.b.say, mic = typeof SREC_OK !== "undefined" && SREC_OK && navigator.onLine !== false;
+      const s = cur.b.say, mic = typeof SREC_OK !== "undefined" && SREC_OK && navigator.onLine !== false, rec = !mic && typeof MIC !== "undefined" && MIC.canRec();
       card.innerHTML = `<div class="qtype">${esc(s.label)}</div>${s.sub ? `<div class="small muted">${esc(s.sub)}</div>` : ""}
         <div class="qq rs-pl">„${esc(s.pl)}”</div>
         <p class="small muted rs-ins">Powiedz to po japońsku – na głos albo w myślach. Potem sprawdź.</p>
         <div class="try"></div><div class="rs-back"></div>
-        <div class="qnav rs-act">${mic ? `<button class="btn rs-mic">🎤 Powiedz</button>` : ""}<button class="btn pri rs-show">Pokaż odpowiedź</button></div>`;
+        <div class="qnav rs-act">${mic ? `<button class="btn rs-mic">🎤 Powiedz</button>` : rec ? `<button class="btn rs-rec">🎙 Nagraj</button>` : ""}<button class="btn pri rs-show">Pokaż odpowiedź</button></div>`;
       if (window.AIHelp) AIHelp.mount(card, { t: "say", label: s.label, q: "„" + s.pl + "”", ex: s.ex }, { src: (S.srs[cur.e.k] || {}).l || "rev", ans: s.jp });
-      const reveal = heardOk => {
+      const reveal = (r, quiet) => {
         cur.shown = true;
         const act = $(".rs-act", card); if (act) act.remove();
         const ins = $(".rs-ins", card); if (ins) ins.remove();
-        $(".rs-back", card).innerHTML = `<div class="fb ${heardOk ? "ok" : "soft"}">${heardOk ? `<div class="h">✓ Dobrze!</div>` : ""}<div class="fans"><span class="jpline">${ruby(s.jp)}</span> ${sayBtn(s.speak, { raw: true })}${slowBtn(s.speak)}</div>
+        $(".rs-back", card).innerHTML = `<div class="fb ${r && r.ok ? "ok" : "soft"}">${r && r.ok ? `<div class="h">✓ Dobrze!</div>` : ""}<div class="fans"><span class="jpline">${ruby(s.jp)}</span> ${sayBtn(s.speak, { raw: true })}${slowBtn(s.speak)}</div>
           ${pron(s.jp)}${s.ex ? `<div class="fex">${esc(s.ex)}</div>` : ""}</div>`;
-        if (S.settings.autoplay) TTS.speak(s.speak);
-        // pod oceną / „Dalej”; 🎤 rozpoznane = dobrze, „Pokaż odpowiedź” = samoocena (nie „Nie wiem”)
-        if (window.AIHelp) setTimeout(() => AIHelp.answered(card, heardOk ? true : null, "", { how: heardOk ? "powiedziane na głos – 🎤 rozpoznało poprawne zdanie" : AIHelp.SELF }), 0);
+        if (S.settings.autoplay && !quiet) TTS.speak(s.speak);
+        // pod oceną / „Dalej”; 🎤 dokładnie jak wzór = dobrze, „Pokaż odpowiedź” i 🎙 = samoocena (nie „Nie wiem”)
+        if (window.AIHelp) setTimeout(() => AIHelp.answered(card, r && r.ok ? true : null, "", { how: r && r.ok ? MIC.how(r) : AIHelp.SELF }), 0);
       };
+      const selfCheck = () => { $(".rs-back", card).insertAdjacentHTML("beforeend", gradeBtns(cur.e.k, cur.e.again)); selfGrade(card, cur, { skill: s.skill }, "say"); };
       $(".rs-show", card).onclick = () => {
-        if (cur.shown) return;
+        if (cur.shown || cur.rec) return;
         if (cur.ms == null) cur.ms = Date.now() - cur.t0;
         $(".try", card).innerHTML = "";
-        reveal(false);
-        $(".rs-back", card).insertAdjacentHTML("beforeend", gradeBtns(cur.e.k, cur.e.again));
-        selfGrade(card, cur, { skill: s.skill }, "say");
+        reveal(null);
+        selfCheck();
       };
       const mb = $(".rs-mic", card);
       if (mb) mb.onclick = async () => {
@@ -46712,45 +47474,94 @@ window.REV = (function () {
           const alts = await listenOnce();
           if (cur.shown || !card.isConnected) return;
           if (cur.ms == null) cur.ms = Date.now() - cur.t0;
-          const t1 = normAnswer(plain(s.jp)), t2 = normAnswer(reading(s.jp));
-          let best = 0, heard = alts[0] || "";
-          for (const x of alts) { const v = normAnswer(x), sc = Math.max(similarity(v, t1), similarity(v, t2)); if (sc > best) { best = sc; heard = x; } }
-          const pct = Math.round(best * 100);
-          if (pct >= 80) {
+          const r = MIC.judge(s.jp, alts, { alts: s.alt });
+          if (r.ok) {
             $(".try", card).innerHTML = "";
-            reveal(true);
-            $(".rs-back .fb", card).insertAdjacentHTML("beforeend", `<div class="small">🎤 Rozpoznano: <span class="jp">${esc(heard)}</span> (${pct}%)</div>`);
+            reveal(r);
+            $(".rs-back .fb", card).insertAdjacentHTML("beforeend", `<div class="small">🎤 Rozpoznano: ${r.heardHTML} · ${esc(r.words)}</div>`);
             if (!cur.e.again) noteStat({ skill: s.skill }, true);
             const g = cur.tries ? 2 : 3, res = grade(cur, g, "a", "say", cur.tries > 0);
             nextLine(card, cur, g, res);
             $(".rs-back", card).insertAdjacentHTML("beforeend", `<div class="qnav"><button class="btn pri nextq">Dalej →</button></div>`);
             const nb = $(".nextq", card); nb.onclick = advance; nb.focus({ preventScroll: true });
           } else {
+            // typowy błąd, różnica albo inne zdanie: co rozpoznano (różnice zaznaczone, bez wzoru) – i ponowna próba (ocena dopiero po „Pokaż odpowiedź”)
             cur.tries++;
-            $(".try", card).innerHTML = `<div class="fb soft"><b>🎤 Rozpoznano: <span class="jp">${esc(heard)}</span></b> (${pct}%)<div class="small muted">Jeszcze nie to. Spróbuj jeszcze raz albo pokaż odpowiedź.</div></div>`;
-            if (window.AIHelp) AIHelp.tried(card, heard, `🎤 rozpoznano (podobieństwo ${pct}%) – jeszcze nie to`);
+            $(".try", card).innerHTML = MIC.html(r, `<div class="small muted">Spróbuj jeszcze raz albo pokaż odpowiedź.</div>`, true, true);
+            if (window.AIHelp) AIHelp.tried(card, r.heard, "🎤 " + r.head + " – " + r.words);
           }
         } catch (err) { toast(srecErrText(err), 4500); }
         finally { if (mb.isConnected) { mb.disabled = false; mb.classList.remove("live"); } }
       };
+      const rb = $(".rs-rec", card);
+      if (rb) rb.onclick = async () => {
+        if (cur.shown || cur.rec || rb.disabled) return;
+        rb.disabled = true; TTS.stop();
+        let r;
+        try { r = await REC.start(); }
+        catch (e) {
+          if (!card.isConnected) return;
+          if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) { REC.denied = true; rb.remove(); toast(IOS ? "Brak dostępu do mikrofonu. Możesz go włączyć w Ustawieniach iPhone’a (Safari → Mikrofon)." : "Brak dostępu do mikrofonu. Możesz go włączyć w ustawieniach strony (ikona obok adresu → Uprawnienia → Mikrofon).", 6000); }
+          else { rb.disabled = false; toast("Mikrofon jest teraz zajęty albo niedostępny. Spróbuj jeszcze raz za chwilę.", 4500); }
+          return;
+        }
+        if (cur.shown || !card.isConnected || S0.cur !== cur) { r.stop(); return; }
+        cur.rec = r;
+        const act = $(".rs-act", card); if (act) act.hidden = true;
+        const ms = Math.min(15000, 4000 + reading(s.jp).length * 450);
+        $(".try", card).innerHTML = `<div class="rs-recnow"><div class="yt"><span class="recdot"></span> Nagrywam – mów!</div><div class="recbar"><i style="--rec-ms:${ms}ms"></i></div><button class="btn sm rs-stop">⏹ Stop</button></div>`;
+        const fin = async () => {
+          if (cur.rec !== r) return; cur.rec = null; clearTimeout(to);
+          const b = await r.stop();
+          if (!card.isConnected || cur.shown || S0.cur !== cur) return;
+          if (!b || b.size < 200) {
+            $(".try", card).innerHTML = `<div class="small muted">Nagranie wyszło puste – spróbuj jeszcze raz (bliżej mikrofonu) albo pokaż odpowiedź.</div>`;
+            if (act) act.hidden = false; rb.disabled = false; return;
+          }
+          if (cur.ms == null) cur.ms = Date.now() - cur.t0;
+          $(".try", card).innerHTML = "";
+          const a = recAudio(b);
+          reveal(null, true);
+          $(".rs-back .fb", card).insertAdjacentHTML("beforeend", `<div class="row rs-cmp"><button class="btn pri rs-play">▶ Porównaj (Ty, potem lektor)</button><button class="btn sm rs-mine">▶ Tylko ja</button></div>
+            <div class="small muted rs-self">${esc(MIC.SELF)}</div>`);
+          const playMine = () => new Promise(res => { a.onended = res; a.onerror = res; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(res); });
+          const cmp = async () => { const t = ++recTok; TTS.stop(); await playMine(); if (t !== recTok) return; await sleep(300); if (t === recTok && card.isConnected) TTS.speak(s.speak); };
+          $(".rs-play", card).onclick = cmp;
+          $(".rs-mine", card).onclick = () => { recTok++; TTS.stop(); playMine(); };
+          selfCheck();
+          if (!IOS) cmp();   // iPhone odtwarza nagranie tylko po dotknięciu
+        };
+        $(".rs-stop", card).onclick = fin;
+        const to = setTimeout(fin, ms);
+      };
+    }
+    // 🎙 w kartach „Powiedz…”: jedno nagranie naraz, zatrzymane przy następnej karcie i wyjściu z powtórki
+    let recA = null, recUrl = "", recTok = 0;
+    function recAudio(b) { recKill(); recA = recA || new Audio(); recUrl = URL.createObjectURL(b); recA.src = recUrl; return recA; }
+    function recKill() {
+      recTok++;
+      const c = S0.cur; if (c && c.rec) { const r = c.rec; c.rec = null; r.stop(); }
+      if (recA) recA.pause();
+      if (recUrl) { URL.revokeObjectURL(recUrl); recUrl = ""; }
     }
 
     function finish() {
       S0.ended = true; window.removeEventListener("hashchange", onLeave); dropKey();
       focusMode(false);
       addXP(S0.pts);
-      const left = dueKeys().length, capped = !!(left && plan().capped);
+      const left = dueKeys().length, pl = plan(), capped = !!(left && pl.capped);
       let tip = ""; try { tip = typeof tipFor === "function" ? tipFor("review") || "" : ""; } catch (e) { }
       // nowa osoba (src/home.js homeNew): bez „Powtórz mimo to” i ustawień kolejki – limit nowych kart jest w Ustawieniach (D1-11)
       let nu = false; try { nu = typeof homeNew === "function" && homeNew(nextLesson()); } catch (e) { }
       root.innerHTML = `<div class="card result rs-end"><div style="font-size:48px">✅</div><h2>Powtórka skończona</h2>
         <p>Dobrze za pierwszym razem: <b>${S0.good} z ${S0.uniq}</b>.${S0.pts ? ` <span class="muted">+${S0.pts} pkt</span>` : ""}</p>
-        ${capped ? `<p><b>Dobra robota – na dziś wystarczy.</b> Pozostałe karty rozłożę na kolejne dni.</p>` : ""}
+        ${capped ? `<p><b>Dobra robota – na dziś wystarczy.</b> ${pl.gentle ? "Pozostałe karty rozłożę na kolejne dni." : `Plan powtórek na dziś zrobiony – pozostałe karty poczekają${lessonNow() ? ", teraz czas na lekcję" : " na kolejne dni"}.`}</p>` : ""}
         <p class="muted">${tomorrowTxt()}</p>
-        <div class="row" style="justify-content:center;margin-top:14px"><a class="btn pri" href="#/">Wróć do planu</a>${capped ? "" : left ? `<button class="btn rs-more">🔁 Kolejne karty (${left})</button>` : nu ? "" : `<button class="btn rs-extra">Powtórz mimo to 10 kart</button>`}</div>
+        <div class="row" style="justify-content:center;margin-top:14px"><a class="btn pri" href="#/">Wróć do planu</a>${capped ? `<button class="btn rs-anyway">Mimo to jeszcze ${kartN(Math.min(10, left))}</button>` : left ? `<button class="btn rs-more">🔁 Kolejne karty (${left})</button>` : nu ? "" : `<button class="btn rs-extra">Powtórz mimo to 10 kart</button>`}</div>
         ${nu ? "" : newqInfoHTML()}</div>${tip}`;
       const m = $(".rs-more", root); if (m) m.onclick = view;
       const x = $(".rs-extra", root); if (x) x.onclick = extra;
+      const y = $(".rs-anyway", root); if (y) y.onclick = () => { const p = plan(); more10(p.order(dueKeys()).filter(k => S.srs[k] && !orphan(k)), p.gentle); };
       updateBadge();
     }
     next();
@@ -46952,27 +47763,28 @@ function addXP(n) {
     try { if (dueN === undefined || dueN === null) dueN = dueList().length; return dueN <= 2 * flowDayBudget(); }
     catch (e) { return true; }
   }
-  // Dla sesji powtórek (REVIEW): {budget, order(keys) -> keys, gentle, msg, short, due, sec}
+  // Dla sesji powtórek (REVIEW): {budget, order(keys) -> keys, gentle, msg, short, due, sec, capped, doneToday}
   // budget = karty mieszczące się w ~60% pozostałych dziś minut (w krótszej sesji: w pozostałych z 5 minut), min. 10;
   // po przerwie ≥ 3 dni najwyżej 40. Terminów kart nic tu nie zmienia – reszta po prostu czeka.
+  // Plan powtórek jest na cały dzień (M-3): po przerwie 40 kart, w krótszej sesji tyle, ile mieści 5 minut, zwykle flowDayBudget();
+  // karty powtórzone już dziś się odliczają, a po całym planie capped – krok planu zrobiony, dalej lekcja, reszta to dodatek.
   function flowSessionPlan(o) {
     o = o || {};
     const now = o.now || Date.now(), d = dayOf(now);
     const keys = o.keys || dueList(now), n = keys.length, sec = secPer();
     const short = isShort(d), rem = Math.max(0, flowGoal(d) - flowMinsToday(now));
     const gap = o.gap !== undefined ? o.gap : flowGap(now), gentle = gap !== null && gap >= 3;
-    // po przerwie limit 40 kart jest na cały dzień, nie na sesję: karty powtórzone już dziś się odliczają
-    const doneT = gentle ? reviewedOn(now) : 0;
+    const doneT = reviewedOn(now);
+    const dayCap = gentle ? 40 : short ? Math.max(10, Math.floor(flowGoal(d) * 60 / sec)) : flowDayBudget();
     let budget = 0;
     if (n) {
       budget = Math.max(10, Math.floor((short ? rem : rem * 0.6) * 60 / sec));
-      if (gentle) budget = Math.min(budget, Math.max(0, 40 - doneT));
-      budget = Math.min(budget, n);
+      budget = Math.min(budget, Math.max(0, dayCap - doneT), n);
     }
-    const capped = gentle && n > 0 && budget === 0;
+    const capped = n > 0 && budget === 0;
     const R = k => { let r = null; try { r = MEM.retr(k, now); } catch (e) { } return typeof r === "number" && isFinite(r) ? r : null; };
     function order(list) {
-      const known = [], fresh = [];
+      const known = [], fresh = [], pos = new Map(list.map((k, i) => [k, i]));
       (typeof shuffle === "function" ? shuffle(list) : list.slice()).forEach(k => { const r = R(k); (r === null ? fresh : known).push([k, r]); });
       known.sort((a, b) => a[1] - b[1]);                     // najpierw najbardziej zagrożone zapomnieniem
       let out = known;
@@ -46982,11 +47794,22 @@ function addXP(n) {
         const rest = known.filter(x => !es.has(x[0]));
         out = easy.concat(rest.filter(x => x[1] >= 0.3), rest.filter(x => x[1] < 0.3).sort((a, b) => b[1] - a[1]));
       }
-      return out.map(x => x[0]).concat(fresh.map(x => x[0]));   // nowe karty (bez historii) na końcu
+      // nowe karty (bez historii): najstarsze najpierw (added, potem kolejność wejścia – kolejność kursu). Po przerwie na końcu;
+      // zwykle do 1/3 porcji, równo między zagrożonymi – przy dziennym planie (M-3) karta „na końcu” czekałaby na pierwszą
+      // powtórkę tygodniami (symulacja: mediana 8 dni przy 30 min dziennie)
+      const ad = k => String((((S && S.srs) || {})[k] || {}).added || "");
+      const F = fresh.map(x => x[0]).sort((a, b) => (ad(a) < ad(b) ? -1 : ad(a) > ad(b) ? 1 : pos.get(a) - pos.get(b)));
+      const K = out.map(x => x[0]), take = budget > 0 ? budget : Math.min(10, list.length);
+      const nf = gentle ? 0 : Math.min(F.length, Math.ceil(take / 3)), head = K.slice(0, Math.max(0, take - nf)), mix = [];
+      for (let i = 0, j = 0; i <= head.length; i++) {
+        while (j < nf && Math.floor((j + 1) * head.length / (nf + 1)) <= i) mix.push(F[j++]);
+        if (i < head.length) mix.push(head[i]);
+      }
+      return mix.concat(K.slice(head.length), F.slice(nf));
     }
     // msg uzupełnia nagłówek sesji („N kart · około X min”), więc nie powtarza liczb
     let msg = "";
-    if (capped) msg = "Dobra robota – na dziś wystarczy. Resztę rozłożę na kolejne dni.";
+    if (capped) msg = gentle ? "Dobra robota – na dziś wystarczy. Resztę rozłożę na kolejne dni." : "Plan powtórek na dziś zrobiony – reszta poczeka na kolejne dni.";
     else if (n && gentle) msg = n > budget ? "Spokojny powrót po przerwie: na początek kilka łatwiejszych kart, resztę rozłożę na kolejne dni." : "Miło Cię znowu widzieć! Zaczynamy spokojnie.";
     else if (n && short) msg = "Dziś krótsza sesja." + (n > budget ? " Reszta poczeka na kolejne dni." : "");
     else if (n > budget) msg = `Reszta (${n - budget}) poczeka na kolejne dni.`;
@@ -46997,6 +47820,51 @@ function addXP(n) {
     const d = new Date(now); d.setHours(0, 0, 0, 0); const t0 = d.getTime(), t1 = t0 + 36 * 36e5;
     let c = 0; for (const k in S.srs || {}) { const f = S.srs[k] && S.srs[k].f; if (f && +f.l >= t0 && +f.l < t1) c++; }
     return c;
+  }
+
+  /* ---------- kolejka nowych kart (S.newq): od najstarszego materiału ---------- */
+  // Karty jednej lekcji w kolejności wejścia do powtórek (M-2): słówka po kolei, każdy znak kanji zaraz po pierwszym słówku,
+  // które go zawiera (bez takiego słówka – równo między słówkami), punkty gramatyki równo rozłożone. Dzienny limit bierze więc
+  // z lekcji po trochu wszystkiego. V, K, G – wpisy {k, card}; K z kluczami „k|znak”, V – „v|zapis|czytanie”.
+  function flowMixCards(V, K, G) {
+    V = V || []; K = K || []; G = G || [];
+    const nV = V.length, word = e => String(e.k).split("|")[1] || "";
+    const at = (i, n, m) => Math.floor((i + 1) * m / (n + 1)) - 1;   // i-ty z n równo w m miejscach: po pozycji at (-1 = na początku)
+    const glued = new Set();   // kanji przy swoim słówku – gramatyka nie wchodzi między nie
+    const kAt = K.map((e, i) => { const c = String(e.k).slice(2), j = c ? V.findIndex(v => word(v).includes(c)) : -1; if (j >= 0) glued.add(e); return [j >= 0 ? j : at(i, K.length, nV), i]; })
+      .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const M = [];
+    for (let i = -1, p = 0; i < nV; i++) { if (i >= 0) M.push(V[i]); while (p < kAt.length && kAt[p][0] <= i) M.push(K[kAt[p++][1]]); }
+    const out = [];
+    for (let i = -1, p = 0; i < M.length; i++) {
+      if (i >= 0) out.push(M[i]);
+      if (i >= 0 && glued.has(M[i + 1])) continue;
+      while (p < G.length && at(p, G.length, M.length) <= i) out.push(G[p++]);
+    }
+    return out;
+  }
+  // S.newq w kolejności kursu (M-1): lekcje po kolei, w lekcji – kolejność cardsOf(lekcja) (lessonCards z gramatyką).
+  // Zwroty z Zestawu przetrwania (card.l „kit:…”) to materiał pierwszego tygodnia: zaraz po poziomie Start, w kolejności dodania.
+  // Wpis spoza kursu (moduł „Życie w Japonii”, lekcja usunięta z kursu) zostaje za wpisem, za którym stał.
+  // Zwraca nową tablicę; wpisy bez zmian (stara wersja czyta ten sam format {k, card}).
+  function flowNewqSort(q, cardsOf) {
+    if (!Array.isArray(q)) return [];
+    let lv = null; try { lv = typeof LV !== "undefined" ? LV : null; } catch (e) { }
+    if (!lv || !lv.length || typeof cardsOf !== "function") return q.slice();
+    const idx = Object.create(null), rank = Object.create(null), B = 1e4;   // bez prototypu: card.l „constructor” to nie lekcja
+    lv.flatMap(L => L.lessons || []).forEach((l, i) => { idx[l.id] = [i, l]; });
+    const kit = ((lv[0].lessons || []).length) * B - 0.5;
+    const keyOf = e => {
+      const l = e && e.card && typeof e.card.l === "string" ? e.card.l : "";
+      if (l.startsWith("kit:")) return kit;
+      const x = idx[l]; if (!x) return null;
+      if (!rank[l]) { rank[l] = Object.create(null); try { cardsOf(x[1]).forEach((c, j) => { if (c && !(c.k in rank[l])) rank[l][c.k] = j; }); } catch (err) { } }
+      const r = rank[l][e.k];
+      return x[0] * B + (r === undefined ? B - 1 : r);
+    };
+    let prev = -Infinity;   // wpis spoza kursu: pozycja poprzednika, przy równych – kolejność w kolejce
+    return q.map((e, i) => { const k = keyOf(e); if (k !== null) prev = k; return [prev, i, e]; })
+      .sort((a, b) => (a[0] === b[0] ? 0 : a[0] - b[0]) || a[1] - b[1]).map(x => x[2]);
   }
 
   /* ---------- punkty za utrwalenie (mem:stable) ---------- */
@@ -47051,7 +47919,7 @@ function addXP(n) {
     flowBoot, flowGoal, flowMinsToday, flowMinsOn, flowDirty, flowDayCounts, flowGap, flowWeek, flowWeekLine,
     flowDayBudget, flowNewAllowed, flowSessionPlan, flowSettingsHTML, flowSettingsBind, flowSetShort,
     flowIsShort: isShort, flowGoalMins: goalMins, flowWeekGoal: weekGoal, flowActive,
-    flowWeekDayN, flowSpeakDone, flowSpeakOn, flowSpeakWeek,
+    flowWeekDayN, flowSpeakDone, flowSpeakOn, flowSpeakWeek, flowMixCards, flowNewqSort,
     __flowT: { T, tick, flush, mark, addDays, diffDays, weekStart, lastActiveBefore }   // do testów
   });
 })();
@@ -47153,6 +48021,7 @@ function addXP(n) {
       ["⏱", `${m} minut dziennie`, `Krótko, ale prawie codziennie – to daje więcej niż długa nauka raz w tygodniu. Czas zmienisz w <a href="#/settings/rytm">Ustawieniach</a>, a w gorszy dzień wybierzesz krótszą sesję (5 minut).`],
       ["🔁", "Najpierw powtórki", "Słówka, kanji i zdania wracają wtedy, gdy zaczynają uciekać z pamięci. Zrób je na początku, potem kawałek nowej lekcji. Gdy zaległości jest dużo, plan sam rozkłada je na kilka dni."],
       ["🗣", "Codziennie trochę mówienia", `Po lekcji plan daje krok „🗣 Mówienie” (2–4 minuty): <a href="#/rozmowy">rozmowę</a> do ostatniej lekcji – za pierwszym razem z podpowiedziami, a gdy pójdzie dobrze, bez nich – raz w tygodniu <a href="#/we-dwoje">Scenkę we dwoje</a>, a przed pierwszymi rozmowami <a href="#/powtarzaj">powtarzanie za lektorem</a>. Mów zawsze na głos.`],
+      ["🤝", "Rozmowy z ludźmi i prawdziwe nagrania", `Aplikacja daje podstawy, ale do swobodnej rozmowy potrzeba jeszcze żywych ludzi i nagrań mówionych przez ludzi. Co dołożyć i od kiedy: <a href="#/poza-aplikacja">🤝 Czego aplikacja nie zrobi za Ciebie</a>. Cel każdej części i realistyczny czas: <a href="#/mapa">🗺 Mapa drogi</a>.`],
       ["⌨️", "Wpisuj i mów, zamiast klikać", "Odpowiedź wydobyta z pamięci zostaje na dłużej niż wybrana z listy. Słowa wpisuj, zdania mów na głos albo w myślach, zanim zobaczysz wzór."],
       ["📝", "Błędy pomagają", "Pomyłka, po której od razu widzisz poprawną odpowiedź i wyjaśnienie, to zwykła część nauki. W lekcji trafia do zeszytu błędów i wraca, aż ją opanujesz, a w powtórce karta wraca jeszcze w tej samej sesji."],
       ["💬", "Pytaj, gdy czegoś nie rozumiesz", `Przy każdym zadaniu jest „💬 Zapytaj”: AI widzi to zadanie i odpowiada po polsku, a Ty możesz dopytywać. Pytanie przed odpowiedzią liczy się jak 💡 podpowiedź. Ustawisz to w <a href="#/settings/ai">Ustawieniach → 💬 Pomoc AI</a>.`],
@@ -47169,11 +48038,111 @@ function addXP(n) {
       <p class="small muted">${TIPS.length} ${plN(TIPS.length, "krótka notka", "krótkie notki", "krótkich notek")}. Przy każdej jest źródło: autor i rok badania albo przeglądu badań. Codziennie jedna z nich pojawia się na stronie startowej.</p>
       <div class="grid g2 ftips">${TIPS.map(t => tipCardHTML(t, { noLink: true })).join("")}</div>
       <p class="small muted" style="margin-top:16px">Tego tu celowo nie ma: „stylów uczenia się” (wzrokowiec, słuchowiec), „10% tego, co czytamy”, nauki przez sen ani „21 dni do nawyku” – badania tego nie potwierdzają.</p>
-      <div class="row" style="margin-top:12px"><a class="btn pri" href="#/">Wróć do planu na dziś</a><a class="btn" href="#/settings/rytm">⏱ Ustaw swój czas</a></div>`;
+      <div class="row" style="margin-top:12px"><a class="btn pri" href="#/">Wróć do planu na dziś</a><a class="btn" href="#/settings/rytm">⏱ Ustaw swój czas</a><a class="btn" href="#/poza-aplikacja">🤝 Czego aplikacja nie zrobi</a><a class="btn" href="#/mapa">🗺 Mapa drogi</a></div>`;
   }
 
   Object.assign(window, { tipFor, viewHowTo, tipCardHTML, TIPS_FLOW: TIPS });
 })();
+
+/* ===================== 🗺 mapa drogi: cele części, „Potrafię…” i „Czego aplikacja nie zrobi za Ciebie” (ocena kursu, punkt 11) ===================== */
+// Treść: content/roadmap.js (window.ROADMAP). Nazwy części i cele tylko do wyświetlania – id poziomów bez zmian.
+// S.cando = {id: {v: 1 | 0, t}} – „Potrafię…” zaznaczone przez osobę (v: 1) albo odznaczone (v: 0, wpis zostaje, żeby odznaczenie
+// dotarło na inne urządzenia); t – chwila zmiany (ms). Łączenie: candoMerge w src/sync.js. Stara wersja zostawia pole bez zmian.
+const rmPart = id => ((window.ROADMAP || {}).parts || {})[id] || null;
+// „Część 1 – cel: A1, proste sytuacje w podróży”
+function rmLabel(L) { const p = L && rmPart(L.id); return p ? `${p.name} – cel: ${p.goal}` : ""; }
+// „ok. 2 miesiące przy 15 min dziennie” (+ „od zera: ok. 3,5 miesiąca” w wersji długiej)
+function rmTime(L, long) {
+  const p = L && rmPart(L.id); if (!p || !p.time) return "";
+  return `${p.time} przy 15 min dziennie${long && p.total ? ` (od zera: ${p.total})` : ""}`;
+}
+// stan jednego zdania; dawny zapis datą („2026-10-07”) też znaczy „zaznaczone”
+function candoOn(id, st) {
+  const m = (st || S).cando, e = m && typeof m === "object" ? m[id] : null;
+  return e && typeof e === "object" ? +e.v === 1 : typeof e === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e);
+}
+function candoSet(id, on) {
+  if (!S.cando || typeof S.cando !== "object" || Array.isArray(S.cando)) S.cando = {};
+  const e = S.cando[id], t0 = e && typeof e === "object" ? +e.t || 0 : 0;
+  S.cando[id] = { v: on ? 1 : 0, t: Math.max(Date.now(), t0 + 1) };   // zawsze nowszy od poprzedniego wpisu, także gdy zegar się cofnął
+  saveState();
+}
+function candoCount(lvId) { const xs = (rmPart(lvId) || {}).cando || []; return { n: xs.length, d: xs.filter(x => candoOn(x.id)).length }; }
+// karta „✅ Potrafię…” na stronie poziomu i na mapie drogi
+function candoCardHTML(L) {
+  const p = rmPart(L.id); if (!p || !(p.cando || []).length) return "";
+  const c = candoCount(L.id);
+  return `<section class="card cando" data-lv="${esc(L.id)}" aria-labelledby="cdh-${esc(L.id)}">
+    <div class="cdhead"><h2 id="cdh-${esc(L.id)}">✅ Potrafię…</h2><span class="pill cdn">${c.d} z ${c.n}</span></div>
+    <p class="small muted">Zaznacz to, co już umiesz. To Twoja własna ocena: nikt jej nie sprawdza, a lista pokazuje, co jeszcze przed Tobą.</p>
+    <ul class="cdlist">${p.cando.map(x => { const on = candoOn(x.id); return `<li class="cdi${on ? " on" : ""}">
+      <label><input type="checkbox" data-cd="${esc(x.id)}"${on ? " checked" : ""}><span>${esc(x.pl)}</span></label>
+      ${x.href ? `<a class="small cdgo" href="${esc(x.href)}" title="Przećwicz"><span class="cdgot" aria-hidden="true">Przećwicz&nbsp;</span><span class="vh">Przećwicz: ${esc(x.pl)}</span><span aria-hidden="true">→</span></a>` : ""}</li>`; }).join("")}</ul>
+    <p class="small cdmore"><a href="#/poza-aplikacja">🤝 Czego aplikacja nie zrobi za Ciebie</a> · <a href="#/mapa">🗺 Mapa drogi</a></p></section>`;
+}
+// zaznaczanie bez przerysowania strony (przewinięcie i fokus zostają)
+function candoBind(root) {
+  $$("input[data-cd]", root).forEach(b => b.onchange = () => {
+    candoSet(b.dataset.cd, b.checked);
+    const li = b.closest(".cdi"); if (li) li.classList.toggle("on", b.checked);
+    const card = b.closest(".cando"), n = card && $(".cdn", card); if (n) { const c = candoCount(card.dataset.lv); n.textContent = `${c.d} z ${c.n}`; }
+  });
+}
+
+/* ---------- #/mapa: części kursu z celem, czasem i „Potrafię…” ---------- */
+function viewMap() {
+  const R = window.ROADMAP || { parts: {}, milestones: [] }, nx = typeof nextLesson === "function" ? nextLesson() : null;
+  const here = nx && LESSON_LEVEL[nx.id] ? LESSON_LEVEL[nx.id].id : "";
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Mapa drogi</div>
+    <h1>🗺 Mapa drogi</h1>
+    <p class="muted">Dokąd prowadzi każda część kursu i ile to mniej więcej trwa przy 15 minutach nauki dziennie. To szacunki z symulacji kursu, a nie norma: każdy uczy się w swoim tempie. Przy 20 minutach dziennie idzie wyraźnie szybciej, przy nauce 5 dni w tygodniu – mniej więcej o 40–50% dłużej.</p>
+    <div class="card small rmab"><p><b>A1</b> – przedstawienie się, zakupy, jedzenie, pytanie o cenę i o drogę prostymi, wyuczonymi zdaniami.</p>
+      <p><b>A2</b> – proste rozmowy o codzienności: weekend, praca, rodzina, plany. Poziom komunikatywny to mniej więcej A2.</p>
+      <p><b>N5–N1</b> – poziomy egzaminu JLPT (N5 najłatwiejszy). Części 1–3 razem to mniej więcej gramatyka N5 i N4, więc koniec „N5 · część 1” nie znaczy jeszcze, że całe N5 jest za Tobą. N3–N1 to przegląd gramatyki, a nie pełny kurs do egzaminu.</p></div>
+    <h2>Od zera, krok po kroku</h2>
+    <ol class="card rmms">${(R.milestones || []).map(m => `<li><b>${esc(m.when)}</b><span>${esc(m.pl)}</span></li>`).join("")}</ol>
+    <h2>Części kursu</h2>
+    <div class="lesson-list rmparts">${LV.map(L => {
+      const p = rmPart(L.id); if (!p) return "";
+      const lp = levelProgress(L), c = candoCount(L.id);
+      return `<a class="card li rmpart ${LOOK.lv(L.id)}${L.id === here ? " here" : ""}" href="#/level/${L.id}"${L.id === here ? ` aria-current="step"` : ""}><span class="num lvb" aria-hidden="true">${esc(L.short)}</span>
+        <span class="t"><b>${esc(rmLabel(L))}</b>${L.id === here ? `<span class="lvhere">Tu jesteś</span>` : ""}<span class="small muted">⏱ ${esc(rmTime(L, true))}</span>
+        <span class="small">${lp.d} z ${lp.n} lekcji · ✅ ${c.d} z ${c.n} „Potrafię…”</span></span><span class="chev" aria-hidden="true"></span></a>`;
+    }).join("")}</div>
+    <a class="card li rmout" href="#/poza-aplikacja"><span class="num" aria-hidden="true">🤝</span><span class="t"><b>Czego aplikacja nie zrobi za Ciebie</b><span class="small muted">Mówienie na głos, rozmowy z ludźmi i prawdziwe nagrania – bez tego A2 w mówieniu się nie uda.</span></span><span class="chev" aria-hidden="true"></span></a>
+    <div class="row" style="margin-top:14px"><a class="btn pri" href="#/">Wróć do planu na dziś</a><a class="btn" href="#/jak-sie-uczyc">🧠 Jak się uczyć</a></div>`;
+}
+
+/* ---------- #/poza-aplikacja: czego aplikacja nie zrobi za Ciebie ---------- */
+// rozmowa do ostatnio zaliczonej lekcji, która ją ma (jak krok „🗣 Mówienie”) – scenariusz na rozmowę z żywym człowiekiem
+function rmScriptTalk() {
+  if (typeof lessonTalks !== "function") return null;
+  let best = null;
+  const later = (a, b) => (a[0] - b[0] || a[1] - b[1] || a[2] - b[2]) > 0;   // prawdziwe zaliczenie przed automatycznym, potem nowsze, potem dalej w kursie
+  LV.flatMap(L => L.lessons).forEach((l, i) => {
+    const st = S.lessons[l.id] || {}, t = st.done ? lessonTalks(l.id)[0] : null; if (!t) return;
+    const k = [st.auto ? 0 : 1, +st.dt || 0, i];
+    if (!best || later(k, best.k)) best = { t, k };
+  });
+  return best ? best.t : null;
+}
+function viewOutside() {
+  const t = rmScriptTalk();
+  const script = t ? `Scenariusz na najbliższą rozmowę: <a href="#/rozmowa/${esc(t.id)}">💬 „${esc(persona(t.title))}”</a> – przećwicz ją tutaj, a potem powiedz to samo prawdziwej osobie.`
+    : `Jako scenariusza użyj rozmowy z ostatniej lekcji (<a href="#/rozmowy">💬 Rozmowy</a>): przećwicz ją tutaj, a potem powiedz to samo prawdziwej osobie.`;
+  const items = [
+    ["🗣", "Mów na głos – codziennie", `Każde zdanie z lekcji, kart i rozmów mów głośno, a nie w myślach: usta i ucho też muszą się nauczyć japońskiego. Wystarczą 2–4 minuty, np. krok „🗣 Mówienie” w planie na dziś albo <a href="#/powtarzaj">🎙 Powtarzaj za lektorem</a>.`],
+    ["👥", "Od 2.–3. miesiąca: rozmowa z żywym człowiekiem", `Raz w tygodniu 30–60 minut z nauczycielem albo z partnerem do wymiany językowej (Ty pomagasz w polskim, ktoś Tobie w japońskim). ${script} Pierwsze rozmowy będą krótkie i z pomyłkami – i tak ma być. W domu świetnie działają też <a href="#/we-dwoje">👫 Scenki we dwoje</a>.`],
+    ["🎧", "Raz w tygodniu prawdziwe słuchanie", `20–30 minut nagrań dla początkujących, mówionych przez ludzi, a nie przez syntezator, np. kanał <a href="https://www.youtube.com/@cijapanese" target="_blank" rel="noopener">Comprehensible Japanese</a> na YouTube albo podcast <a href="https://nihongoconteppei.com/" target="_blank" rel="noopener">Nihongo con Teppei</a>. Nie trzeba rozumieć wszystkiego – wystarczy łapać sens.`],
+    ["📱", "Mikrofon na iPhonie", `${IOS ? "<b>Na tym telefonie</b> (aplikacja dodana do ekranu głównego) mikrofon" : "Na iPhonie (aplikacja dodana do ekranu głównego) mikrofon"} nie sprawdza wymowy. Mów na głos i porównuj się ze wzorem: w Rozmowach i w Powtarzaj za lektorem działa „🎙 Nagraj” i odsłuch nagrania tuż po lektorze. Na Androidzie i komputerze wynik 🎤 traktuj jako wskazówkę, a nie wyrok.`]
+  ];
+  app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › Czego aplikacja nie zrobi za Ciebie</div>
+    <h1>🤝 Czego aplikacja nie zrobi za Ciebie</h1>
+    <p class="muted">Aplikacja da Ci solidne podstawy: słówka, gramatykę, wyuczone zdania i codzienne powtórki. Do prawdziwej rozmowy potrzeba jeszcze kilku rzeczy, których żaden program nie zastąpi. Nie trzeba robić wszystkiego naraz – wybierz to, co pasuje do Twojego tygodnia.</p>
+    <div class="card fhow rmoutl">${items.map(s => `<div class="fhowi"><span class="fhowe" aria-hidden="true">${s[0]}</span><div><b>${s[1]}</b><div class="small">${s[2]}</div></div></div>`).join("")}</div>
+    <p class="small muted" style="margin-top:14px">Bez presji: to dodatki, dzięki którym wyuczone zdania zamieniają się w rozmowę. Nawet jedna rozmowa w miesiącu to dużo więcej niż żadna.</p>
+    <div class="row" style="margin-top:12px"><a class="btn pri" href="#/">Wróć do planu na dziś</a><a class="btn" href="#/mapa">🗺 Mapa drogi</a><a class="btn" href="#/jak-sie-uczyc">🧠 Jak się uczyć</a></div>`;
+}
 
 /* ===================== etap 1: ekran startowy i plan na dziś (przeniesione z app.js) ===================== */
 /* ===================== widok: start ===================== */
@@ -47250,10 +48219,10 @@ function lvTitle(L) {
 function homeLevelsHTML(nx, list) {
   const here = nx && LESSON_LEVEL[nx.id] ? LESSON_LEVEL[nx.id].id : "";
   return `<div class="lvgrid">${(list || LV).map(L => {
-    const p = levelProgress(L), on = L.id === here, t = lvTitle(L);
+    const p = levelProgress(L), on = L.id === here, t = lvTitle(L), g = typeof rmLabel === "function" ? rmLabel(L) : "";   // cel części i czas (content/roadmap.js)
     return `<a class="card lvl ${LOOK.lv(L.id)}${on ? " here" : ""}" href="#/level/${L.id}"${on ? ` aria-current="step"` : ""}>
       <span class="lvb" aria-hidden="true">${esc(L.short)}</span>
-      <span class="lvt"><span class="vh">${esc(L.short)} – </span><b>${esc(t)}</b>${on ? `<span class="lvhere">Tu jesteś</span>` : ""}<span class="small muted lvd">${esc(L.desc)}</span></span>
+      <span class="lvt"><span class="vh">${esc(L.short)} – </span><b>${esc(t)}</b>${on ? `<span class="lvhere">Tu jesteś</span>` : ""}${g ? `<span class="small lvg">🎯 ${esc(g)}</span><span class="small muted lvtm">⏱ ${esc(rmTime(L))}</span>` : ""}<span class="small muted lvd">${esc(L.desc)}</span></span>
       <span class="lvp"><span class="prog"><i style="width:${p.pct}%"></i></span><span class="lvn">${p.d}/${p.n} lekcji</span></span></a>`;
   }).join("")}</div>`;
 }
@@ -47280,18 +48249,19 @@ const HOME_TOOLS = [
     ["#/search", "🔎", "Słowniczek i gramatyka", "Szukaj słówek, kanji i konstrukcji ze wszystkich lekcji."]]],
   ["O nauce", [
     ["#/jak-sie-uczyc", "🧠", "Jak się uczyć", "Krótko o tym, co robić każdego dnia i dlaczego to działa – z badaniami w tle."],
+    ["#/mapa", "🗺", "Mapa drogi", "Cel każdej części (A1, A2), realistyczny czas przy 15 minutach dziennie i lista „Potrafię…”."],
+    ["#/poza-aplikacja", "🤝", "Czego aplikacja nie zrobi za Ciebie", "Mówienie na głos, rozmowy z ludźmi i prawdziwe nagrania – co dołożyć do nauki w aplikacji."],
     ["#/settings", "⚙️", "Ustawienia", "Wygląd, głos, tempo mowy, furigana, romaji, zapis postępów."]]]
 ];
 function homeToolsHTML(title, items, noHead) {
   return `<section class="tgrp" aria-label="${esc(title)}">${noHead ? "" : `<h3 class="tgh">${esc(title)}</h3>`}<div class="tlist">${items.map(([href, ic, t, d, jp]) =>
     `<a class="tool" href="${href}"><span class="toi${jp ? " jp" : ""}" aria-hidden="true">${ic}</span><span class="tot"><b>${esc(t)}</b><span class="small muted">${esc(d)}</span></span><span class="chev" aria-hidden="true"></span></a>`).join("")}</div></section>`;
 }
-// „Do życia w Japonii”: zestaw przetrwania, moduły z życia i mapa drogi
+// „Do życia w Japonii”: zestaw przetrwania i moduły z życia (🗺 Mapa drogi jest w „O nauce”)
 function homeJapanItems() {
   const items = [];
-  if (KIT().sits.length) items.push(["#/przetrwanie", "🛟", "Zestaw przetrwania", "Gotowe zdania od pierwszego tygodnia: przedstawienie się, „proszę powtórzyć”, konbini, restauracja, pomoc."]);
+  if (KIT().sits.length) items.push(["#/przetrwanie", "🛟", "Zestaw przetrwania", "Gotowe zdania od pierwszego tygodnia: przedstawienie się, „proszę powtórzyć”, konbini, restauracja, droga, pociąg, daty, pomoc."]);
   if (typeof LIFE_BY !== "undefined" && Object.keys(LIFE_BY).length) items.push(["#/japonia", "🗾", "Życie w Japonii", "Prawdziwe sytuacje: scenka, rozmowa, słuchanie, napisy i formularze, jak to działa na miejscu."]);
-  if (window.ROADMAP) items.push(["#/mapa", "🗺", "Mapa drogi i darmowe źródła", "Gdzie jesteś, co dalej, ile godzin nauki za Tobą i najlepsze darmowe materiały."]);
   return items;
 }
 function japanHomeHTML() {
@@ -47328,15 +48298,18 @@ function planHTML(nx, gentle) {
   const nm = S.me && (S.me.plv || S.me.name), hi = nm ? `, ${esc(nm)}` : "";
   const cards = Object.keys(S.srs).length, fresh = !cards && !Object.values(S.lessons || {}).some(r => r && !r.auto);   // zaliczenia automatyczne (src/lvl.js) to jeszcze nie postęp
   if (fresh && nx) return `<section class="card fplan fwelcome">
-    <h1>Japoński od zera do biegłości <span class="jp">🇯🇵</span></h1>
-    <p class="muted">${LESSON_LEVEL[nx.id] === LV[0] ? "Najpierw wymowa i kana – dwa japońskie alfabety. Potem poziomy N5–N1 (to poziomy egzaminu JLPT; N5 jest najłatwiejszy) i japoński „z ulicy”. Lekcje to krótka teoria, słuchanie i ćwiczenia, a od N5 także słówka, kanji i scenki z głosami."
-      : "Kurs idzie poziomami N5–N1 (to poziomy egzaminu JLPT; N5 jest najłatwiejszy), a na końcu jest japoński „z ulicy”. Każda lekcja to teoria, słówka z wymową, kanji, scenka z głosami i dużo ćwiczeń."}</p>
+    <h1>Japoński od zera, krok po kroku <span class="jp">🇯🇵</span></h1>
+    <p class="muted">${LESSON_LEVEL[nx.id] === LV[0] ? "Najpierw wymowa i kana – dwa japońskie alfabety. Potem poziomy N5–N1 (to poziomy egzaminu JLPT; N5 jest najłatwiejszy): trzy części do prostych rozmów, a dalej przegląd gramatyki i japoński „z ulicy”. Lekcje to krótka teoria, słuchanie i ćwiczenia, a od N5 także słówka, kanji i scenki z głosami."
+      : "Kurs idzie poziomami N5–N1 (to poziomy egzaminu JLPT; N5 jest najłatwiejszy): trzy części do prostych rozmów, a dalej przegląd gramatyki i japoński „z ulicy”. Każda lekcja to teoria, słówka z wymową, kanji, scenka z głosami i dużo ćwiczeń."}</p>
+    <p class="small muted">Przy 15 minutach dziennie proste sytuacje w podróży (poziom A1) to ok. 5–6 miesięcy. <a href="#/mapa">🗺 Mapa drogi</a></p>
     <p>Twój plan: <b>${goal} minut dziennie</b>. Zacznij od ${nx.id === ((LV[0] || { lessons: [] }).lessons[0] || {}).id ? "pierwszej lekcji" : "pierwszej lekcji swojego poziomu"} – słówka z niej trafią potem do powtórek.</p>
     <div class="fgo"><a class="btn pri" href="#/lesson/${nx.id}">▶ Zacznij: ${esc(nx.title)}</a><a class="btn" href="#/jak-sie-uczyc">🧠 Jak się uczyć</a></div>
     ${voiceWarnHTML()}</section>`;
   let sp = null; try { sp = typeof flowSessionPlan === "function" ? flowSessionPlan() : null; } catch (e) { }
   const due = sp ? sp.due : dueCount(), n = sp ? sp.budget : Math.min(due, 30), m = sp ? sp.mins : Math.max(1, Math.round(n * 12 / 60));
-  const mc = mistCount(), fixed = (S.mistDone || "") === today();
+  // pomyłki z dzisiaj czekają do jutrzejszego planu – po lekcji nie wracamy od razu do tego samego (D1-3); zeszyt błędów ma je od razu
+  const d0 = new Date().setHours(0, 0, 0, 0), mo = Object.values(S.mist || {}).filter(x => x && !(+x.t >= d0)).length;
+  const fixed = (S.mistDone || "") === today(), mc = fixed ? mistCount() : mo;
   const steps = [];
   // po przerwie (gentle): tylko powtórka i ewentualnie kawałek lekcji – reszta poczeka
   if (cards) steps.push(sp && sp.capped ? { ok: true, href: "#/review", t: "🔁 Powtórki", d: "Na dziś wystarczy – reszta poczeka na kolejne dni" }
@@ -47446,7 +48419,7 @@ function flowWeekHTML() {
     ["d3", "N4+", "Znasz N4 – utrwalasz i poszerzasz podstawy."],
     ["n3", "N3", "Znasz podstawy – poziom średniozaawansowany."],
     ["n2", "N2", "Poziom zaawansowany."],
-    ["n1", "N1", "Biegłość."]
+    ["n1", "N1", "Najwyższy poziom egzaminu JLPT."]
   ];
   const lvs = () => typeof LV !== "undefined" ? LV : [];
   const opts = full => OPTS.filter(o => lvs().some(L => L.id === o[0])).filter(o => full || (o[0] !== "n2" && o[0] !== "n1"))
@@ -47993,6 +48966,7 @@ function route() {
   if (p === "gramatyka" && window.GRAMT) furi = furiFor(GRAMT.furiLevel(a));   // 🧩 trening gramatyki: furigana jak na poziomie tematu (src/gram.js)
   if (window.__newVersion && !p) { location.reload(); return; }
   document.body.classList.toggle("nofuri", !furi);
+  try { releaseNewDaily(); } catch (e) { }
   updateBadge();
   if (!p) return viewHome();
   if (p === "level") return viewLevel(a);
@@ -48027,6 +49001,8 @@ function route() {
   if (p === "japonia") return a ? viewLife(a, b || "") : viewLifeList();
   if (p === "przenies" && typeof viewTransfer === "function") return viewTransfer();
   if (p === "jak-sie-uczyc" && typeof viewHowTo === "function") return viewHowTo();
+  if (p === "mapa" && typeof viewMap === "function") return viewMap();   // 🗺 mapa drogi: cele części, czas, „Potrafię…” (src/mapa.js)
+  if (p === "poza-aplikacja" && typeof viewOutside === "function") return viewOutside();   // 🤝 czego aplikacja nie zrobi za Ciebie
   if (p === "lekcje" && window.LVL) return LVL.viewPick();   // ✏️ Wybierz lekcje (src/lvl.js)
   viewHome();
 }
@@ -48080,50 +49056,89 @@ function nextLessonBtn() {
   return `<div class="row nextlw"><a class="btn pri nextl" href="${n ? `#/lesson/${n.id}` : "#/"}">${n ? `▶ ${(S.lessons[n.id] || {}).seen ? "Wróć do lekcji" : "Zacznij lekcję"}: ${esc(n.title)}` : "Wróć do planu"}</a></div>`;
 }
 function dueCount() { if (window.MEM && MEM.dueKeys) return MEM.dueKeys().length; const now = Date.now(); return Object.values(S.srs).filter(c => c.due <= now).length; }
-// po przerwie zaległości są rozkładane na kilka dni: licznik pokazuje dzisiejszy plan, nie cały zapas
+// po przerwie zaległości są rozkładane na kilka dni: licznik pokazuje dzisiejszy plan, nie cały zapas;
+// po zrobionym planie powtórek na dziś (capped) licznik znika – reszta to dodatek (M-3)
 function updateBadge() {
   const b = $("#revbadge"); if (!b) return;
   let n = dueCount();
-  try { if (n && typeof flowSessionPlan === "function") { const sp = flowSessionPlan(); if (sp.gentle) n = Math.min(n, sp.budget); } } catch (e) { }
+  try { if (n && typeof flowSessionPlan === "function") { const sp = flowSessionPlan(); if (sp.gentle || sp.capped) n = Math.min(n, sp.budget); } } catch (e) { }
   b.textContent = n; b.hidden = !n;
   const a = b.closest("a"); if (a) a.setAttribute("aria-label", n ? `Powtórki – ${n} na dziś` : "Powtórki");
 }
 /* jeden dzienny limit nowych kart dla wszystkiego (lekcje, gramatyka, zwroty); reszta czeka w kolejce S.newq */
+// Kolejka zawsze w kolejności kursu (flowNewqSort, src/rhythm.js): najpierw najstarsze lekcje, w lekcji słówka razem z kanji
+// i gramatyką – bez względu na to, w jakiej kolejności karty do niej trafiły. Wpis {k, card, d?}: d – dzień, w którym lekcja
+// była przerabiana; takie karty wchodzą do powtórek dopiero następnego dnia (D1-3). Stara wersja czyta {k, card} jak dawniej.
 const newCap = () => +S.settings.newCap || 15;
 const newToday = () => { const d = today(); return Object.values(S.srs).filter(c => c.added === d).length; };
 function putCard(e) { S.srs[e.k] = Object.assign({ box: 0 }, e.card, { due: Date.now(), added: today() }); }
+// o.hold = id lekcji przerabianej teraz: jej nowe i czekające już karty dostają d = dziś (do powtórek od jutra)
 function queueNew(entries, o = {}) {
-  S.newq = S.newq || [];
-  const inQ = new Set(S.newq.map(e => e.k)), rest = [];
-  let room = flowNewGate() ? newCap() - newToday() : 0, now = 0;
-  entries.filter(e => !S.srs[e.k] && !inQ.has(e.k)).forEach(e => { if (room > 0) { putCard(e); room--; now++; } else rest.push(e); });
-  if (rest.length) S.newq = o.front ? rest.concat(S.newq) : S.newq.concat(rest);
-  if (now || rest.length) saveState();
-  return { now, later: rest.length };
+  const q = S.newq = Array.isArray(S.newq) ? S.newq : [];
+  const inQ = new Set(q.map(e => e && e.k)), d = o.hold ? today() : "";
+  const add = (entries || []).filter(e => e && e.k && !S.srs[e.k] && !inQ.has(e.k) && inQ.add(e.k));
+  let ch = add.length > 0;
+  if (d) q.forEach((e, i) => { if (e && e.card && e.card.l === o.hold && e.d !== d) { q[i] = Object.assign({}, e, { d }); ch = true; } });
+  add.forEach(e => q.push(d ? Object.assign({}, e, { d }) : e));
+  if (ch) newqSort();
+  releaseNew();
+  if (ch) saveState();
+  const now = add.filter(e => S.srs[e.k]).length;
+  return { now, later: add.length - now, added: add.length };
+}
+// S.newq w kolejności kursu; true, gdy coś się przesunęło
+function newqSort() {
+  const q = Array.isArray(S.newq) ? S.newq : [];
+  const s = typeof flowNewqSort === "function" ? flowNewqSort(q, l => lessonCards(l, true)) : q.slice();
+  const ch = s.length !== q.length || s.some((e, i) => e !== q[i]);
+  S.newq = s;
+  return ch;
 }
 // nowe karty tylko, gdy zaległe powtórki nie przekraczają dwóch dni budżetu powtórek (etap 1: flowNewAllowed w rhythm.js)
 function flowNewGate() { try { return typeof flowNewAllowed === "function" ? flowNewAllowed() : dueCount() <= 150; } catch (e) { return true; } }
-// przy starcie i na stronie powtórek: z kolejki do powtórek, ale tylko gdy zaległości nie są duże
+// przy starcie i na stronie powtórek: z kolejki do powtórek od najstarszych, ale tylko gdy zaległości nie są duże;
+// karty lekcji przerabianej dziś (d) czekają do jutra
+// newqDay: dzień i osoba ostatniego wpuszczenia – po północy bez przeładowania (telefon wraca z tła) i po zmianie osoby
+// route() wpuszcza jeszcze raz (releaseNewDaily), więc karty z wczorajszej lekcji są w planie i w liczniku od rana
+let newqDay = "";
+const newqDayKey = () => today() + "|" + (typeof PROF !== "undefined" && PROF ? PROF.cur : "");
+function releaseNewDaily() { if (newqDay !== newqDayKey()) releaseNew(); }
 function releaseNew() {
-  if (!S.newq || !S.newq.length || !flowNewGate()) return 0;
-  let room = newCap() - newToday(), n = 0, ch = false;
-  while (room > 0 && S.newq.length) { const e = S.newq.shift(); ch = true; if (!e || !e.k || S.srs[e.k]) continue; putCard(e); room--; n++; }
+  newqDay = newqDayKey();
+  if (!Array.isArray(S.newq) || !S.newq.length) return 0;
+  let ch = newqSort(), n = 0;
+  if (flowNewGate()) {
+    let room = newCap() - newToday();
+    const d = today(), keep = [];
+    for (const e of S.newq) {
+      if (!e || !e.k || S.srs[e.k]) { ch = true; continue; }
+      if (room > 0 && !(e.d && e.d >= d)) { putCard(e); room--; n++; ch = true; } else keep.push(e);
+    }
+    S.newq = keep;
+  }
   if (ch) saveState();
   return n;
 }
 const kartN = n => n + " " + plN(n, "karta", "karty", "kart");
-// karty lekcji: słówka i kanji, z withGrammar także punkty gramatyki
+// karty lekcji: słówka i kanji (kanji przy swoich słówkach), z withGrammar także punkty gramatyki – wymieszane (flowMixCards)
 function lessonCards(lesson, withGrammar) {
-  const E = [];
-  (lesson.vocab || []).forEach(v => E.push({ k: "v|" + v[0] + "|" + v[1], card: { m: v[2], l: lesson.id } }));
-  (lesson.kanji || []).forEach(x => E.push({ k: "k|" + x[0], card: { m: x[3], l: lesson.id } }));
-  if (withGrammar) E.push(...grammarCards(lesson));
-  return E;
+  const V = (lesson.vocab || []).map(v => ({ k: "v|" + v[0] + "|" + v[1], card: { m: v[2], l: lesson.id } }));
+  const K = (lesson.kanji || []).map(x => ({ k: "k|" + x[0], card: { m: x[3], l: lesson.id } }));
+  const G = withGrammar ? grammarCards(lesson) : [];
+  return typeof flowMixCards === "function" ? flowMixCards(V, K, G) : V.concat(K, G);
 }
 function addToSRS(lesson, withGrammar) {
-  const r = queueNew(lessonCards(lesson, withGrammar), { front: true });
-  if (r.later) toast(`Do powtórek: ${kartN(r.now)} dziś, ${r.later} w kolejnych dniach.`);
+  const r = queueNew(lessonCards(lesson, withGrammar), { hold: lesson.id });
+  if (r.added) toast(newqWhenTxt(lesson.id, r.added), 4500);
   return r.now;
+}
+// prostym językiem: kiedy karty lekcji z kolejki wejdą do powtórek (po dziennym limicie, starsze lekcje najpierw)
+function newqWhenTxt(id, n) {
+  const q = S.newq || [], cap = newCap(), at = q.map((e, i) => e && e.card && e.card.l === id ? i : -1).filter(i => i >= 0);
+  const a = at.length ? Math.floor(at[0] / cap) : 0, b = at.length ? Math.floor(at[at.length - 1] / cap) : 0;
+  const head = `🗓 ${kartN(n)} z tej lekcji ${plN(n, "trafi", "trafią", "trafi")} do powtórek`;
+  if (a > 0) return `${head} za około ${a + 1} dni – najpierw wejdą starsze lekcje (po ${cap} kart dziennie).`;
+  return b > 0 ? `${head} od jutra, po ${cap} dziennie (ostatnie za około ${b + 1} dni).` : `${head} od jutra.`;
 }
 // lekcja „✔️ Znam – pomiń” (src/lvl.js): jej karty nie trafiają same do powtórek – zamiast tego notka i przycisk „➕ Dodaj do powtórek”
 // (tylko gdy coś z tej lekcji nie jest jeszcze w powtórkach ani w kolejce)
@@ -48134,7 +49149,7 @@ function lessonKnownNote(root, l, withGrammar) {
   d.innerHTML = `<span>✔️ Ta lekcja jest u Ciebie jako „Znam – pomiń”, więc jej ${withGrammar && grammarCards(l).length ? "słówka i gramatyka nie trafiają" : "słówka nie trafiają"} same do powtórek.</span><button type="button" class="btn sm lvladd">➕ Dodaj do powtórek</button>`;
   root.prepend(d);
   $(".lvladd", d).onclick = () => {
-    const r = queueNew(lessonCards(l, withGrammar), { front: true });
+    const r = queueNew(lessonCards(l, withGrammar));
     toast(r.now || r.later ? `Do powtórek: ${kartN(r.now)} dziś${r.later ? `, ${r.later} w kolejnych dniach` : ""}.` : "Już są w powtórkach ✓", 3500);
     updateBadge(); d.remove();
   };
@@ -48166,7 +49181,7 @@ function viewLevel(id, keepScroll) {
   app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › ${esc(lvCrumb(L))}</div>
   <div class="card lvtop ${LOOK.lv(L.id)}">
     <span class="lvb" aria-hidden="true">${esc(L.short)}</span>
-    <h1><span class="vh">${esc(L.short)} – </span>${esc(lvTitle(L))}</h1><p class="muted lvdesc">${esc(L.desc)}</p>
+    <h1><span class="vh">${esc(L.short)} – </span>${esc(lvTitle(L))}</h1>${typeof rmLabel === "function" && rmLabel(L) ? `<p class="lvgoal">🎯 ${esc(rmLabel(L))}</p><p class="small muted lvtime">⏱ ${esc(rmTime(L, true))}. To szacunek, a nie norma.</p>` : ""}<p class="muted lvdesc">${esc(L.desc)}</p>
     <div class="prog"><i style="width:${p.pct}%"></i></div>
     <div class="lvmeta"><span class="small muted">${p.d} z ${p.n} lekcji zaliczonych${pn ? ` · na później: ${pn}` : ""}</span>
       <label class="small"><input type="checkbox" id="furi" ${furiFor(L.id) ? "checked" : ""}> furigana (małe znaki z wymową nad kanji)</label></div>
@@ -48179,6 +49194,7 @@ function viewLevel(id, keepScroll) {
       <span class="t">${here ? `<span class="lhere">Tu jesteś</span>` : ""}<b>${esc(l.title)}</b>${st.done ? "" : `<span class="small muted lgoal">${esc(l.goal || "")}</span>`}${st.done && st.auto ? `<span class="small lvlauto">✓ zaliczone automatycznie</span>` : ""}</span>
       <span class="lmeta">${st.best ? `<span class="sc"><span aria-hidden="true">✓ </span>wynik ${st.best}%</span>` : ""}${here ? `<span class="lgo">Dalej<span class="chev" aria-hidden="true"></span></span>` : ""}${window.LVL ? LVL.chipSpace(l) : ""}</span></a>${window.LVL ? LVL.chipHTML(l) : ""}</li>`;
   }).join("")}</ol>
+  ${typeof candoCardHTML === "function" ? candoCardHTML(L) : ""}
   <div class="card lvexam"><span class="lvexi" aria-hidden="true">🏁</span><span class="lvext"><b>Egzamin poziomu</b><span class="small muted">${ex ? `Twój najlepszy wynik: ${ex}%. ` : ""}Na koniec poziomu: losowe zadania ze wszystkich lekcji. ${p.d >= exN ? `Wynik od ${PASS}% zalicza poziom.` : `Warto podejść, gdy zaliczysz większość lekcji – masz ${p.d} z ${p.n}.`}</span></span><a class="btn sm lvexb" href="#/exam/${L.id}">${ex ? "Spróbuj jeszcze raz" : "Do egzaminu"}</a></div>
   ${(STORIES_BY[L.id] || []).length ? `<h2>📚 Czytanki</h2><div class="lesson-list">${storyItems(STORIES_BY[L.id])}</div>` : ""}
   ${(TALKS_IDX().lvl[L.id] || []).length ? `<h2>💬 Rozmowy</h2><div class="lesson-list">${talkItems(TALKS_IDX().lvl[L.id])}</div>` : ""}
@@ -48186,6 +49202,7 @@ function viewLevel(id, keepScroll) {
   ${(PR().lvl[L.id] || []).length ? `<h2>🔀 Mylące pary</h2><div class="lesson-list">${pairItems(PR().lvl[L.id])}</div>` : ""}`;
   $("#furi").onchange = e => { S.settings.furi[L.id] = e.target.checked; saveState(); document.body.classList.toggle("nofuri", !e.target.checked); };
   if (window.LVL) LVL.bindChips(app(), () => viewLevel(id, true));   // W mojej nauce / Znam – pomiń / Na później (src/lvl.js)
+  if (typeof candoBind === "function") candoBind(app());   // ✅ „Potrafię…” (S.cando, src/mapa.js)
   // mapa poziomu otwiera się przy bieżącej lekcji (gdy przed nią są już zaliczone), nie na samej górze listy
   const here = $(".lpath .liw.here");
   if (!keepScroll && here && L.lessons.indexOf(cur) >= 3) requestAnimationFrame(() => { try { here.scrollIntoView({ block: "center", behavior: LOOK.smooth() }); } catch (e) { } });
@@ -48414,7 +49431,7 @@ function learnTheory(l) {
       <ul class="ex-list">${(g.examples || []).map(e => exampleLi(e[0], e[1], e[2])).join("")}</ul>${window.AIHelp ? AIHelp.btnHTML({ t: "expl", label: "Wyjaśnienie gramatyki", q: g.title, pattern: g.pattern || "", ex: g.explain || "", exs: (g.examples || []).slice(0, 4) }, { src: l.id, label: "💬 Zapytaj o to" }) : ""}${window.GRAMT ? GRAMT.lessonHTML(l.id, i) : ""}</div>`;   // 💬 Zapytaj (src/aihelp.js); 🎯 Ćwicz ten temat (src/gram.js)
   });
   if (l.kind === "intro") h += pronTab(l);
-  if (l.grammar && l.grammar.length) h += `<p class="small muted">💡 Kliknij 🔊, by usłyszeć zdanie, i 🎤, by sprawdzić swoją wymowę. W Ustawieniach możesz zakryć tłumaczenia, żeby najpierw samodzielnie zgadywać.</p>`;
+  if (l.grammar && l.grammar.length) h += `<p class="small muted">💡 Kliknij 🔊, by usłyszeć zdanie${SREC_OK ? ", i 🎤, by sprawdzić swoją wymowę" : MIC.canRec() ? ", i 🎙, by się nagrać i porównać z lektorem (▶ Ty, potem lektor)" : ""}. W Ustawieniach możesz zakryć tłumaczenia, żeby najpierw samodzielnie zgadywać.</p>`;
   return h;
 }
 function exampleLi(jp, pl, pron) {
@@ -48563,7 +49580,7 @@ function dialogPlayer(root, d) {
       <label class="small"><input type="checkbox" class="snt" ${noText ? "checked" : ""}> 📵 bez tekstu</label>
     </div>
     <div class="hint small mhint">Oglądaj i słuchaj. Kliknij dowolną kwestię poniżej, żeby ją powtórzyć.</div>
-    <div class="script">${d.lines.map((ln, i) => `<div class="sline" data-l="${i}"><span class="who">${esc(ln[0])}</span><div style="flex:1"><div class="jpl">${ruby(ln[1])}</div><div class="pl ${S.settings.hidepl ? "hid" : ""}">${esc(ln[2])}</div></div>${recBtn(ln[1])}</div>`).join("")}</div></div>`;
+    <div class="script">${d.lines.map((ln, i) => `<div class="sline" data-l="${i}"><span class="who">${esc(ln[0])}</span><div style="flex:1"><div class="jpl">${ruby(ln[1])}</div><div class="pl ${S.settings.hidepl ? "hid" : ""}">${esc(ln[2])}</div></div>${recBtn(ln[1], { me: ln[0] })}</div>`).join("")}</div></div>`;
   const card = root.firstElementChild; card.classList.toggle("notext", noText);
   const subs = $(".subs", root), playB = $(".play", root);
   const actors = $$(".actor", root), lines = $$(".sline", root);
@@ -48587,8 +49604,8 @@ function dialogPlayer(root, d) {
   // po Twojej kolejce: wzór (japoński i polski) zamiast samego polskiego zdania
   function afterTurn(i) { const ln = d.lines[i]; lines[i].classList.remove("rhide"); subs.innerHTML = `<div class="sj">${ruby(ln[1])}</div><div class="sp">${esc(ln[2])}</div>`; }
   // Twoja kolej: z mikrofonem „🎤 Powiedz”, gdy już wiesz, co powiedzieć (bez nasłuchiwania od razu – najpierw chwila na przypomnienie);
-  // nierozpoznane albo słabo (< 60%) – „Spróbuj jeszcze raz” naprawdę można; bez mikrofonu albo bez sieci (rozpoznawanie jej potrzebuje)
-  // pasek czasu (dłuższy niż na czytanie); „Dalej →” zawsze
+  // sędzia mowy (src/mic.js): dobrze albo „≈ Prawie” – dalej; typowy błąd, inne zdanie, sam początek – podpowiedź i „Spróbuj jeszcze raz”
+  // (naprawdę można); bez mikrofonu albo bez sieci (rozpoznawanie jej potrzebuje) pasek czasu (dłuższy niż na czytanie); „Dalej →” zawsze
   function roleTurn(t, i) {
     const ln = d.lines[i];
     if (!SREC_OK || navigator.onLine === false) return waitNext(t, morae(reading(ln[1])).length * 250 + 2500);
@@ -48597,7 +49614,7 @@ function dialogPlayer(root, d) {
       row.innerHTML = `<button class="btn pri rsay">🎤 Powiedz</button><button class="btn rnext">Dalej →</button>`;
       subs.appendChild(row);
       let done = false; const fin = () => { if (done) return; done = true; clearInterval(iv); res(); };
-      $(".rsay", row).onclick = async e => { const b = e.currentTarget; b.disabled = true; const pct = await checkSpeech(ln[1], b); if (t !== token) return fin(); if (!(pct >= 60)) { b.disabled = false; return; } await sleep(600); fin(); };
+      $(".rsay", row).onclick = async e => { const b = e.currentTarget; b.disabled = true; const r = await checkSpeech(ln[1], b, { me: ln[0] }); if (t !== token) return fin(); if (!r || !(r.ok || r.v === "near")) { b.disabled = false; return; } await sleep(600); fin(); };
       $(".rnext", row).onclick = fin;
       const iv = setInterval(() => { if (t !== token) fin(); }, 300);
     });
@@ -48657,7 +49674,7 @@ function dialogPlayer(root, d) {
   playB.onclick = () => { if (playing) stop(); else playFrom(cur >= 0 && cur < d.lines.length - 1 ? cur : 0); };
   $(".prev", root).onclick = () => { stop(); cur = Math.max(0, cur - 1); playFrom(cur); };
   $(".nxt", root).onclick = () => { stop(); cur = Math.min(d.lines.length - 1, cur + 1); playFrom(cur); };
-  lines.forEach((x, i) => x.onclick = e => { if (e.target.closest("[data-rec]") || e.target.closest(".pl.hid")) return; stop(); cur = i; x.classList.remove("rhide"); const t = ++token; speakLine(i, t); });
+  lines.forEach((x, i) => x.onclick = e => { if (e.target.closest("[data-rec], .recplay") || e.target.closest(".pl.hid")) return; stop(); cur = i; x.classList.remove("rhide"); const t = ++token; speakLine(i, t); });
   $(".mode", root).onchange = e => { mode = e.target.value; $(".role", root).style.display = mode === "role" ? "" : "none"; $(".mhint", root).textContent = hints[mode]; stop(); cur = -1; roleHide(true); };
   $(".role", root).onchange = e => { role = e.target.value; roleHide(true); };
   $(".rate", root).oninput = e => { S.settings.rate = +e.target.value; saveState(); };
@@ -48809,7 +49826,7 @@ function viewListen() {
   players.push({ stop: () => { stop(); document.removeEventListener("visibilitychange", onVis); } });
   const start = async () => {
     if (!items.length) { items = listenItems(c); i = 0; }
-    if (!items.length) { $(".ljp").innerHTML = ""; $(".lrd").innerHTML = ""; $(".lpl").textContent = c.kind === "srs" ? "Nie masz jeszcze słówek ani zwrotów w powtórkach. Otwórz Słówka w jakiejś lekcji albo dodaj zwroty z Zestawu przetrwania." : "Brak materiału."; return; }
+    if (!items.length) { $(".ljp").innerHTML = ""; $(".lrd").innerHTML = ""; $(".lpl").textContent = c.kind !== "srs" ? "Brak materiału." : (S.newq || []).length ? "Słówka z Twoich lekcji czekają jeszcze w kolejce – pojawią się tu, gdy wejdą do powtórek (z dzisiejszej lekcji: od jutra)." : "Nie masz jeszcze słówek ani zwrotów w powtórkach. Otwórz Słówka w jakiejś lekcji albo dodaj zwroty z Zestawu przetrwania."; return; }
     playing = true; $(".lplay").textContent = "⏸ Pauza";
     try { if (navigator.wakeLock) lock = await navigator.wakeLock.request("screen"); } catch (e) { }
     loop();
@@ -48996,7 +50013,7 @@ function viewSettings(sub) {
     ${voiceCardHTML()}
     ${window.PWA_MODE ? `<p class="small" style="margin:0">${navigator.serviceWorker && navigator.serviceWorker.controller ? "✓ Kurs jest zapisany w telefonie i działa bez internetu." : "⏳ Zapisuję kurs w telefonie… zostaw go chwilę otwartego z internetem."}</p>` : ""}
     <div><b>Tempo mowy:</b> <span id="rv">${S.settings.rate}</span><br><input type="range" id="rate" min="0.5" max="1.3" step="0.05" value="${S.settings.rate}" style="width:100%;max-width:320px"></div>
-    <div><b>Nowe karty w powtórkach dziennie:</b> <select class="ncap" aria-label="Limit nowych kart dziennie">${NEWCAP_CHOICES.map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select><div class="small muted">Słówka, kanji, gramatyka i zwroty ponad limit czekają w kolejce na kolejne dni (teraz: ${(S.newq || []).length}).</div>${myLessonsHTML()}</div>
+    <div><b>Nowe karty w powtórkach dziennie:</b> <select class="ncap" aria-label="Limit nowych kart dziennie">${NEWCAP_CHOICES.map(v => `<option value="${v}" ${newCap() === v ? "selected" : ""}>${v}</option>`).join("")}</select><div class="small muted">Słówka, kanji, gramatyka i zwroty ponad limit czekają w kolejce na kolejne dni (teraz: ${(S.newq || []).length}).</div><div class="small muted rs-rule">${NEWQ_RULE}</div>${myLessonsHTML()}</div>
     <div><b>Próg zaliczenia testów:</b> <select id="passm" aria-label="Próg zaliczenia testów">${PASS_CHOICES.map(v => `<option value="${v}" ${PASS === v ? "selected" : ""}>${v}%</option>`).join("")}</select><div class="small muted">Od tego wyniku zaliczasz test lekcji, egzamin poziomu, czytanki i rozmowy. Wyższy próg to pewniejsza wiedza, niższy – szybsze tempo.</div></div>
     <label><input type="checkbox" id="auto" ${S.settings.autoplay ? "checked" : ""}> Automatycznie czytaj zdania w ćwiczeniach</label>
     <label><input type="checkbox" id="rom" ${S.settings.romaji ? "checked" : ""}> Pokazuj romaji przy słówkach</label>
