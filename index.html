@@ -37476,7 +37476,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-23 00:27";
+window.APP_VERSION = "2026-10-23 01:09";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -39598,6 +39598,7 @@ document.addEventListener("click", e => {
     referer: "Ten klucz Gemini ma ograniczenie do innych stron internetowych. W Google Cloud Console (Interfejsy API i usługi → Dane logowania → Twój klucz → Ograniczenia aplikacji → Witryny) dodaj adres tej strony: {origin}/* – albo utwórz nowy klucz w Google AI Studio.",
     perm: "Ten klucz nie ma dostępu do Gemini. Utwórz nowy klucz w Google AI Studio (aistudio.google.com) i wklej go w Ustawieniach → 💬 Pomoc AI.",
     quota: "Na dziś limit darmowych pytań się skończył. Odnowi się jutro – do tego czasu możesz skopiować pytanie do innego czatu AI.",
+    nofree: "Google nie daje temu kluczowi darmowych pytań (limit 0). To nie jest wykorzystany limit, tylko ustawienie konta lub projektu po stronie Google – aplikacja spróbowała też innych modeli. Zwykle pomaga nowy klucz w Google AI Studio (aistudio.google.com), utworzony w nowym projekcie. Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     minute: "Za dużo pytań w krótkim czasie. Odczekaj minutę i zapytaj jeszcze raz.",
     region: "Google nie udostępnia Gemini w miejscu, z którego się łączysz (albo dla tego konta). Możesz skopiować pytanie do innego czatu AI.",
     precond: "Google odrzucił pytanie dla tego klucza (warunek konta lub projektu nie jest spełniony). Pomaga zwykle nowy klucz z Google AI Studio (aistudio.google.com). Do tego czasu możesz skopiować pytanie do innego czatu AI.",
@@ -39612,7 +39613,7 @@ document.addEventListener("click", e => {
   };
   // komunikat dla ucznia; przy błędach bez jasnej przyczyny dopisujemy krótko, co odpowiedział Google (łatwiej wtedy pomóc)
   const msgOf = (code, detail) => (MSG[code] || MSG.other).replace("{origin}", (typeof location !== "undefined" && location.origin) || "") +
-    (detail && /^(other|precond|perm|model|busy)$/.test(code || "other") ? " (Google: " + detail + ")" : "");
+    (detail && /^(other|precond|perm|model|busy|quota|nofree)$/.test(code || "other") ? " (Google: " + detail + ")" : "");
   const aerr = (code, extra) => Object.assign(new Error("aihelp: " + code), { aih: code }, extra || {});
   // błąd Google → kod komunikatu; ta sama ocena dla odpowiedzi HTTP i dla błędu, który przyszedł w strumieniu
   function gClass(s, e) {
@@ -39620,7 +39621,17 @@ document.addEventListener("click", e => {
     const msg = String(e.message || ""), st = String(e.status || ""), det = JSON.stringify(e.details || []);
     const detail = (s ? s + " " : "") + (st ? st + " " : "") + msg.replace(/\s+/g, " ").slice(0, 160);
     const x = c => aerr(c, { detail: detail.trim() });
-    if (s === 429 || st === "RESOURCE_EXHAUSTED") return x(/per ?minute|PerMinute/i.test(msg + det) && !/per ?day|PerDay/i.test(msg + det) ? "minute" : "quota");
+    if (s === 429 || st === "RESOURCE_EXHAUSTED") {
+      // limit 0: ten klucz (projekt) nie ma darmowych pytań do tego modelu – to nie jest wykorzystany limit
+      // (sama treść Google jest długa, więc w komunikacie krótko: limit, na dzień/minutę, model)
+      const lim = (msg + " " + det).match(/limit:\s*(\d+)(?:,\s*model:\s*([\w.\-]+))?/), all = msg + det;
+      const per = /PerDay/i.test(all) ? " na dzień" : /PerMinute/i.test(all) ? " na minutę" : "";
+      const zero = (lim && +lim[1] === 0) || /"quotaValue":"0"/.test(det);
+      const d = "429" + (lim ? ", limit " + lim[1] + per : "") + (lim && lim[2] ? ", model " + lim[2] : "");
+      const q = c => aerr(c, { detail: d });
+      if (zero) return q("nofree");
+      return q(/per ?minute|PerMinute/i.test(all) && !/per ?day|PerDay/i.test(all) ? "minute" : "quota");
+    }
     if (((s === 400 || st === "INVALID_ARGUMENT") && (/API_KEY_INVALID|API key/i.test(msg + det))) || s === 401 || st === "UNAUTHENTICATED") return x("key");
     // klucz ograniczony do wybranych stron (Referer): podpowiadamy, co dopisać, zamiast „utwórz nowy klucz”
     if (/API_KEY_HTTP_REFERRER_BLOCKED|referer|referrer/i.test(msg + det)) return x("referer");
@@ -39662,16 +39673,19 @@ document.addEventListener("click", e => {
     const j = await r.json().catch(() => ({}));
     return (j.models || []).filter(m => m && typeof m.name === "string");
   }
-  // najnowszy stabilny model „flash”, który umie generateContent (bez lite, obrazów, mowy, osadzeń…)
-  function pickModel(models) {
+  // modele, które umieją generateContent, od najlepszego: najnowszy stabilny „flash” (bez lite, obrazów, mowy, osadzeń…)
+  function rankModels(models) {
     const can = models.filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => ({ id: m.name.replace(/^models\//, ""), m }));
     const ver = id => { const x = id.match(/gemini-(\d+(?:\.\d+)?)/); return x ? +x[1] : 0; };
     const bad = /(image|tts|audio|live|embed|vision|thinking|learnlm|aqa|8b|computer|robotics|native)/;
     const score = id => (/flash/.test(id) ? 1000 : 0) - (/lite/.test(id) ? 300 : 0) - (/(preview|exp)/.test(id) ? 100 : 0) - (/latest/.test(id) ? 0 : 1) + ver(id) * 10;
     const ok = can.filter(x => /^gemini/.test(x.id) && !bad.test(x.id));
     ok.sort((a, b) => score(b.id) - score(a.id));
-    return ok.length ? ok[0].id : "";
+    return ok.map(x => x.id);
   }
+  const pickModel = models => rankModels(models)[0] || "";
+  // zapasowe modele do pytań: tylko „flash” (też „lite”), bez „pro”
+  const flashList = models => rankModels(models).filter(id => /flash/.test(id) && !/pro/.test(id));
   function feedSSE(st, chunk, onText) {
     st.buf += chunk;
     const lines = st.buf.split(/\r?\n/); st.buf = lines.pop();
@@ -39693,14 +39707,10 @@ document.addEventListener("click", e => {
     let j; try { j = JSON.parse(d); } catch (e) { return; }
     eatObj(st, j, onText);
   }
-  async function geminiAsk(cfg, sys, turns, onText, signal) {
-    const key = cfg.key;
-    const body = JSON.stringify({
-      systemInstruction: { parts: [{ text: sys }] },
-      contents: turns.map(t => ({ role: t.role === "user" ? "user" : "model", parts: [{ text: t.text }] })),
-      generationConfig: { temperature: 0.4 }
-    });
-    const post = model => gFetch(API + "models/" + encodeURIComponent(model) + ":streamGenerateContent?alt=sse",
+  // jedno zapytanie strumieniowe; err = błąd HTTP albo błąd, który przyszedł w strumieniu (HTTP 200), zanim padło choć słowo
+  async function gTry(key, model, body, signal, onText) {
+    onText = onText || (() => { });
+    const res = await gFetch(API + "models/" + encodeURIComponent(model) + ":streamGenerateContent?alt=sse",
       { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, hdr(key)), body }, signal, async r => {
         if (!r.ok) return { r };
         const st = { buf: "", text: "", finish: "", block: "", err: null };
@@ -39714,28 +39724,64 @@ document.addEventListener("click", e => {
         }
         return { r, st };
       });
-    const tried = [], remember = m => { const c = load(cfg.prof); if (c.key === key) { c.auto = m; save(cfg.prof, c); } };
-    const ask = async m => { tried.push(m); const r = await post(m); return Object.assign(r, { err: r.r.ok ? null : await gErr(r.r) }); };
-    let model = cfg.model || cfg.auto || DEF_MODEL, res = await ask(model);
+    res.err = !res.r.ok ? await gErr(res.r) : res.st.err && !res.st.text ? gClass(+res.st.err.code || 0, res.st.err) : null;
+    return res;
+  }
+  // błędy niezależne od modelu: zły klucz, ograniczenie stron, brak sieci, limit czasu, zatrzymanie, kraj
+  const STOP = /^(key|referer|offline|timeout|cancel|region)$/;
+  // ten model nie odpowiada dla tego klucza (limit 0 na darmowym planie, wykorzystany limit tego modelu, nowe klucze „AQ.”…):
+  // po kolei alias „flash”, alias „lite”, potem modele „flash” z listy klucza (bez „pro” – na darmowym planie zwykle limit 0);
+  // najwyżej 6 prób razem z pierwszą. Wynik: { model, res } gdy któryś odpowiedział, { res } gdy błąd niezależny od modelu, null gdy nic
+  async function fallback(key, body, signal, onText, tried, models) {
+    const list = [DEF_MODEL, LITE_MODEL];
+    let listed = false;
+    for (let i = 0; i < list.length && tried.length < 6; i++) {
+      const m = list[i];
+      if (!tried.includes(m)) {
+        tried.push(m);
+        const r = await gTry(key, m, body, signal, onText);
+        if (!r.err) return { model: m, res: r };
+        if (STOP.test(r.err.aih)) return { res: r };
+        tried.errs.push(r.err);
+      }
+      if (i === list.length - 1 && !listed) {
+        listed = true;
+        if (!models) try { models = await listModels(key, signal); } catch (e) { models = []; }
+        flashList(models).forEach(x => { if (!list.includes(x)) list.push(x); });
+      }
+    }
+    return null;
+  }
+  // który błąd pokazać, gdy żaden model nie odpowiedział: wykorzystany limit mówi więcej niż „limit 0” innego modelu
+  const bestErr = errs => errs.find(e => /^(quota|minute)$/.test(e.aih)) || errs[0];
+  const FALL = /^(other|precond|perm|model|busy|quota|minute|nofree)$/;
+  async function geminiAsk(cfg, sys, turns, onText, signal) {
+    const key = cfg.key;
+    const body = JSON.stringify({
+      systemInstruction: { parts: [{ text: sys }] },
+      contents: turns.map(t => ({ role: t.role === "user" ? "user" : "model", parts: [{ text: t.text }] })),
+      generationConfig: { temperature: 0.4 }
+    });
+    const tried = Object.assign([], { errs: [] }), remember = m => { const c = load(cfg.prof); if (c.key === key) { c.auto = m; save(cfg.prof, c); } };
+    let model = cfg.model || cfg.auto || DEF_MODEL; tried.push(model);
+    let res = await gTry(key, model, body, signal, onText);
     if (res.err && res.err.aih === "model") {
       // model wycofany albo zła nazwa: bierzemy aktualny „flash” z listy modeli tego klucza i pamiętamy go dla tej osoby
       const m = pickModel(await listModels(key, signal));
       if (!m || m === model) throw aerr("model");
       const c = load(cfg.prof); if (c.key === key) { c.auto = m; if (c.model === model) delete c.model; save(cfg.prof, c); }
-      model = m; res = await ask(model);
+      model = m; tried.push(m); res = await gTry(key, model, body, signal, onText);
     }
-    // błąd, który przyszedł w strumieniu (HTTP 200), zanim padło choć słowo – oceniamy jak błąd HTTP
-    if (!res.err && res.st.err && !res.st.text) res.err = gClass(+res.st.err.code || 0, res.st.err);
-    // ten model nie odpowiada dla tego klucza (np. nowe klucze „AQ.”, darmowy projekt, limit tylko tego modelu):
-    // próbujemy aliasu Google, a potem wersji „lite” – zły klucz, brak sieci czy limit czasu nie zależą od modelu
-    if (res.err && !cfg.model && /^(other|precond|perm|model|busy|quota|minute)$/.test(res.err.aih)) {
-      for (const m of [DEF_MODEL, LITE_MODEL]) {
-        if (tried.includes(m)) continue;
-        const r2 = await ask(m);
-        if (!r2.err && r2.st.err && !r2.st.text) r2.err = gClass(+r2.st.err.code || 0, r2.st.err);
-        if (!r2.err) { if (/^(other|precond|perm|model)$/.test(res.err.aih)) remember(m); model = m; res = r2; break; }
-        if (/^(key|referer|offline|timeout|cancel)$/.test(r2.err.aih)) { res = r2; break; }
-      }
+    // własny model ucznia próbujemy zastąpić tylko wtedy, gdy Google w ogóle nie daje do niego darmowych pytań
+    if (res.err && FALL.test(res.err.aih) && (!cfg.model || res.err.aih === "nofree")) {
+      tried.errs.push(res.err);
+      const f = await fallback(key, body, signal, onText, tried);
+      if (f && f.model) {
+        // limit tylko na dziś albo chwilowe przeciążenie – jutro pierwszy model znów zadziała, więc go nie zmieniamy
+        if (!/^(quota|minute|busy)$/.test(res.err.aih)) remember(f.model);
+        model = f.model; res = f.res;
+      } else if (f) res = f.res;
+      else res.err = bestErr(tried.errs);
     }
     if (res.err) throw res.err;
     const st = res.st;
@@ -39743,12 +39789,20 @@ document.addEventListener("click", e => {
     if (!st.text) throw aerr(st.block || /SAFETY|PROHIBITED|BLOCKLIST|SPII/.test(st.finish) ? "safety" : "empty");
     return { text: st.text, cut: /MAX_TOKENS|SAFETY|PROHIBITED|BLOCKLIST|SPII|RECITATION/.test(st.finish), model };
   }
-  // „Sprawdź klucz”: lista modeli nie zużywa limitu pytań
+  // „Sprawdź klucz”: lista modeli sprawdza sam klucz (nie zużywa limitu), a jedno krótkie pytanie – czy Google da mu odpowiadać
+  // (sama lista nie mówi, że darmowy limit to 0); zapamiętujemy model, który odpowiedział, gdy to nie domyślny
+  const PROBE = JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Odpowiedz jednym słowem: ok" }] }], generationConfig: { maxOutputTokens: 16 } });
   async function checkKey(key) {
     if (!okKey(key)) return { ok: false, msg: "To nie wygląda na klucz z Google AI Studio (zwykle zaczyna się od „AIza” i ma około 39 znaków)." };
     try {
       const ms = await listModels(key);
-      return { ok: true, auto: pickModel(ms), n: ms.length };
+      const tried = Object.assign([], { errs: [] });
+      const f = await fallback(key, PROBE, null, null, tried, ms);
+      if (f && f.model) return { ok: true, auto: f.model === DEF_MODEL ? "" : f.model, n: ms.length };
+      const e = f ? f.res.err : bestErr(tried.errs);
+      if (e.aih === "offline") return { ok: false, code: "offline", msg: msgOf("offline") };
+      // klucz jest prawdziwy (lista modeli przyszła), ale pytania nie przechodzą: zapisujemy go i mówimy dlaczego
+      return { ok: true, warn: msgOf(e.aih, e.detail), n: ms.length };
     } catch (e) { return { ok: false, code: e.aih || "other", msg: msgOf(e.aih, e.detail) }; }
   }
 
@@ -40092,7 +40146,7 @@ document.addEventListener("click", e => {
       const partial = shown || (e && e.text) || "";
       if (partial && code !== "cancel") v.view.push({ kind: "a", text: partial, who: p.name, cut: true });
       const msg = e && e.msg ? e.msg : msgOf(code, e && e.detail);
-      v.view.push({ kind: "err", text: msg, copy: /^(quota|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
+      v.view.push({ kind: "err", text: msg, copy: /^(quota|nofree|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
       if (code !== "cancel" && cur === c && !P.ta.value) P.ta.value = q;
       if (e && e.off) P.p = null;
     } finally {
@@ -40149,11 +40203,14 @@ document.addEventListener("click", e => {
       if (!document.body.contains(chk)) return;
       if (r.ok) {
         const c = load(p);
-        if (typed) { c.key = typed; delete c.auto; }
-        if (r.auto && !c.auto) c.auto = r.auto;
+        if (typed) c.key = typed;
+        if (r.auto) c.auto = r.auto; else if (!r.warn || typed) delete c.auto;
         save(p, c); inp.value = "";
-        toast("✓ Klucz działa – możesz pytać przy zadaniach");
-        if (typeof route === "function") { route(); setTimeout(() => { const x = document.getElementById("aihres"); if (x) x.textContent = "✓ Klucz działa."; }, 0); }
+        if (r.warn) toast("Klucz zapisany, ale Google teraz nie odpowiada – szczegóły pod polem klucza");
+        else toast("✓ Klucz działa – możesz pytać przy zadaniach");
+        const t = r.warn ? "Klucz zapisany. " + r.warn : "✓ Klucz działa.";
+        if (typeof route === "function") { route(); setTimeout(() => { const x = document.getElementById("aihres"); if (x) { x.textContent = t; x.classList.toggle("badtxt", !!r.warn); } }, 0); }
+        else say(t, r.warn ? false : undefined);
       } else if (r.code === "offline" && typed && okKey(typed)) {
         const c = load(p); c.key = typed; delete c.auto; save(p, c); inp.value = "";
         say("Brak internetu – klucz zapisany. Sprawdzi się przy pierwszym pytaniu.");
