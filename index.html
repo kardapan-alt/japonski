@@ -38270,7 +38270,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-23 19:00";
+window.APP_VERSION = "2026-10-23 19:37";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -40433,6 +40433,7 @@ document.addEventListener("click", e => {
     quota: "Na dziś limit darmowych pytań się skończył. Odnowi się jutro – do tego czasu możesz skopiować pytanie do innego czatu AI.",
     nofree: "Google nie daje temu kluczowi darmowych pytań (limit 0). To nie jest wykorzystany limit, tylko ustawienie konta lub projektu po stronie Google – aplikacja spróbowała też innych modeli. Zwykle pomaga nowy klucz w Google AI Studio (aistudio.google.com), utworzony w nowym projekcie. Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     minute: "Za dużo pytań w krótkim czasie. Odczekaj minutę i zapytaj jeszcze raz.",
+    prepay: "Ten klucz należy do projektu Google z płatnym planem (przedpłata), a środki na nim się skończyły – dlatego Google nie odpowiada. Żeby korzystać za darmo, utwórz nowy klucz w Google AI Studio (aistudio.google.com → Get API key → Create API key) w nowym projekcie i nie włączaj w nim płatności. Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     toomany: "Google odrzucił pytanie z tym kluczem (429), ale nie podał, który limit się skończył – to nie musi być limit na dziś. Spróbuj za kilka minut. Jeśli to się powtarza, utwórz nowy klucz w Google AI Studio (aistudio.google.com) w nowym projekcie. Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     region: "Google nie udostępnia Gemini w miejscu, z którego się łączysz (albo dla tego konta). Możesz skopiować pytanie do innego czatu AI.",
     precond: "Google odrzucił pytanie dla tego klucza (warunek konta lub projektu nie jest spełniony). Pomaga zwykle nowy klucz z Google AI Studio (aistudio.google.com). Do tego czasu możesz skopiować pytanie do innego czatu AI.",
@@ -40455,6 +40456,8 @@ document.addEventListener("click", e => {
     const msg = String(e.message || ""), st = String(e.status || ""), det = JSON.stringify(e.details || []);
     const detail = (s ? s + " " : "") + (st ? st + " " : "") + msg.replace(/\s+/g, " ").slice(0, 160);
     const x = c => aerr(c, { detail: detail.trim() });
+    // projekt klucza ma płatny plan z przedpłatą i środki się skończyły (Google zwraca wtedy 429 albo 402): inne modele też nie pomogą
+    if (/prepay(ment)?\b|credits are depleted/i.test(msg + det) || s === 402) return x("prepay");
     if (s === 429 || st === "RESOURCE_EXHAUSTED") {
       // limit 0: ten klucz (projekt) nie ma darmowych pytań do tego modelu – to nie jest wykorzystany limit
       // (sama treść Google jest długa, więc w komunikacie krótko: limit, na dzień/minutę, model)
@@ -40569,7 +40572,7 @@ document.addEventListener("click", e => {
     return res;
   }
   // błędy niezależne od modelu: zły klucz, ograniczenie stron, brak sieci, limit czasu, zatrzymanie, kraj
-  const STOP = /^(key|referer|offline|timeout|cancel|region)$/;
+  const STOP = /^(key|referer|offline|timeout|cancel|region|prepay)$/;
   // ten model nie odpowiada dla tego klucza (limit 0 na darmowym planie, wykorzystany limit tego modelu, nowe klucze „AQ.”…):
   // po kolei alias „flash”, alias „lite”, potem modele „flash” z listy klucza (bez „pro” – na darmowym planie zwykle limit 0);
   // najwyżej 6 prób razem z pierwszą. Wynik: { model, res } gdy któryś odpowiedział, { res } gdy błąd niezależny od modelu, null gdy nic
@@ -40993,7 +40996,7 @@ document.addEventListener("click", e => {
       const partial = shown || (e && e.text) || "";
       if (partial && code !== "cancel") v.view.push({ kind: "a", text: partial, who: p.name, cut: true });
       const msg = e && e.msg ? e.msg : msgOf(code, e && e.detail);
-      v.view.push({ kind: "err", text: msg, copy: /^(quota|nofree|toomany|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
+      v.view.push({ kind: "err", text: msg, copy: /^(quota|nofree|toomany|prepay|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
       if (code !== "cancel" && cur === c && !P.ta.value) P.ta.value = q;
       if (e && e.off) P.p = null;
     } finally {
