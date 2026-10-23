@@ -38270,7 +38270,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-23 19:37";
+window.APP_VERSION = "2026-10-23 20:46";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -40489,14 +40489,15 @@ document.addEventListener("click", e => {
     // odpowiedź nie z API (np. strona HTML „za dużo zapytań”): krótki tekst zamiast pustego powodu
     return gClass(r.status, e || (t ? { message: t.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) } : {}));
   }
-  // limit czasu: brak odpowiedzi w T.first ms albo całość dłużej niż T.total ms
-  async function gFetch(url, o, signal, onFirst) {
+  // limit czasu: brak odpowiedzi w T.first ms albo całość dłużej niż T.total ms (tm – krótsze limity, np. przy sprawdzaniu klucza)
+  async function gFetch(url, o, signal, onFirst, tm) {
+    tm = tm || A.T;
     const ctl = new AbortController();
     let why = "";
     const stop = w => { if (!why) why = w; try { ctl.abort(); } catch (e) { } };
     const onAb = () => stop("cancel");
     if (signal) { if (signal.aborted) throw aerr("cancel"); signal.addEventListener("abort", onAb); }
-    const t1 = setTimeout(() => stop("timeout"), A.T.first), t2 = setTimeout(() => stop("timeout"), A.T.total);
+    const t1 = setTimeout(() => stop("timeout"), tm.first), t2 = setTimeout(() => stop("timeout"), tm.total);
     const done = () => { clearTimeout(t1); clearTimeout(t2); if (signal) signal.removeEventListener("abort", onAb); };
     try {
       const r = await fetch(url, Object.assign({ cache: "no-store", referrerPolicy: "strict-origin", signal: ctl.signal }, o));
@@ -40551,7 +40552,7 @@ document.addEventListener("click", e => {
     eatObj(st, j, onText);
   }
   // jedno zapytanie strumieniowe; err = błąd HTTP albo błąd, który przyszedł w strumieniu (HTTP 200), zanim padło choć słowo
-  async function gTry(key, model, body, signal, onText) {
+  async function gTry(key, model, body, signal, onText, tm) {
     onText = onText || (() => { });
     const res = await gFetch(API + "models/" + encodeURIComponent(model) + ":streamGenerateContent?alt=sse",
       { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, hdr(key)), body }, signal, async r => {
@@ -40566,7 +40567,7 @@ document.addEventListener("click", e => {
           if (/^\s*\[/.test(all)) { try { JSON.parse(all).forEach(o => eatObj(st, o, onText)); } catch (e) { } } else feedSSE(st, all + "\n", onText);
         }
         return { r, st };
-      });
+      }, tm);
     res.err = !res.r.ok ? await gErr(res.r) : res.st.err && !res.st.text ? gClass(+res.st.err.code || 0, res.st.err) : null;
     if (res.err) res.err.model = model;
     return res;
@@ -40576,17 +40577,19 @@ document.addEventListener("click", e => {
   // ten model nie odpowiada dla tego klucza (limit 0 na darmowym planie, wykorzystany limit tego modelu, nowe klucze „AQ.”…):
   // po kolei alias „flash”, alias „lite”, potem modele „flash” z listy klucza (bez „pro” – na darmowym planie zwykle limit 0);
   // najwyżej 6 prób razem z pierwszą. Wynik: { model, res } gdy któryś odpowiedział, { res } gdy błąd niezależny od modelu, null gdy nic
-  async function fallback(key, body, signal, onText, tried, models) {
+  async function fallback(key, body, signal, onText, tried, models, tm) {
     const list = [DEF_MODEL, LITE_MODEL];
     let listed = false;
     for (let i = 0; i < list.length && tried.length < 6; i++) {
       const m = list[i];
       if (!tried.includes(m)) {
         tried.push(m);
-        const r = await gTry(key, m, body, signal, onText);
-        if (!r.err) return { model: m, res: r };
-        if (STOP.test(r.err.aih)) return { res: r };
-        tried.errs.push(r.err);
+        let r = null;
+        // przy sprawdzaniu klucza (tm) model, który nie odpowiada w czasie, nie kończy prób – bierzemy następny
+        try { r = await gTry(key, m, body, signal, onText, tm); } catch (e) { if (!tm || e.aih !== "timeout") throw e; e.model = m; tried.errs.push(e); }
+        if (r && !r.err) return { model: m, res: r };
+        if (r && STOP.test(r.err.aih)) return { res: r };
+        if (r) tried.errs.push(r.err);
       }
       if (i === list.length - 1 && !listed) {
         listed = true;
@@ -40644,17 +40647,23 @@ document.addEventListener("click", e => {
   const PROBE = JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Odpowiedz jednym słowem: ok" }] }], generationConfig: { maxOutputTokens: 16 } });
   async function checkKey(key) {
     if (!okKey(key)) return { ok: false, msg: "To nie wygląda na klucz z Google AI Studio (zwykle zaczyna się od „AIza” i ma około 39 znaków)." };
+    let ms;
+    try { ms = await listModels(key); } catch (e) { return { ok: false, code: e.aih || "other", msg: msgOf(e.aih, e.detail) }; }
+    // klucz jest prawdziwy (lista modeli przyszła): zapisujemy go nawet wtedy, gdy pytania teraz nie przechodzą, i mówimy dlaczego
+    const tm = { first: Math.min(A.T.first, 20000), total: Math.min(A.T.total, 30000) };
     try {
-      const ms = await listModels(key);
       const tried = Object.assign([], { errs: [] });
-      const f = await fallback(key, PROBE, null, null, tried, ms);
+      const f = await fallback(key, PROBE, null, null, tried, ms, tm);
       if (f && f.model) return { ok: true, auto: f.model === DEF_MODEL ? "" : f.model, n: ms.length };
       const e = f ? f.res.err : bestErr(tried.errs);
       if (e.aih === "offline") return { ok: false, code: "offline", msg: msgOf("offline") };
-      // klucz jest prawdziwy (lista modeli przyszła), ale pytania nie przechodzą: zapisujemy go i mówimy dlaczego
       return { ok: true, warn: msgOf(e.aih, e.detail), n: ms.length };
-    } catch (e) { return { ok: false, code: e.aih || "other", msg: msgOf(e.aih, e.detail) }; }
+    } catch (e) {
+      if (e.aih === "offline") return { ok: false, code: "offline", msg: msgOf("offline") };
+      return { ok: true, warn: msgOf(e.aih, e.detail), n: ms.length };
+    }
   }
+
 
   /* ---------- Claude (claude.ai) ---------- */
   const CMSG = {
