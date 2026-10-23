@@ -38270,7 +38270,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-23 12:00";
+window.APP_VERSION = "2026-10-23 19:00";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -40433,6 +40433,7 @@ document.addEventListener("click", e => {
     quota: "Na dziś limit darmowych pytań się skończył. Odnowi się jutro – do tego czasu możesz skopiować pytanie do innego czatu AI.",
     nofree: "Google nie daje temu kluczowi darmowych pytań (limit 0). To nie jest wykorzystany limit, tylko ustawienie konta lub projektu po stronie Google – aplikacja spróbowała też innych modeli. Zwykle pomaga nowy klucz w Google AI Studio (aistudio.google.com), utworzony w nowym projekcie. Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     minute: "Za dużo pytań w krótkim czasie. Odczekaj minutę i zapytaj jeszcze raz.",
+    toomany: "Google odrzucił pytanie z tym kluczem (429), ale nie podał, który limit się skończył – to nie musi być limit na dziś. Spróbuj za kilka minut. Jeśli to się powtarza, utwórz nowy klucz w Google AI Studio (aistudio.google.com) w nowym projekcie. Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     region: "Google nie udostępnia Gemini w miejscu, z którego się łączysz (albo dla tego konta). Możesz skopiować pytanie do innego czatu AI.",
     precond: "Google odrzucił pytanie dla tego klucza (warunek konta lub projektu nie jest spełniony). Pomaga zwykle nowy klucz z Google AI Studio (aistudio.google.com). Do tego czasu możesz skopiować pytanie do innego czatu AI.",
     safety: "Gemini nie odpowiedział, bo zadziałał filtr bezpieczeństwa Google. Spróbuj zapytać innymi słowami.",
@@ -40446,7 +40447,7 @@ document.addEventListener("click", e => {
   };
   // komunikat dla ucznia; przy błędach bez jasnej przyczyny dopisujemy krótko, co odpowiedział Google (łatwiej wtedy pomóc)
   const msgOf = (code, detail) => (MSG[code] || MSG.other).replace("{origin}", (typeof location !== "undefined" && location.origin) || "") +
-    (detail && /^(other|precond|perm|model|busy|quota|nofree)$/.test(code || "other") ? " (Google: " + detail + ")" : "");
+    (detail && /^(other|precond|perm|model|busy|quota|nofree|toomany)$/.test(code || "other") ? " (Google: " + detail + ")" : "");
   const aerr = (code, extra) => Object.assign(new Error("aihelp: " + code), { aih: code }, extra || {});
   // błąd Google → kod komunikatu; ta sama ocena dla odpowiedzi HTTP i dla błędu, który przyszedł w strumieniu
   function gClass(s, e) {
@@ -40457,13 +40458,17 @@ document.addEventListener("click", e => {
     if (s === 429 || st === "RESOURCE_EXHAUSTED") {
       // limit 0: ten klucz (projekt) nie ma darmowych pytań do tego modelu – to nie jest wykorzystany limit
       // (sama treść Google jest długa, więc w komunikacie krótko: limit, na dzień/minutę, model)
-      const lim = (msg + " " + det).match(/limit:\s*(\d+)(?:,\s*model:\s*([\w.\-]+))?/), all = msg + det;
+      const all = msg + " " + det, lim = all.match(/limit:\s*(\d+)(?:,\s*model:\s*([\w.\-]+))?/), qv = det.match(/"quotaValue":"(\d+)"/);
+      const n = lim ? +lim[1] : qv ? +qv[1] : null, mdl = (lim && lim[2]) || (det.match(/"model":"([\w.\-]+)"/) || [])[1] || "";
       const per = /PerDay/i.test(all) ? " na dzień" : /PerMinute/i.test(all) ? " na minutę" : "";
-      const zero = (lim && +lim[1] === 0) || /"quotaValue":"0"/.test(det);
-      const d = "429" + (lim ? ", limit " + lim[1] + per : "") + (lim && lim[2] ? ", model " + lim[2] : "");
-      const q = c => aerr(c, { detail: d });
-      if (zero) return q("nofree");
-      return q(/per ?minute|PerMinute/i.test(all) && !/per ?day|PerDay/i.test(all) ? "minute" : "quota");
+      const d = "429" + (n !== null ? ", limit " + n + per : per ? ", limit" + per : "") + (mdl ? ", model " + mdl : "");
+      // bez limitu w odpowiedzi dopisujemy, co Google napisał (łatwiej wtedy pomóc)
+      const q = c => aerr(c, { detail: n === null && !per && msg ? d + " " + msg.replace(/\s+/g, " ").trim().slice(0, 100) : d });
+      if (n === 0) return q("nofree");
+      if (/per ?minute|PerMinute/i.test(all) && !/per ?day|PerDay/i.test(all)) return q("minute");
+      if (n !== null || per) return q("quota");
+      // 429 bez podanego limitu (np. „Resource has been exhausted”, strona „za dużo zapytań”): nie wiadomo, że to limit na dziś
+      return q("toomany");
     }
     if (((s === 400 || st === "INVALID_ARGUMENT") && (/API_KEY_INVALID|API key/i.test(msg + det))) || s === 401 || st === "UNAUTHENTICATED") return x("key");
     // klucz ograniczony do wybranych stron (Referer): podpowiadamy, co dopisać, zamiast „utwórz nowy klucz”
@@ -40476,8 +40481,10 @@ document.addEventListener("click", e => {
     return x("other");
   }
   async function gErr(r) {
-    let j = null; try { j = await r.json(); } catch (e) { }
-    return gClass(r.status, (Array.isArray(j) ? (j[0] || {}) : (j || {})).error);
+    let t = "", j = null; try { t = await r.text(); j = JSON.parse(t); } catch (e) { }
+    const e = (Array.isArray(j) ? (j[0] || {}) : (j || {})).error;
+    // odpowiedź nie z API (np. strona HTML „za dużo zapytań”): krótki tekst zamiast pustego powodu
+    return gClass(r.status, e || (t ? { message: t.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) } : {}));
   }
   // limit czasu: brak odpowiedzi w T.first ms albo całość dłużej niż T.total ms
   async function gFetch(url, o, signal, onFirst) {
@@ -40558,6 +40565,7 @@ document.addEventListener("click", e => {
         return { r, st };
       });
     res.err = !res.r.ok ? await gErr(res.r) : res.st.err && !res.st.text ? gClass(+res.st.err.code || 0, res.st.err) : null;
+    if (res.err) res.err.model = model;
     return res;
   }
   // błędy niezależne od modelu: zły klucz, ograniczenie stron, brak sieci, limit czasu, zatrzymanie, kraj
@@ -40586,8 +40594,14 @@ document.addEventListener("click", e => {
     return null;
   }
   // który błąd pokazać, gdy żaden model nie odpowiedział: wykorzystany limit mówi więcej niż „limit 0” innego modelu
-  const bestErr = errs => errs.find(e => /^(quota|minute)$/.test(e.aih)) || errs[0];
-  const FALL = /^(other|precond|perm|model|busy|quota|minute|nofree)$/;
+  // gdy modele odpowiedziały różnie, powód wymienia każdy model (np. „flash-latest: 429…; flash-lite-latest: 429, limit 0…”)
+  function bestErr(errs) {
+    const e = errs.find(x => /^(quota|minute)$/.test(x.aih)) || errs.find(x => x.aih === "toomany") || errs[0];
+    if (e && new Set(errs.map(x => x.aih + "|" + (x.detail || "").replace(/, model [\w.\-]+/, ""))).size > 1)
+      e.detail = errs.slice(0, 6).map(x => String(x.model || "?").replace(/^gemini-/, "") + ": " + String(x.detail || x.aih).replace(/, model [\w.\-]+/, "").slice(0, 70)).join("; ");
+    return e;
+  }
+  const FALL = /^(other|precond|perm|model|busy|quota|minute|nofree|toomany)$/;
   async function geminiAsk(cfg, sys, turns, onText, signal) {
     const key = cfg.key;
     const body = JSON.stringify({
@@ -40979,7 +40993,7 @@ document.addEventListener("click", e => {
       const partial = shown || (e && e.text) || "";
       if (partial && code !== "cancel") v.view.push({ kind: "a", text: partial, who: p.name, cut: true });
       const msg = e && e.msg ? e.msg : msgOf(code, e && e.detail);
-      v.view.push({ kind: "err", text: msg, copy: /^(quota|nofree|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
+      v.view.push({ kind: "err", text: msg, copy: /^(quota|nofree|toomany|minute|region|precond|offline|busy|timeout|perm|referer|key|model|claude|other)$/.test(code || "") ? q : "" });
       if (code !== "cancel" && cur === c && !P.ta.value) P.ta.value = q;
       if (e && e.off) P.p = null;
     } finally {
