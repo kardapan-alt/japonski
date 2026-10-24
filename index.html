@@ -997,6 +997,7 @@ select:focus,input[type=text]:focus,input[type=search]:focus,input[type=email]:f
 .flash .fjp{font-family:var(--jp);font-size:42px;line-height:1.8}
 .flash .fpl{font-size:22px;font-weight:600}
 .flash hr{border:none;border-top:1px solid var(--line)}
+.flash .frd{margin:-4px 0 6px}.flash .frd .kpron,.flash .frd .small{font-size:15px}
 .hint{background:var(--bg3);border-radius:var(--r-sm);padding:10px 12px;font-size:14px}
 .warnbox{background:var(--warnbg);color:var(--warntext);border:1px solid var(--warnline);border-radius:var(--r-sm);padding:10px 14px;margin:10px 0;font-size:14px}
 .warnbox a{color:inherit;font-weight:700}
@@ -1860,6 +1861,22 @@ body.focus .refbar{bottom:calc(var(--qnav-h) + 12px + env(safe-area-inset-bottom
 .xlchips .chip{text-decoration:none}
 .pill.xlin{text-decoration:none;font-weight:600;margin-left:4px;vertical-align:middle}
 .xlprog{margin:6px 0 10px}
+
+/* Zestaw przetrwania: każdy zwrot osobnym blokiem z kreską, tekst po lewej, przyciski z boku (wąsko: w słupku) */
+.ksub{margin:-4px 0 10px}
+.kitlist{padding-top:2px;padding-bottom:2px}
+.kitrow{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}
+.kitrow:last-child{border-bottom:0}
+.kitt{flex:1;min-width:0}
+.kitb{display:flex;gap:6px;flex:none}
+.kjp{font-size:21px;line-height:1.5}
+.kjp .pill{vertical-align:middle;margin-left:4px;font-family:var(--ui)}
+.kitt .kpron{margin-top:1px}
+.kpl{font-weight:700;margin-top:5px}
+.knote{font-size:13.5px;line-height:1.4;color:var(--fg2);margin-top:4px}
+.knote .jp{color:var(--fg)}
+.kitt .kreply{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+@media (max-width:599px){.kitb{flex-direction:column}}
 </style></head><body>
 <header class="top"><div class="topin"><a class="logo" href="#/"><span class="hanko" aria-hidden="true">日</span><span class="tlabel">Nauka japońskiego</span></a><span class="sp"></span>
 <nav class="tabbar" aria-label="Główne miejsca">
@@ -2952,9 +2969,11 @@ function wordEx(words, kata) {
     const k2 = i % 5;
     if (k2 === 0) ex.push({ t: "listen", jp: k, opts: [k, ...others(k, 3)], a: 0, ex: `${k} – czytaj „${toPolish(k)}” – ${m}` });
     else if (k2 === 1) ex.push({ t: "type", latin: true, label: "Przeczytaj na głos, potem wpisz łacinką", q: `<span style="font-size:40px">${k}</span>`, a: alts(k), ex: `„${toPolish(k)}” – ${m}` });
-    // pozdrowienie: polecenie „konbanwa”, ale na końcu piszesz は (romajiToKana(„konbanwa”) dałoby błędne こんばんわ)
-    else if (k2 === 2) ex.push({ t: "type", label: kata ? "Napisz katakaną (wpisz romaji)" : "Napisz hiraganą (wpisz romaji)", q: `„${toRomaji(k)}” <span class="small muted">(${m}${/(こんにち|こんばん)は$/.test(k) ? "; na końcu znak は, czytany „wa”" : ""})</span>`, a: [k, kata ? K2H(k) : k, romajiToKana(toRomaji(k).replace(/(nichi|ban)wa$/, "$1ha"), true)], hint: kata ? "Wpisz romaji – zostanie zamienione na kanę; katakanę i hiraganę sprawdzam tak samo." : "Wpisz litery po kolei, np. n-e-k-o → ねこ." });
-    else if (k2 === 3 && morae(k).length >= 3) ex.push({ t: "order", tr: `Ułóż słowo „${toRomaji(k)}” (${m}) z sylab`, words: morae(k) });
+    // pozdrowienie: polecenie „konbanwa”, ale na końcu piszesz は (romajiToKana(„konbanwa”) dałoby błędne こんばんわ).
+    // q i tr (z romaji) zostają w danych – od nich zależą podpisy wyjaśnień i pomyłek (exSig); uczeń widzi dq/dtr: znaczenie i 🔊,
+    // bo „„hai” – wpisz romaji” to przepisywanie odpowiedzi z pytania (romaji samo zamienia się w kanę)
+    else if (k2 === 2) { const wa = /(こんにち|こんばん)は$/.test(k) ? "; na końcu znak は, czytany „wa”" : ""; ex.push({ t: "type", label: kata ? "Napisz katakaną (wpisz romaji)" : "Napisz hiraganą (wpisz romaji)", q: `„${toRomaji(k)}” <span class="small muted">(${m}${wa})</span>`, dq: `Posłuchaj i napisz <span class="small muted">(${m}${wa})</span>`, speakQ: k, a: [k, kata ? K2H(k) : k, romajiToKana(toRomaji(k).replace(/(nichi|ban)wa$/, "$1ha"), true)], hint: `Zaczyna się od „${toRomaji(k).slice(0, 2)}…”. ` + (kata ? "Wpisz romaji – zostanie zamienione na kanę; katakanę i hiraganę sprawdzam tak samo." : "Wpisuj litery po kolei, np. n-e-k-o → ねこ.") }); }
+    else if (k2 === 3 && morae(k).length >= 3) ex.push({ t: "order", tr: `Ułóż słowo „${toRomaji(k)}” (${m}) z sylab`, dtr: `Ułóż z sylab po japońsku: „${m}”`, speakQ: k, words: morae(k) });
     else ex.push({ t: "listen", jp: k, opts: [m, ...pick(words.filter(x => x[0] !== k), 3, rnd).map(x => x[1])], a: 0, ex: `${k} – „${toPolish(k)}”` });
   });
   for (let i = 0; i + 3 <= words.length && i < 10; i += 5) ex.push({ t: "match", pairs: words.slice(i, i + 5).map(w => [w[0], w[1]]) });
@@ -3008,7 +3027,7 @@ LEVELS.push({
     exercises: [
       { t:"mc", q:"Ile sylab zapisuje jeden znak hiragany, np. か?", opts:["jedną (tu: „ka”)","jedną literę (tu: „k”)","całe słowo","zależy od zdania"], a:0, ex:"Jeden znak kana = jedna sylaba." },
       { t:"mc", q:"Którym alfabetem zapisuje się słowa z innych języków, np. コーヒー (kawa)?", opts:["katakaną","hiraganą","kanji","polskimi literami"], a:0 },
-      { t:"mc", q:"Co robi przycisk 🐾?", opts:["czyta słowo sylaba po sylabie, potem całość","tłumaczy na polski","pokazuje kanji","nagrywa Twój głos"], a:0 },
+      { t:"mc", q:"Co robi przycisk 🐾?", opts:["czyta słowo sylaba po sylabie, potem całość", "tłumaczy słowo na polski i pokazuje znaczenie", "pokazuje kanji i kolejność kresek", "nagrywa Twój głos do porównania"], a:0 },
       { t:"listen", jp:"こんにちは", opts:["dzień dobry","dziękuję","do widzenia","sushi"], a:0, ex:"こんにちは – czytaj „konniciła”" },
       { t:"listen", jp:"ありがとう", opts:["dziękuję","dzień dobry","Japonia","do widzenia"], a:0, ex:"ありがとう – czytaj „arigatoo”" },
       { t:"match", pairs:[["こんにちは","dzień dobry"],["ありがとう","dziękuję"],["さようなら","do widzenia"],["にほん","Japonia"]] }
@@ -3039,9 +3058,9 @@ LEVELS.push({
       { t:"listen", jp:"いえ", opts:["ie","ei","ii","ee"], a:0, ex:"いえ – dom: najpierw i, potem e." },
       { t:"listen", jp:"あお", opts:["ao","au","oa","aa"], a:0 },
       { t:"listen", jp:"いいえ", opts:["iie (długie i + e)","ie (krótkie)","ii","ei"], a:0, ex:"いいえ = nie. Długie „ii”, potem „e”." },
-      { t:"mc", q:"Która samogłoska brzmi trochę inaczej niż polska?", opts:["u – bez zaokrąglania ust","a","o","e"], a:0 },
-      { t:"mc", q:"Jak przeczytasz いい (dobry)?", opts:["długie „ii”, dwa razy dłużej niż „i”","„i” jak zwykle","„ii” z przerwą: i…i","„ij”"], a:0 },
-      { t:"mc", q:"Jak przeczytasz あい (miłość)?", opts:["„a-i” – obie samogłoski wyraźnie","„aj” jak w „kraj”","„ej”","„a”"], a:0, ex:"W szybkiej mowie brzmi blisko „aj”, ale ucz się wymawiać obie: a + i." },
+      { t:"mc", q:"Która samogłoska brzmi trochę inaczej niż polska?", opts:["u", "a", "o", "e"], a:0 },
+      { t:"mc", q:"Jak przeczytasz いい (dobry)?", opts:["długie „ii”, dwa razy dłużej niż „i”", "krótkie „i”, jak zwykłe polskie i", "dwa osobne „i” z przerwą: i…i", "„ij”, jak na końcu słowa „kij”"], a:0 },
+      { t:"mc", q:"Jak przeczytasz あい (miłość)?", opts:["„a-i” – dwie wyraźne samogłoski", "„aj” jak w „kraj”", "„ej” jak w słowie „lej”", "samo „a”, bez „i” na końcu"], a:0, ex:"W szybkiej mowie brzmi blisko „aj”, ale ucz się wymawiać obie: a + i." },
       { t:"order", tr:"Ułóż samogłoski w japońskiej kolejności", words:["あ","い","う","え","お"] },
       { t:"match", pairs:[["あ","a"],["い","i"],["う","u"],["え","e"],["お","o"]] }
     ]
@@ -3068,18 +3087,18 @@ LEVELS.push({
     pron: [["すし","sushi – czytaj „susi”"],["ちかてつ","chikatetsu (metro) – „cikatecu”"],["ふじさん","Fujisan (góra Fudżi) – „fudzisan”"],["つなみ","tsunami – „cunami”"],["さくら","sakura – lekkie r"],["ありがとう","arigatou – lekkie r: „arigatoo”"],["やま","yama (góra) – „jama”"],["わたし","watashi (ja) – „łatasi”"],["じゃあね","jaa ne (na razie) – „dziaane”"],["おちゃ","ocha (herbata) – „ocia”"],["しゃしん","shashin (zdjęcie) – „siasin”"],["けいたい","keitai (komórka) – twarde k: „keetai”"]],
     vocab: [["すし","すし","sushi"],["ちかてつ","ちかてつ","metro"],["つなみ","つなみ","tsunami"],["さくら","さくら","wiśnia japońska"],["やま","やま","góra"],["わたし","わたし","ja"],["おちゃ","おちゃ","herbata (zielona)"],["しゃしん","しゃしん","zdjęcie"]],
     exercises: [
-      { t:"mc", q:"Romaji <b>shi</b> (し) wymawiasz jak polskie…", opts:["„si” w słowie „siwy”","„szi”","„chi”","„sy”"], a:0 },
+      { t:"mc", q:"Romaji <b>shi</b> (し) wymawiasz jak polskie…", opts:["„si” jak w „siwy”", "„szy” jak w „szyba”", "„chi” jak w „Chiny”", "„sy” jak w „syn”"], a:0 },
       { t:"mc", q:"Romaji <b>chi</b> (ち) wymawiasz jak polskie…", opts:["„ci” w słowie „cisza”","„chi” w „chirurg”","„czy”","„ki”"], a:0 },
       { t:"mc", q:"Romaji <b>tsu</b> (つ) wymawiasz jak polskie…", opts:["„cu” w „cukier”","„tsu” – t i s osobno","„su”","„tu”"], a:0 },
       { t:"mc", q:"Romaji <b>ya</b> (や) wymawiasz jak polskie…", opts:["„ja”","„ya” jak w „yeti”","„ła”","„a”"], a:0 },
       { t:"mc", q:"Romaji <b>wa</b> (わ) wymawiasz jak polskie…", opts:["„ła”","„wa”","„fa”","„ua” z przerwą"], a:0 },
       { t:"mc", q:"Romaji <b>ji</b> (じ) wymawiasz jak polskie…", opts:["„dzi” w „dziś”","„ji” jak „ij”","„żi”","„zi”"], a:0 },
-      { t:"mc", q:"Jak brzmi japońskie r w słowie さくら?", opts:["jedno lekkie stuknięcie języka – między r i l","mocne polskie „rrr”","angielskie „r”","jak „ł”"], a:0 },
-      { t:"listen", jp:"すし", opts:["susi (sushi)","suszi","sisu","susu"], a:0, ex:"し brzmi jak polskie „si” w „siwy”." },
-      { t:"listen", jp:"ちかてつ", opts:["cikatecu (metro)","czikatetsu","kikatetu","sikatesu"], a:0 },
-      { t:"listen", jp:"わたし", opts:["łatasi (ja)","watasi","latasi","łatasz"], a:0 },
-      { t:"listen", jp:"おちゃ", opts:["ocia (herbata)","osia","oka","ocza"], a:0 },
-      { t:"listen", jp:"しゃしん", opts:["siasin (zdjęcie)","sasin","szaszin","cziasin"], a:0 },
+      { t:"mc", q:"Jak brzmi japońskie r w słowie さくら?", opts:["lekkie stuknięcie – między r i l", "mocne, długie polskie „rrr”", "angielskie „r”, jak w „red”", "jak polskie „ł” w „ładny”"], a:0 },
+      { t:"listen", jp:"すし", opts:["susi","suszi","sisu","susu"], a:0, ex:"し brzmi jak polskie „si” w „siwy”." },
+      { t:"listen", jp:"ちかてつ", opts:["cikatecu","czikatetsu","kikatetu","sikatesu"], a:0 },
+      { t:"listen", jp:"わたし", opts:["łatasi","watasi","latasi","łatasz"], a:0 },
+      { t:"listen", jp:"おちゃ", opts:["ocia","osia","oka","ocza"], a:0 },
+      { t:"listen", jp:"しゃしん", opts:["siasin","sasin","szaszin","cziasin"], a:0 },
       { t:"type", latin:true, q:"Napisz po polsku, jak przeczytasz romaji <b>tsunami</b>:", a:["cunami"], ex:"ts = c" },
       { t:"type", latin:true, q:"Napisz po polsku, jak przeczytasz romaji <b>yama</b> (góra):", a:["jama"], ex:"y = j" },
       { t:"match", pairs:[["し","si (siwy)"],["ち","ci (cisza)"],["つ","cu (cukier)"],["じ","dzi (dziś)"],["わ","ła"]] }
@@ -3110,7 +3129,7 @@ LEVELS.push({
       { t:"listen", jp:"ビール", opts:["piwo (długie i)","budynek (krótkie i)"], a:0 },
       { t:"listen", jp:"ビル", opts:["budynek (krótkie i)","piwo (długie i)"], a:0 },
       { t:"mc", q:"Ile sylab (klaśnięć) ma słowo <span class=\"jp\">ほん</span> (książka)?", opts:["2: ho-n","1: hon","3","4"], a:0, ex:"ん to osobna sylaba." },
-      { t:"mc", q:"Ile klaśnięć ma <span class=\"jp\">きって</span>?", opts:["3: ki-(cisza)-te","2: ki-te","4","1"], a:0, ex:"Pauza っ też trwa jedno klaśnięcie." },
+      { t:"mc", q:"Ile klaśnięć ma <span class=\"jp\">きって</span>?", opts:["3: ki – っ – te","2: ki – te","4: ki – っ – っ – te","1: kitte"], a:0, ex:"Pauza っ też trwa jedno klaśnięcie: ki – (cisza) – te." },
       { t:"mc", q:"Jak brzmi <span class=\"jp\">です</span> na końcu zdania?", opts:["„des” – u prawie niesłyszalne","„desu” z wyraźnym u","„dezu”","„dis”"], a:0 },
       { t:"mc", q:"Japoński akcent to…", opts:["melodia: wyżej i niżej, bez mocnego nacisku","mocny nacisk jak w polskim","zawsze na pierwszej sylabie","nie ma żadnej melodii"], a:0 },
       { t:"mc", q:"Jak przeczytasz <span class=\"jp\">せんせい</span> (nauczyciel)?", opts:["„sensee” – długie e","„sensei” jak po angielsku „sej”","„sense”","„senseji”"], a:0 },
@@ -3120,11 +3139,11 @@ LEVELS.push({
   // Pierwsze zwroty zaraz po wymowie – uczeń jeszcze nie czyta znaków: kind "phr" (📖 Wstęp zamiast Znaków), rom – romaji pod japońskim
   // w ćwiczeniach, pron – zwroty do powtarzania, dialog.w – czytanie kwestii scenki. Słowa i ćwiczenia jak dawniej (te same wyjaśnienia).
   phr(row("zwroty", "Pierwsze zwroty: dzień dobry, dziękuję, przepraszam", [],
-    [["おはようございます","dzień dobry (rano)"],["こんにちは","dzień dobry"],["こんばんは","dobry wieczór"],["さようなら","do widzenia"],["ありがとうございます","dziękuję (grzecznie)"],["すみません","przepraszam"],["ごめんなさい","przepraszam (osobiście)"],["はい","tak"],["いいえ","nie"],["おやすみなさい","dobranoc"],["いただきます","smacznego (przed jedzeniem)"],["ごちそうさまでした","dziękuję za posiłek"],["はじめまして","miło mi (przy poznaniu)"],["よろしくおねがいします","miło mi; proszę o życzliwość"]],
+    [["おはようございます","dzień dobry (rano)"],["こんにちは","dzień dobry"],["こんばんは","dobry wieczór"],["さようなら","do widzenia"],["ありがとうございます","dziękuję"],["すみません","przepraszam"],["ごめんなさい","przepraszam (osobiście)"],["はい","tak"],["いいえ","nie"],["おやすみなさい","dobranoc"],["いただきます","smacznego (przed jedzeniem)"],["ごちそうさまでした","dziękuję za posiłek"],["はじめまして","miło mi (przy poznaniu)"],["よろしくおねがいします","miło mi; proszę o życzliwość"]],
     `<p>Zanim poznasz znaki, nauczysz się pierwszych zwrotów <b>na ucho</b>. Japońskie znaki na razie tylko oglądasz: pod każdym zwrotem jest czytanie po polsku i zapis łacinką (romaji). Po lekcjach hiragany wrócisz tu i przeczytasz je już bez podpowiedzi.</p><p>Słuchaj przyciskiem 🔊, potem 🐢 wolniej i 🐾 sylabami – i powtarzaj na głos. Potem obejrzyj <b>scenkę</b>, a po teście czeka Cię <b>pierwsza rozmowa</b>: powitanie i przedstawienie się.</p>` + P("こんにちは i こんばんは kończą się znakiem は, ale czyta się je „konniciła”, „kombanła”. ございます brzmi „gozaimas” (ciche u)."),
     [{ t:"mc", q:"Co mówisz PRZED jedzeniem?", opts:["いただきます","ごちそうさまでした","おやすみなさい","さようなら"], a:0 },
      { t:"mc", q:"Co mówisz rano do sąsiada?", opts:["おはようございます","こんばんは","おやすみなさい","いただきます"], a:0 },
-     { t:"mc", q:"Ktoś przytrzymał Ci drzwi. Co mówisz?", opts:["すみません / ありがとうございます","ごめんなさい","はじめまして","いいえ"], a:0, ex:"すみません to uniwersalne „przepraszam / dziękuję za fatygę”." }],
+     { t:"mc", q:"Ktoś przytrzymał Ci drzwi. Co mówisz?", opts:["すみません / ありがとうございます", "ごめんなさい / いただきます", "はじめまして / こんにちは", "いいえ / さようなら"], a:0, ex:"すみません to uniwersalne „przepraszam / dziękuję za fatygę”." }],
     { goal: "Witasz się, dziękujesz, przepraszasz i przedstawiasz się po japońsku – jeszcze zanim poznasz znaki.", dialog: { title: "Pierwsze spotkanie w kawiarni", cast: { "ダニエル":"m", "ゆき":"f" }, lines: [
       ["ゆき","こんにちは。","Dzień dobry."],
       ["ダニエル","こんにちは。はじめまして。ダニエルです。","Dzień dobry. Miło mi. Jestem Daniel."],
@@ -3152,7 +3171,7 @@ LEVELS.push({
   row("h-sa", "Hiragana 3: さ し す せ そ", ["さ","し","す","せ","そ"],
     [["すし","sushi"],["さけ","łosoś; sake"],["しお","sól"],["あさ","rano"],["いす","krzesło"],["かさ","parasol"],["すき","lubiany, lubię"],["そこ","tam (przy tobie)"],["おかし","słodycze"],["あし","noga"],["うし","krowa"],["せかい","świat"]],
     `<p>Wiersz S. Uwaga na <b>し</b> – to jedyny znak w tym wierszu, który nie brzmi jak „s + samogłoska”.</p>` + P("し = polskie „si” jak w „siwy” (miękko!). Reszta jak po polsku: sa, su, se, so. すし czytasz więc „susi”."),
-    [{ t:"mc", q:"Jak przeczytasz し?", opts:["„si” jak w „siwy”","„szi”","„sy”","„ci”"], a:0 },
+    [{ t:"mc", q:"Jak przeczytasz し?", opts:["„si” jak w „siwy”", "„szy” jak w „szyba”", "„sy” jak w „syn”", "„ci” jak w „ciasto”"], a:0 },
      { t:"mc", q:"Który znak to „sa”?", opts:["さ","き","ち","そ"], a:0, ex:"さ ma jedną poziomą kreskę, き – dwie." }]),
   row("h-ta", "Hiragana 4: た ち つ て と", ["た","ち","つ","て","と"],
     [["たこ","ośmiornica"],["した","dół, pod"],["くつ","buty"],["て","ręka"],["そと","na zewnątrz"],["ちかてつ","metro"],["つくえ","biurko"],["とけい","zegarek"],["ちいさい","mały"],["たかい","wysoki; drogi"],["あつい","gorący"],["きた","północ"]],
@@ -3619,6 +3638,9 @@ LEVELS.push({
     {
      "t": "type",
      "q": "Napisz hiraganą: „hajimemashite” (miło mi)",
+     "dq": "Posłuchaj i napisz hiraganą <span class=\"small muted\">(miło mi)</span>",
+     "speakQ": "はじめまして",
+     "hint": "Zaczyna się od „ha…”.",
      "a": [
       "はじめまして"
      ]
@@ -9197,7 +9219,7 @@ LEVELS.push({
     { t:"mc", q:"この{料理|りょうり}はおいしい＿＿{思|おも}います。", opts:["と","だと","を","に"], a:0, ex:"Przymiotnik い stoi przed と bez だ: おいしいと思います. だと tylko po rzeczowniku i przymiotniku な." },
     { t:"mc", q:"Jak powiesz: „Nie sądzę, żeby on przyszedł.”", opts:["{彼|かれ}は{来|こ}ないと{思|おも}います。","{彼|かれ}は{来|く}ると{思|おも}いません。","{彼|かれ}は{来|き}ませんと{思|おも}います。","{彼|かれ}は{来|こ}ないだと{思|おも}います。"], a:0, ex:"Po japońsku zaprzeczamy zdanie wewnętrzne (来ない), a 思います zostaje twierdzące. Przed と – forma prosta, bez だ po czasowniku." },
     { t:"mc", q:"Jak powiesz: „Proszę nie zapominać parasola.”", opts:["{傘|かさ}を{忘|わす}れないでください。","{傘|かさ}を{忘|わす}れてください。","{傘|かさ}を{忘|わす}れませんでください。","{傘|かさ}を{忘|わす}れなくてください。"], a:0, ex:"Forma ない + でください: 忘れない → 忘れないでください." },
-    { t:"mc", q:"Przyjaciółka mówi: 「{田中|たなか}さん、{今日|きょう}{休|やす}むって。」 Co to znaczy?", opts:["Tanaka mówi, że dziś nie przyjdzie (bierze wolne).","Myślę, że Tanaka dziś odpocznie.","Tanaka, odpocznij dziś!","Tanaka pyta, czy dziś odpoczywasz."], a:0, ex:"って to potoczne と言った/と言っている – przytaczasz czyjeś słowa." },
+    { t:"mc", q:"Przyjaciółka mówi: 「{田中|たなか}さん、{今日|きょう}{休|やす}むって。」 Co to znaczy?", opts:["Tanaka mówi, że dziś bierze wolne i nie przyjdzie.","Myślę, że Tanaka dziś odpocznie.","Tanaka, odpocznij dziś!","Tanaka pyta, czy dziś odpoczywasz."], a:0, ex:"って to potoczne と言った/と言っている – przytaczasz czyjeś słowa." },
     { t:"listen", jp:"{雨|あめ}だから、{今日|きょう}は{出|で}かけない。", opts:["Pada, więc dziś nie wychodzę.","Pada, ale dziś wychodzę.","Jeśli będzie padać, nie wyjdę.","Dziś nie pada, więc wychodzę."], a:0 },
     { t:"listen", jp:"{田中|たなか}さんは{来|こ}ないと{思|おも}います。", opts:["Myślę, że Tanaka nie przyjdzie.","Tanaka powiedział, że nie przyjdzie.","Myślę, że Tanaka przyjdzie.","Tanaka myśli, że nie przyjdę."], a:0 },
     { t:"listen", jp:"ここにごみを{捨|す}てないでください。", opts:["Proszę nie wyrzucać tu śmieci.","Proszę wyrzucić tu śmieci.","Tu nie ma kosza na śmieci.","Proszę nie zostawiać tu rzeczy."], a:0 },
@@ -9998,7 +10020,7 @@ LEVELS.push({
     { t:"mc", q:"Przyjaciel ma smutną minę. Pytasz grzecznie: „Co się stało?”", opts:["どうしたんですか。","どうしましたんですか。","どうするんですか。","どうしたんでした。"], a:0, ex:"Przed んです stoi forma prosta (した), nie ます. どうするんですか znaczy „co zamierzasz zrobić?”." },
     { t:"mc", q:"{今日|きょう}は{休|やす}み＿＿んです。", tr:"Dziś mam wolne (dlatego…).", opts:["な","だ","の","が"], a:0, ex:"Rzeczownik i przymiotnik な przed んです dostają な: 休みなんです." },
     { t:"mc", q:"{漢字|かんじ}＿＿{書|か}き{方|かた}を{教|おし}えてください。", opts:["の","を","が","に"], a:0, ex:"書き方 to rzeczownik, więc dopełnienie łączy się z nim przez の." },
-    { t:"mc", q:"Koleżanka mówi: 「{飲|の}み{物|もの}、{買|か}っとくね。」 Co to znaczy?", opts:["Kupię (zawczasu) napoje, dobrze?","Kupiłam już napoje.","Nie kupuj napojów.","Spróbuję kupić napoje."], a:0, ex:"買っとく to potoczne 買っておく – zrobić coś zawczasu." },
+    { t:"mc", q:"Koleżanka mówi: 「{飲|の}み{物|もの}、{買|か}っとくね。」 Co to znaczy?", opts:["Kupię zawczasu napoje, dobrze?","Kupiłam już napoje.","Nie kupuj napojów.","Spróbuję kupić napoje."], a:0, ex:"買っとく to potoczne 買っておく – zrobić coś zawczasu." },
     { t:"listen", jp:"{週末|しゅうまつ}、{一緒|いっしょ}に{映画|えいが}を{見|み}よう。", opts:["Obejrzyjmy razem film w weekend.","W weekend oglądałem film z kolegą.","Chcę sam obejrzeć film w weekend.","Czy oglądałeś ten film?"], a:0 },
     { t:"listen", jp:"{明日|あした}の{会議|かいぎ}の{資料|しりょう}を{作|つく}っておきます。", opts:["Przygotuję zawczasu materiały na jutrzejsze zebranie.","Spróbuję zrobić materiały na zebranie.","Jutro na zebraniu zrobię materiały.","Materiały na zebranie są gotowe od wczoraj."], a:0 },
     { t:"listen", jp:"どうしたの？{元気|げんき}がないね。", opts:["Co się stało? Wyglądasz na przygnębionego.","Jak się masz? Wyglądasz świetnie.","Co robisz? Jesteś zajęty?","Czemu nie przyszedłeś? Byłeś chory?"], a:0 },
@@ -10968,7 +10990,7 @@ LEVELS.push({
     { t:"mc", q:"{部屋|へや}を＿＿しました。", tr:"Posprzątałem pokój (zrobiłem go czystym).", opts:["きれいに","きれいく","きれいな","きれいで"], a:0, ex:"きれい to przymiotnik な: きれいにする." },
     { t:"listen", jp:"{部長|ぶちょう}は{三時|さんじ}ごろお{帰|かえ}りになります。", opts:["Pan kierownik wróci około trzeciej.","Wrócę do kierownika około trzeciej.","Pan kierownik wyszedł o trzeciej.","Kierownik prosi, żeby wrócić o trzeciej."], a:0 },
     { t:"listen", jp:"こちらにお{名前|なまえ}をお{書|か}きください。", opts:["Proszę tu wpisać swoje nazwisko.","Tu jest napisane pana nazwisko.","Napisałem tu swoje nazwisko.","Proszę nie pisać tu nazwiska."], a:0 },
-    { t:"listen", jp:"{机|つくえ}の{上|うえ}に{資料|しりょう}が{置|お}いてあります。", opts:["Materiały leżą (przygotowane) na biurku.","Proszę położyć materiały na biurku.","Materiały spadły z biurka.","Na biurku nie ma materiałów."], a:0 },
+    { t:"listen", jp:"{机|つくえ}の{上|うえ}に{資料|しりょう}が{置|お}いてあります。", opts:["Materiały leżą przygotowane na biurku.","Proszę położyć materiały na biurku.","Materiały spadły z biurka.","Na biurku nie ma materiałów."], a:0 },
     { t:"order", tr:"Czy zna pan profesora Suzuki?", words:["{鈴木先生|すずきせんせい}を","ご{存|ぞん}じ","ですか。"] },
     { t:"order", tr:"Gdy byłem w delegacji, przyszedł list.", words:["{出張|しゅっちょう}している","{間|あいだ}に、","{手紙|てがみ}が","{来|き}ました。"] },
     { t:"order", tr:"Na ścianie wisi plakat.", words:["{壁|かべ}に","ポスターが","{貼|は}って","あります。"] },
@@ -11260,7 +11282,7 @@ LEVELS.push({
     { t:"mc", q:"Jak powiesz: „Ukradziono mi rower.”", opts:["{自転車|じてんしゃ}を{盗|ぬす}まれました。","{自転車|じてんしゃ}を{盗|ぬす}みました。","{自転車|じてんしゃ}に{盗|ぬす}まれました。","{自転車|じてんしゃ}が{盗|ぬす}めました。"], a:0, ex:"Ofiara (ja) jest ukrytym podmiotem, skradziona rzecz dostaje を. 自転車に盗まれた = „rower mnie okradł”, 盗みました = to ja ukradłem." },
     { t:"mc", q:"「{源氏物語|げんじものがたり}」は{紫式部|むらさきしきぶ}＿＿{書|か}かれました。", tr:"„Opowieść o księciu Genjim” napisała Murasaki Shikibu.", opts:["によって","で","を","から"], a:0, ex:"Twórcę dzieła, wynalazku lub budowli w tekstach oznacza się によって. To typowa konstrukcja z podręczników i artykułów." },
     { t:"mc", q:"Które zdanie mówi, że sąsiad grał na pianinie i <b>przeszkadzało</b> mi to?", opts:["{隣|となり}の{人|ひと}にピアノを{弾|ひ}かれた。","{隣|となり}の{人|ひと}がピアノを{弾|ひ}いた。","{隣|となり}の{人|ひと}にピアノを{弾|ひ}いてもらった。","{隣|となり}の{人|ひと}がピアノを{弾|ひ}けた。"], a:0, ex:"Strona bierna z osobą-ofiarą wyraża uciążliwość. ～てもらった to przeciwieństwo – przysługa, za którą jestem wdzięczny. 弾いた to neutralny fakt." },
-    { t:"mc", q:"{友達|ともだち}に{来|こ}られて、{勉強|べんきょう}できなかった。– co wyraża to zdanie?", opts:["Przyszedł kolega (nie w porę) i nie mogłem się uczyć.","Kolega mógł przyjść, więc się nie uczyłem.","Przyszedłem do kolegi i nie mogliśmy się uczyć.","Kolega przyszedł mi pomóc w nauce."], a:0, ex:"来られる to tu strona bierna od 来る (nieprzechodni!) – klasyczna strona bierna „cierpiąca”: wizyta była dla mnie kłopotem." },
+    { t:"mc", q:"{友達|ともだち}に{来|こ}られて、{勉強|べんきょう}できなかった。– co wyraża to zdanie?", opts:["Przyszedł kolega nie w porę i nie mogłem się uczyć.","Kolega mógł przyjść, więc się nie uczyłem.","Przyszedłem do kolegi i nie mogliśmy się uczyć.","Kolega przyszedł mi pomóc w nauce."], a:0, ex:"来られる to tu strona bierna od 来る (nieprzechodni!) – klasyczna strona bierna „cierpiąca”: wizyta była dla mnie kłopotem." },
     { t:"mc", q:"この{寺|てら}は{八百年前|はっぴゃくねんまえ}に＿＿。", tr:"Ta świątynia została zbudowana 800 lat temu.", opts:["{建|た}てられました","{建|た}てました","{建|た}てさせました","{建|た}てられます"], a:0, ex:"Świątynia nie budowała sama siebie → strona bierna. Wydarzenie z przeszłości → forma przeszła 建てられました." },
     { t:"listen", jp:"{子|こ}どものころ、よく{父|ちち}に{叱|しか}られました。", opts:["W dzieciństwie tata często mnie beształ.","W dzieciństwie często beształem tatę.","W dzieciństwie tata często mnie chwalił.","Jako dziecko rzadko słuchałem taty."], a:0 },
     { t:"listen", jp:"{昨日|きのう}、{駅|えき}の{近|ちか}くで{犯人|はんにん}が{逮捕|たいほ}されました。", opts:["Wczoraj w pobliżu stacji aresztowano sprawcę.","Wczoraj w pobliżu stacji sprawca kogoś okradł.","Wczoraj sprawca uciekł z okolic stacji.","Jutro przy stacji będzie szukany sprawca."], a:0 },
@@ -12189,7 +12211,7 @@ LEVELS.push({
     { t:"mc", q:"Która potoczna forma odpowiada {飲|の}んでしまった?", opts:["{飲|の}んじゃった","{飲|の}んちゃった","{飲|の}みちゃった","{飲|の}んでちゃった"], a:0, ex:"～でしまう → ～じゃう (czasowniki z te-formą na で: 飲んで, 読んで, 遊んで). ～てしまう → ～ちゃう (食べちゃった)." },
     { t:"mc", q:"Kolega pyta, co się stało z kubkiem. Która odpowiedź brzmi, jakbyś <b>nie podkreślał</b> swojej winy?", opts:["コップが{割|わ}れちゃった。","コップを{割|わ}っちゃった。","コップを{割|わ}られた。","コップを{割|わ}らせた。"], a:0, ex:"Nieprzechodni 割れる skupia się na zdarzeniu („pękł”), przechodni 割る przyznaje, że to ja rozbiłem. 割られた = ktoś mi rozbił, 割らせた = kazałem komuś rozbić." },
     { t:"listen", jp:"{電車|でんしゃ}の{中|なか}に{傘|かさ}を{忘|わす}れてしまいました。", opts:["Niestety zostawiłem parasol w pociągu.","Wziąłem parasol do pociągu.","Ktoś zostawił parasol w pociągu.","Nie zapomniałem parasola w pociągu."], a:0 },
-    { t:"listen", jp:"{壁|かべ}に{地図|ちず}が{貼|は}ってあります。", opts:["Na ścianie wisi (przyklejona) mapa.","Ktoś właśnie przykleja mapę do ściany.","Mapa odkleiła się od ściany.","Proszę przykleić mapę do ściany."], a:0 },
+    { t:"listen", jp:"{壁|かべ}に{地図|ちず}が{貼|は}ってあります。", opts:["Na ścianie wisi przyklejona mapa.","Ktoś właśnie przykleja mapę do ściany.","Mapa odkleiła się od ściany.","Proszę przykleić mapę do ściany."], a:0 },
     { t:"listen", jp:"{来年|らいねん}、{日本|にほん}の{大学|だいがく}に{留学|りゅうがく}することにしました。", opts:["Postanowiłem, że w przyszłym roku wyjadę na studia do Japonii.","Zostałem wysłany na studia do Japonii.","W przyszłym roku japoński uniwersytet przyjmie studentów z zagranicy.","Mam zasadę, że co roku jeżdżę do Japonii."], a:0 },
     { t:"order", tr:"Krzesła są już ustawione.", words:["{椅子|いす}は","もう","{並|なら}べて","あります。"] },
     { t:"order", tr:"Postanowiłem rzucić palenie.", words:["タバコを","やめる","ことに","しました。"] },
@@ -12869,7 +12891,7 @@ LEVELS.push({
     { t:"mc", q:"{台風|たいふう}の{被害|ひがい}は{九州|きゅうしゅう}＿＿{広|ひろ}がっている。", tr:"Szkody po tajfunie rozprzestrzeniają się głównie na Kiusiu.", opts:["を{中心|ちゅうしん}に","をはじめ","にとって","に{対|たい}して"], a:0, ex:"Centrum zjawiska (największe szkody) → を中心に. をはじめ wymagałoby wyliczenia: 九州をはじめ、四国や中国地方でも…" },
     { t:"mc", q:"{実験|じっけん}の{結果|けっか}＿＿{論文|ろんぶん}を{書|か}いた。", tr:"Napisałem artykuł na podstawie wyników eksperymentu.", opts:["に{基|もと}づいて","をめぐって","に{対|たい}して","において"], a:0, ex:"Podstawa (dane, fakty) → に基づいて. To częste w raportach i tekstach naukowych." },
     { t:"mc", q:"Które zdanie jest NIENATURALNE?", opts:["{昨日|きのう}は{友達|ともだち}と{天気|てんき}をめぐって{話|はな}した。","{予算|よさん}をめぐって{議論|ぎろん}が{続|つづ}いた。","{土地|とち}をめぐる{争|あらそ}いが{起|お}きた。","{人事|じんじ}をめぐって{社内|しゃない}が{対立|たいりつ}している。"], a:0, ex:"をめぐって wymaga tematu sporu. Zwykła rozmowa o pogodzie → 天気について話した." },
-    { t:"listen", jp:"{当社|とうしゃ}の{個人情報|こじんじょうほう}の{取|と}り{扱|あつか}いに{関|かん}しては、ホームページをご{覧|らん}ください。", opts:["W sprawie przetwarzania danych osobowych przez naszą firmę prosimy zajrzeć na stronę internetową.","Nasza firma nie przetwarza danych osobowych.","Prosimy podać swoje dane osobowe na stronie.","Strona internetowa naszej firmy jest w przebudowie."], a:0 },
+    { t:"listen", jp:"{当社|とうしゃ}の{個人情報|こじんじょうほう}の{取|と}り{扱|あつか}いに{関|かん}しては、ホームページをご{覧|らん}ください。", opts:["O tym, jak przetwarzamy dane osobowe, przeczytasz na naszej stronie.", "Nasza firma w ogóle nie przetwarza danych osobowych klientów.", "Prosimy podać swoje dane osobowe w formularzu na stronie.", "Strona internetowa naszej firmy jest obecnie w przebudowie."], a:0 },
     { t:"listen", jp:"{男性|だんせい}の{賛成|さんせい}が{多|おお}かったのに{対|たい}して、{女性|じょせい}は{反対|はんたい}が{多|おお}かった。", opts:["Wśród mężczyzn przeważali zwolennicy, a wśród kobiet przeciwnicy.","Mężczyźni i kobiety w większości byli za.","Kobiety sprzeciwiały się mężczyznom.","Mężczyźni byli przeciwni pomysłowi kobiet."], a:0 },
     { t:"listen", jp:"{国際会議|こくさいかいぎ}は{来月|らいげつ}、{横浜|よこはま}において{開催|かいさい}される{予定|よてい}だ。", opts:["Konferencja międzynarodowa ma się odbyć w przyszłym miesiącu w Jokohamie.","Konferencja w Jokohamie została odwołana.","W przyszłym miesiącu wyjeżdżam z Jokohamy na konferencję.","Konferencja odbyła się w zeszłym miesiącu w Jokohamie."], a:0 },
     { t:"order", tr:"Przeprowadzono badanie dotyczące pracy zdalnej.", words:["{在宅勤務|ざいたくきんむ}に","{関|かん}する","{調査|ちょうさ}が","{行|おこな}われた。"] },
@@ -13007,7 +13029,7 @@ LEVELS.push({
     { t:"mc", q:"{住所|じゅうしょ}＿＿{分|わ}かれば、{荷物|にもつ}を{送|おく}れます。", tr:"Wystarczy znać adres, a wyślemy paczkę.", opts:["さえ","こそ","どころか","はもちろん"], a:0, ex:"Jedyny potrzebny warunek → さえ～ば. こそ wskazuje „właśnie ten”, ale nie tworzy warunku minimum." },
     { t:"mc", q:"{本当|ほんとう}に{大切|たいせつ}な{友達|ともだち}だから＿＿、{厳|きび}しいことも{言|い}うんです。", tr:"Mówię mu przykre rzeczy właśnie dlatego, że to naprawdę ważny przyjaciel.", opts:["こそ","さえ","どころか","うえに"], a:0, ex:"～からこそ podkreśla prawdziwą przyczynę, często zaskakującą (przyjaciel → krytyka). さえ po から nie tworzy tego znaczenia." },
     { t:"mc", q:"Które zdanie jest BŁĘDNE?", opts:["この{部屋|へや}は{広|ひろ}いうえに、{暗|くら}い。","この{部屋|へや}は{広|ひろ}いうえに、{明|あか}るい。","この{部屋|へや}は{狭|せま}いうえに、{暗|くら}い。","この{部屋|へや}は{駅|えき}から{近|ちか}いうえに、{家賃|やちん}も{安|やす}い。"], a:0, ex:"うえに łączy cechy tego samego „znaku”. 広い (zaleta) + 暗い (wada) → trzeba 広いけど暗い." },
-    { t:"listen", jp:"{彼女|かのじょ}は{挨拶|あいさつ}をしないばかりか、{目|め}も{合|あ}わせようとしない。", opts:["Nie tylko się nie wita, ale nawet nie chce spojrzeć w oczy.","Wita się, ale nie patrzy w oczy.","Zamiast się witać, patrzy w oczy.","Wita się i patrzy w oczy."], a:0 },
+    { t:"listen", jp:"{彼女|かのじょ}は{挨拶|あいさつ}をしないばかりか、{目|め}も{合|あ}わせようとしない。", opts:["Nie dość, że się nie wita, to nawet nie patrzy w oczy.", "Wita się grzecznie, ale nigdy nie patrzy w oczy.", "Zamiast się witać, tylko długo patrzy w oczy.", "Zawsze się wita i patrzy przy tym w oczy."], a:0 },
     { t:"listen", jp:"このごろは{忙|いそが}しくて、{映画|えいが}どころかテレビを{見|み}る{時間|じかん}もない。", opts:["Ostatnio jestem tak zajęty, że o kinie nie ma mowy – nie mam nawet czasu na telewizję.","Ostatnio zamiast do kina chodzę oglądać telewizję.","Ostatnio oglądam filmy w telewizji, bo jestem zajęty.","Ostatnio mam czas na kino, ale nie na telewizję."], a:0 },
     { t:"listen", jp:"{健康|けんこう}でさえあれば、ほかには{何|なに}もいりません。", opts:["Byle tylko zdrowie było – niczego więcej nie potrzebuję.","Nawet zdrowie nie wystarczy, potrzebuję więcej.","Jestem zdrowy, ale niczego nie mam.","Zdrowie jest ważne, ale pieniądze też."], a:0 },
     { t:"order", tr:"Wystarczy tylko nacisnąć przycisk.", words:["ボタンを","{押|お}し","さえ","すればいい。"] },
@@ -13282,7 +13304,7 @@ LEVELS.push({
     { t:"mc", q:"{戻|もど}れる＿＿、{十年前|じゅうねんまえ}に{戻|もど}ってやり{直|なお}したい。", tr:"Gdybym tylko mógł, wróciłbym o dziesięć lat i zaczął od nowa.", opts:["ものなら","ことなら","ものか","ことに"], a:0, ex:"Forma możliwościowa + ものなら = mało realny warunek + życzenie. ことなら występuje w innym zwrocie (できることなら), ale nie po 戻れる." },
     { t:"listen", jp:"{学生時代|がくせいじだい}は、この{店|みせ}で{友達|ともだち}とよく{夜|よる}まで{話|はな}したものだ。", opts:["W czasach studenckich często rozmawialiśmy z przyjaciółmi w tym lokalu do nocy.","Studenci powinni rozmawiać z przyjaciółmi w tym lokalu.","W tym lokalu nie wolno rozmawiać do nocy.","Raz w czasach studenckich byłem w tym lokalu."], a:0 },
     { t:"listen", jp:"{遅刻|ちこく}しようものなら、{課長|かちょう}にひどく{叱|しか}られる。", opts:["Niech no tylko się spóźnisz, a kierownik strasznie cię zruga.","Spóźniłem się, ale kierownik mnie nie zganił.","Gdybym mógł się spóźnić, zrobiłbym to.","Kierownik zawsze się spóźnia i nikt go nie gani."], a:0 },
-    { t:"listen", jp:"{一人|ひとり}で{悩|なや}むことはないよ。いつでも{相談|そうだん}して。", opts:["Nie musisz martwić się sam. Przychodź z tym zawsze, kiedy chcesz.","Nie martw się, sam sobie poradzisz.","Nigdy nie konsultuj się z nikim.","Martwienie się samemu jest ważne."], a:0 },
+    { t:"listen", jp:"{一人|ひとり}で{悩|なや}むことはないよ。いつでも{相談|そうだん}して。", opts:["Nie martw się sam – przyjdź pogadać, kiedy chcesz.", "Nie martw się, na pewno sam sobie poradzisz.", "Nigdy nie radź się nikogo, rozwiązuj to sam.", "Martwienie się w samotności jest bardzo ważne."], a:0 },
     { t:"order", tr:"Choć raz chciałbym zobaczyć zorzę polarną.", words:["{一度|いちど}","オーロラを","{見|み}てみたい","ものだ。"] },
     { t:"order", tr:"Ku zdziwieniu wszystkich odszedł z pracy.", words:["{驚|おどろ}いた","ことに、","{彼|かれ}は","{会社|かいしゃ}を{辞|や}めた。"] },
     { t:"order", tr:"Nie musisz specjalnie przychodzić.", words:["わざわざ","{来|く}る","ことは","ない。"] },
@@ -13411,8 +13433,8 @@ LEVELS.push({
     { t:"mc", q:"Jak przepiszesz w stylu である: 「この{問題|もんだい}は{深刻|しんこく}です。」", opts:["この{問題|もんだい}は{深刻|しんこく}である。","この{問題|もんだい}は{深刻|しんこく}であります。","この{問題|もんだい}は{深刻|しんこく}でございます。","この{問題|もんだい}は{深刻|しんこく}だである。"], a:0, ex:"な-przymiotnik + である. であります to styl przemówień, でございます – bardzo grzeczna mowa, nie styl pisany." },
     { t:"listen", jp:"お{世話|せわ}になっております。{先日|せんじつ}ご{依頼|いらい}いただいた{資料|しりょう}を{添付|てんぷ}いたしました。お{手数|てすう}ですが、ご{確認|かくにん}いただけますでしょうか。", opts:["Nadawca załączył zamówione materiały i prosi o ich sprawdzenie.","Nadawca prosi o przesłanie materiałów.","Nadawca przeprasza, że zapomniał załącznika.","Nadawca odwołuje spotkanie."], a:0 },
     { t:"listen", jp:"{政府|せいふ}は{二十日|はつか}、{来年度|らいねんど}の{経済成長率|けいざいせいちょうりつ}の{見通|みとお}しを{一・二|いってんに}パーセントに{引|ひ}き{下|さ}げた。{輸出|ゆしゅつ}の{減少|げんしょう}が{主|おも}な{原因|げんいん}だ。{専門家|せんもんか}の{間|あいだ}では、さらに{下|さ}がるという{見方|みかた}もある。", opts:["Rząd obniżył prognozę wzrostu gospodarczego, głównie przez spadek eksportu.","Rząd podniósł prognozę wzrostu dzięki eksportowi.","Eksperci uważają, że wzrost przyspieszy.","Wzrost gospodarczy w tym roku wyniósł 1,2%."], a:0 },
-    { t:"listen", jp:"{誠|まこと}に{勝手|かって}ながら、{年末年始|ねんまつねんし}は{休業|きゅうぎょう}させていただきます。{期間中|きかんちゅう}のお{問|と}い{合|あ}わせには、{一月|いちがつ}{六日|むいか}{以降|いこう}に{順次|じゅんじ}{対応|たいおう}いたします。", opts:["Firma jest zamknięta w okresie noworocznym, na zapytania odpowie od 6 stycznia.","Firma pracuje normalnie w okresie noworocznym.","Zapytania należy wysyłać przed 6 stycznia.","Firma zamyka się na stałe 6 stycznia."], a:0 },
-    { t:"listen", jp:"{関係者|かんけいしゃ}によると、{両社|りょうしゃ}は{来年|らいねん}{四月|しがつ}をめどに{経営統合|けいえいとうごう}する{方向|ほうこう}で{調整|ちょうせい}している。{正式|せいしき}な{発表|はっぴょう}は{来月|らいげつ}になる{見通|みとお}しだ。", opts:["Według źródeł obie firmy przygotowują fuzję na kwiecień; oficjalny komunikat ma być w przyszłym miesiącu.","Obie firmy oficjalnie ogłosiły fuzję w kwietniu.","Fuzja została odwołana w przyszłym miesiącu.","Jedna firma przejęła drugą w zeszłym roku."], a:0 },
+    { t:"listen", jp:"{誠|まこと}に{勝手|かって}ながら、{年末年始|ねんまつねんし}は{休業|きゅうぎょう}させていただきます。{期間中|きかんちゅう}のお{問|と}い{合|あ}わせには、{一月|いちがつ}{六日|むいか}{以降|いこう}に{順次|じゅんじ}{対応|たいおう}いたします。", opts:["Firma ma przerwę noworoczną, na zapytania odpowie od 6 stycznia.", "Firma pracuje normalnie przez cały okres noworoczny.", "Zapytania z okresu świąt trzeba wysłać przed 6 stycznia.", "Firma 6 stycznia zamyka się na stałe i nie odpowie."], a:0 },
+    { t:"listen", jp:"{関係者|かんけいしゃ}によると、{両社|りょうしゃ}は{来年|らいねん}{四月|しがつ}をめどに{経営統合|けいえいとうごう}する{方向|ほうこう}で{調整|ちょうせい}している。{正式|せいしき}な{発表|はっぴょう}は{来月|らいげつ}になる{見通|みとお}しだ。", opts:["Podobno firmy szykują fuzję na kwiecień, a komunikat będzie za miesiąc.", "Obie firmy już oficjalnie ogłosiły fuzję, która nastąpi w kwietniu.", "Fuzję odwołano, a komunikat w tej sprawie będzie w przyszłym miesiącu.", "Jedna firma przejęła drugą w zeszłym roku, w kwietniu."], a:0 },
     { t:"order", tr:"Uprzejmie proszę o zapoznanie się z załączonym plikiem.", words:["{恐|おそ}れ{入|い}りますが、","{添付|てんぷ}ファイルを","ご{確認|かくにん}","いただけますでしょうか。"] },
     { t:"order", tr:"Pozwolę sobie przedstawić nowy produkt.", words:["{新商品|しんしょうひん}について","ご{説明|せつめい}","させて","いただきます。"] },
     { t:"order", tr:"Nowa stacja ma zostać ukończona w przyszłym roku (przewidywanie).", words:["{新|あたら}しい{駅|えき}は","{来年|らいねん}","{完成|かんせい}する","{見通|みとお}しだ。"] },
@@ -14776,7 +14798,7 @@ __PRO_LESSONS.push({
     { t:"mc", q:"Kansai-ben „{分|わ}からへん” w standardzie to:", opts:["{分|わ}からない","{分|わ}かった","{分|わ}かるでしょう","{分|わ}かってる"], a:0, ex:"～へん = ～ない. Czas przeszły: 分からへんかった = 分からなかった." },
     { t:"mc", q:"「そこ{触|さわ}ったらあかんで」 znaczy:", opts:["Tego nie wolno dotykać.","Możesz tego dotknąć.","Dotknij tego, śmiało.","Ktoś tego dotknął."], a:0, ex:"～たらあかん = ～てはいけない. あかん to kansaiskie だめ." },
     { t:"mc", q:"Standardowy odpowiednik 「{明日|あした}、{仕事|しごと}やねん」:", opts:["{明日|あした}、{仕事|しごと}なんだ。","{明日|あした}、{仕事|しごと}じゃない。","{明日|あした}、{仕事|しごと}ですか。","{明日|あした}、{仕事|しごと}だった。"], a:0, ex:"や = だ, ねん ≈ のだ / んだ. やねん = なんだ." },
-    { t:"mc", q:"Kiedy mieszkaniec Kansai powie 「なんでやねん!」?", opts:["Żartobliwie ripostując absurdalne słowa rozmówcy","Gdy dziękuje sprzedawcy","Gdy przeprasza szefa","Gdy pyta o drogę"], a:0, ex:"なんでやねん to 突っ込み – riposta z manzai, zwykle ze śmiechem. Nie jest to poważne pytanie „dlaczego?”." },
+    { t:"mc", q:"Kiedy mieszkaniec Kansai powie 「なんでやねん!」?", opts:["Gdy żartem ripostuje absurd", "Gdy dziękuje sprzedawcy", "Gdy grzecznie przeprasza szefa", "Gdy pyta przechodnia o drogę"], a:0, ex:"なんでやねん to 突っ込み – riposta z manzai, zwykle ze śmiechem. Nie jest to poważne pytanie „dlaczego?”." },
     { t:"mc", q:"Czym jest ～はる w 「{先生|せんせい}、{来|き}はった」?", opts:["Łagodną formą szacunku","Formą przeczącą","Formą rozkazującą","Formą potencjalną"], a:0, ex:"～はる to kansaiskie lekkie honoryfikum, mniej więcej jak 来られた / いらっしゃった. Nigdy o sobie." },
     { t:"mc", q:"Jako obcokrajowiec w Osace, z klientem w biurze najlepiej:", opts:["mówić standardowym keigo, a Kansai-ben tylko rozumieć","mówić wyłącznie po kansaisku, żeby się przypodobać","mówić なんでやねん na każdą propozycję","używać あほ zamiast ばか, bo jest grzeczniejsze"], a:0, ex:"Kansai-ben to mowa swobodna. Źle naśladowany (エセ関西弁) może razić. Z klientem obowiązuje keigo." },
     { t:"listen", jp:"ほんまに? めっちゃええやん!", opts:["Serio? Mega super!","Naprawdę? To okropne!","Nie wierzę, to kłamstwo.","Serio? Ile to kosztuje?"], a:0 },
@@ -14913,7 +14935,7 @@ __PRO_LESSONS.push({
     { t:"mc", q:"Co znaczy 「{草|くさ}」 w komentarzu pod śmiesznym filmikiem?", opts:["LOL, ale śmieszne","Ten film jest nudny","Na filmie jest trawa","Ten film to spam"], a:0, ex:"Śmiech pisano jako wwww (od 笑う), co wygląda jak trawa – stąd 草. Jest też mówione żartem na głos." },
     { t:"mc", q:"Które słowo z SNS dziś brzmi najbardziej przestarzale?", opts:["～なう","コスパ","バズる","{推|お}し"], a:0, ex:"～なう było modne około 2010 roku; dziś używa się go głównie ironicznie. コスパ, バズる, 推し są wciąż żywe." },
     { t:"listen", jp:"{友達|ともだち}に{約束|やくそく}をドタキャンされた。", opts:["Kolega odwołał spotkanie w ostatniej chwili.","Kolega spóźnił się na spotkanie.","Odwołałem spotkanie z kolegą tydzień wcześniej.","Kolega przyszedł na spotkanie za wcześnie."], a:0 },
-    { t:"listen", jp:"この{店|みせ}、{安|やす}くておいしいし、コスパ{最強|さいきょう}だね。", opts:["Ten lokal jest tani i dobry – najlepszy stosunek ceny do jakości.","Ten lokal jest drogi, ale dobry.","Ten lokal jest tani, ale niedobry.","W tym lokalu najlepsza jest kawa."], a:0 },
+    { t:"listen", jp:"この{店|みせ}、{安|やす}くておいしいし、コスパ{最強|さいきょう}だね。", opts:["Tani i smaczny – świetny stosunek ceny do jakości.", "Drogi, ale za to bardzo smaczny i elegancki.", "Tani, ale niestety niezbyt smaczny lokal.", "Najlepsza jest tu kawa, reszta jest taka sobie."], a:0 },
     { t:"listen", jp:"{強盗|ごうとう}{容疑|ようぎ}で{男|おとこ}を{逮捕|たいほ}。", opts:["Mężczyzna aresztowany pod zarzutem rozboju.","Mężczyzna padł ofiarą rozboju.","Mężczyzna został zwolniony z aresztu.","Policja szuka mężczyzny podejrzanego o rozbój."], a:0 },
     { t:"order", tr:"Wysłałam wiadomość, a on przeczytał i nie odpisał.", words:["メッセージを","{送|おく}ったのに","{既読|きどく}スルー","された。"] },
     { t:"order", tr:"Filmik z kotem stał się viralem w social mediach.", words:["{猫|ねこ}の","{動画|どうが}が","SNSで","バズった。"] },
@@ -16784,10 +16806,10 @@ STORIES.push({
     ["メッセージ", "wiadomość (np. SMS)"]
   ],
   questions: [
-    { t: "mc", q: "Dokąd Haruka chciała pojechać w sobotę?", opts: ["nad morze", "w góry", "do kina", "do zoo"], a: 0, ex: "明日は土曜日だ。友達と海に行きたい – ～たい = chcę; 海 = morze." },
+    { t: "mc", q: "Dokąd Haruka chciała pojechać w sobotę?", opts: ["nad morze", "w góry", "do kina", "do ogrodu zoologicznego"], a: 0, ex: "明日は土曜日だ。友達と海に行きたい – ～たい = chcę; 海 = morze." },
     { t: "mc", q: "Dlaczego zrezygnowała z wyjazdu? (dwa powody)", opts: ["zapowiadano deszcz i musiała odrobić lekcje", "była chora i padał deszcz", "brat nie chciał jechać i było zimno", "przyjaciele nie mieli czasu"], a: 0, ex: "Prognoza: 明日は雨でしょう, a poza tym (それに) 宿題をしなければならない – musi odrobić pracę domową." },
     { t: "mc", q: "{土曜日|どようび}の{天気|てんき}はどうでしたか。", opts: ["とてもいい{天気|てんき}でした。", "{一日|いちにち}{雨|あめ}でした。", "{風|かぜ}が{強|つよ}かったです。", "{雪|ゆき}が{降|ふ}りました。"], a: 0, ex: "外はとてもいい天気だった。雨はぜんぜん降らなかった – prognoza się pomyliła." },
-    { t: "mc", q: "Gdzie była Ai w sobotę w południe?", opts: ["nad morzem", "w domu", "u Haruki", "w szkole"], a: 0, ex: "Ai pisze: 今、海にいるよ！ – „jestem teraz nad morzem!”." },
+    { t: "mc", q: "Gdzie była Ai w sobotę w południe?", opts: ["nad morzem", "w domu", "u Haruki", "w szkole na zajęciach"], a: 0, ex: "Ai pisze: 今、海にいるよ！ – „jestem teraz nad morzem!”." },
     { t: "listen", jp: "{弟|おとうと}は{家|いえ}でゲームをしたがっている。", opts: ["Brat chce grać w domu w gry.", "Chcę grać z bratem w gry.", "Brat nie chce grać w gry.", "Brat gra w gry u kolegi."], a: 0 },
     { t: "type", q: "Do której godziny Haruka odrabiała lekcje? Wpisz kaną: ごご＿＿まで", a: ["ごじ", "五時"], hint: "5:00", ex: "午後五時（ごじ）まで部屋で宿題をした." },
     { t: "order", tr: "Jutro zamierzam uczyć się w domu.", words: ["{明日|あした}は", "{家|いえ}で", "{勉強|べんきょう}する", "つもりだ。"] },
@@ -16881,7 +16903,7 @@ STORIES.push({
   questions: [
     { t: "mc", q: "Dlaczego Piotr przyjdzie dopiero o dwunastej?", opts: ["bo w sobotę rano pracuje", "bo musi zrobić pierogi", "bo zaspał", "bo jedzie po mamę"], a: 0, ex: "土曜日の朝はアルバイトがあるんだ – ～んだ wyjaśnia powód: w sobotę rano ma pracę dorywczą." },
     { t: "mc", q: "Co kupi Haruka?", opts: ["mięso i warzywa", "talerze i kubki", "pierogi", "napoje"], a: 0, ex: "私は肉と野菜を買っておくね – ～ておく = zrobić coś zawczasu." },
-    { t: "mc", q: "なおきさんは{何|なに}を{持|も}って{行|い}きますか。", opts: ["{皿|さら}と{割|わ}り{箸|ばし}と{紙|かみ}コップ", "{肉|にく}と{野菜|やさい}", "ピエロギ", "{天気予報|てんきよほう}"], a: 0, ex: "Naoki: 僕は皿と割り箸と紙コップを持って行くよ." },
+    { t: "mc", q: "なおきさんは{何|なに}を{持|も}って{行|い}きますか。", opts: ["{皿|さら}と{割|わ}り{箸|ばし}と{紙|かみ}コップ", "{肉|にく}と{野菜|やさい}と{飲|の}み{物|もの}", "ピエロギ", "{天気予報|てんきよほう}"], a: 0, ex: "Naoki: 僕は皿と割り箸と紙コップを持って行くよ." },
     { t: "mc", q: "Jaki błąd popełnił Naoki?", opts: ["przyszedł dzień za wcześnie", "przyszedł na złą stację", "zapomniał talerzy", "spóźnił się godzinę"], a: 0, ex: "Haruka: バーベキューは明日だよ！今日は金曜日！ – Naoki przyszedł w piątek, a grill był w sobotę." },
     { t: "listen", jp: "{作|つく}り{方|かた}は{母|はは}に{聞|き}いておく。", opts: ["Zapytam wcześniej mamę, jak to się robi.", "Mama mi już powiedziała, jak to zrobić.", "Zrobię to razem z mamą.", "Nie wiem, jak to się robi."], a: 0 },
     { t: "type", q: "Jakie polskie danie zrobi Piotr? Wpisz kaną (katakaną).", a: ["ピエロギ", "ぴえろぎ"], hint: "pierogi", ex: "じゃ、ピエロギを作ろう – „to zrobię pierogi” (forma wolicjonalna 作ろう)." },
@@ -16935,7 +16957,7 @@ STORIES.push({
     { t: "mc", q: "Czy trzeba było kupić bilet?", opts: ["nie, bilet nie był potrzebny", "tak, i był drogi", "tak, ale tylko dla studentów", "nie wiadomo"], a: 0, ex: "チケットは買わなくてもいいって – ～なくてもいい = nie trzeba." },
     { t: "mc", q: "{二人|ふたり}はどのぐらい{待|ま}ちましたか。", opts: ["{三時間|さんじかん}", "{一時間|いちじかん}", "{三十分|さんじゅっぷん}", "{一日|いちにち}"], a: 0, ex: "二人は三時間待ってから、やっと前の席に座れた – czekali trzy godziny." },
     { t: "mc", q: "Kim okazał się „sławny piosenkarz”?", opts: ["kierownikiem akademika", "kolegą Kenty", "nauczycielem Anny", "prawdziwą gwiazdą z telewizji"], a: 0, ex: "Anna: あの人…寮の管理人さんみたい – ～みたい = wygląda na to, że… I rzeczywiście to on." },
-    { t: "mc", q: "Dlaczego kierownik był kiedyś w telewizji?", opts: ["uratował kota z drzewa", "dobrze śpiewał", "wygrał konkurs", "był aktorem"], a: 0, ex: "去年、ニュースに出たそうだよ。寮の猫を木から助けた時に – w zeszłym roku, kiedy ratował kota." },
+    { t: "mc", q: "Dlaczego kierownik był kiedyś w telewizji?", opts: ["uratował kota z drzewa", "dobrze śpiewał w programie muzycznym", "wygrał konkurs", "grał kiedyś w serialu"], a: 0, ex: "去年、ニュースに出たそうだよ。寮の猫を木から助けた時に – w zeszłym roku, kiedy ratował kota." },
     { t: "listen", jp: "{雨|あめ}が{降|ふ}っても{行|い}くよ！", opts: ["Pójdę, nawet jeśli będzie padać!", "Jeśli będzie padać, nie pójdę.", "Pójdę, kiedy przestanie padać.", "Padało, ale poszłam."], a: 0 },
     { t: "type", q: "Gdzie mieszkają Anna i Kenta? Wpisz kaną: ＿＿＿ (akademik)", a: ["りょう", "寮"], hint: "akademik", ex: "寮（りょう） = akademik. Np. 寮の食堂, 寮の管理人さん." },
     { t: "order", tr: "Lepiej iść wcześnie.", words: ["{早|はや}く", "{行|い}った", "ほうが", "いいよ。"] }
@@ -17033,7 +17055,7 @@ STORIES.push({
     { t: "mc", q: "Jak długo Ewa mieszkała u państwa Yamamoto?", opts: ["tydzień", "miesiąc", "rok", "dwa tygodnie"], a: 0, ex: "先月は一週間、本当にお世話になりました – 一週間 = jeden tydzień." },
     { t: "mc", q: "Czego nauczył Ewę pan Yamamoto?", opts: ["robić zupę miso", "uprawiać ryż", "śpiewać japońskie piosenki", "jeździć na krowie"], a: 0, ex: "お父さんに教えていただいた味噌汁の作り方 – sposób robienia zupy miso. ～ていただく = uniżona forma ～てもらう." },
     { t: "mc", q: "エヴァさんは{週|しゅう}に{何回|なんかい}{味噌汁|みそしる}を{作|つく}っていますか。", opts: ["{二回|にかい}", "{一回|いっかい}", "{三回|さんかい}", "{毎日|まいにち}"], a: 0, ex: "週に二回味噌汁を作っております – okres + に + liczba razy: dwa razy w tygodniu." },
-    { t: "mc", q: "Co dziwi Ewę w jej zupie miso?", opts: ["mimo że robi wszystko tak samo, smak jest inny", "że jest za słona", "że w Polsce nie ma miso", "że rodzina jej nie lubi"], a: 0, ex: "教えていただいたとおりに作っているのに、同じ味になりません – ～のに wyraża zdziwienie: „mimo że…”." },
+    { t: "mc", q: "Co dziwi Ewę w jej zupie miso?", opts: ["że smak jest inny, choć robi ją tak samo", "że wychodzi za słona, choć daje mało soli", "że w Polsce nigdzie nie można kupić miso", "że rodzina w ogóle jej nie lubi"], a: 0, ex: "教えていただいたとおりに作っているのに、同じ味になりません – ～のに wyraża zdziwienie: „mimo że…”." },
     { t: "mc", q: "Jakie plany ma Ewa na przyszły rok?", opts: ["rok studiów w Tokio", "przeprowadzkę na japońską wieś", "pracę w Krakowie", "wycieczkę z rodziną Yamamoto do Polski"], a: 0, ex: "来年の春にまた日本へ参ります。東京の大学で一年間勉強いたします – 参る i いたす to formy uniżające (kenjōgo)." },
     { t: "listen", jp: "その{時|とき}は、ポーランドのお{菓子|かし}をお{持|も}ちします。", opts: ["Wtedy przywiozę polskie słodycze.", "Proszę przywieźć polskie słodycze.", "Wtedy jadłam polskie słodycze.", "Nie przywiozę słodyczy."], a: 0 },
     { t: "type", q: "Kto jest na zdjęciu obok Ewy? Wpisz kaną: ＿＿ (krowa)", a: ["うし", "牛"], hint: "krowa", ex: "牛の隣で笑っているのが私です – obok krowy (牛 = うし)." },
@@ -17077,11 +17099,11 @@ STORIES.push({
     ["{気持|きも}ちになる", "nabrać ochoty, poczuć się na siłach"]
   ],
   questions: [
-    { t: "mc", q: "Dlaczego Maria zaczęła biegać?", opts: ["Lekarz na badaniach powiedział, że ruch jej pomoże.", "Koleżanka z pracy zaprosiła ją do parku.", "Chciała wystartować w maratonie.", "Kupiła nowe buty do biegania."], a: 0, ex: "Linia 2: {健康|けんこう}{診断|しんだん}で「もう{少|すこ}し{運動|うんどう}すれば…」と{言|い}われました – usłyszała to na badaniach." },
+    { t: "mc", q: "Dlaczego Maria zaczęła biegać?", opts: ["Lekarz na badaniach poradził jej więcej ruchu.", "Koleżanka z pracy zaprosiła ją do parku.", "Chciała wystartować w maratonie w Tokio.", "Kupiła sobie nowe, drogie buty do biegania."], a: 0, ex: "Linia 2: {健康|けんこう}{診断|しんだん}で「もう{少|すこ}し{運動|うんどう}すれば…」と{言|い}われました – usłyszała to na badaniach." },
     { t: "mc", q: "「{雨|あめ}が{降|ふ}ったら{休|やす}む」 – co tu znaczy ～たら?", opts: ["jeśli / w sytuacji, gdy (pada)", "zawsze, kiedy pada (prawo natury)", "skoro już mowa o deszczu", "mimo że pada"], a: 0, ex: "～たら to warunek „jeśli / kiedy już”: jeśli zdarzy się deszcz, wtedy odpoczywam." },
     { t: "mc", q: "Co poradziła jej starsza koleżanka ({先輩|せんぱい})?", opts: ["Biegać razem z przyjaciółmi.", "Biegać także w deszczu.", "Kupić drogie buty.", "Biegać krócej, po pięć minut."], a: 0, ex: "「{続|つづ}けたいなら、{友達|ともだち}と{一緒|いっしょ}に{走|はし}ったらどう?」 – なら podejmuje temat (jeśli chcesz wytrwać), たらどう? to rada." },
     { t: "mc", q: "Co autorka myśli, patrząc wstecz?", opts: ["Że powinna była zacząć wcześniej.", "Że bieganie jest za drogie.", "Że lepiej biegać samemu.", "Że zasada o deszczu była zła."], a: 0, ex: "もっと{早|はや}く{始|はじ}めればよかった – ～ばよかった wyraża żal: „trzeba było…”." },
-    { t: "listen", jp: "{一人|ひとり}だと{休|やす}みたくなる{日|ひ}も、{友達|ともだち}が{待|ま}っていれば{行|い}くしかありません。", opts: ["Gdy jestem sama, czasem chcę odpuścić, ale jeśli przyjaciele czekają, muszę iść.", "Gdy jestem sama, zawsze biegam, a z przyjaciółmi odpoczywam.", "Przyjaciele czekają na mnie każdego dnia w parku.", "Jeśli przyjaciele nie przyjdą, nie idę biegać."], a: 0 },
+    { t: "listen", jp: "{一人|ひとり}だと{休|やす}みたくなる{日|ひ}も、{友達|ともだち}が{待|ま}っていれば{行|い}くしかありません。", opts: ["Sama czasem chcę odpuścić, ale gdy przyjaciele czekają, muszę iść.", "Gdy jestem sama, zawsze biegam, a z przyjaciółmi odpoczywam.", "Przyjaciele czekają na mnie w parku każdego dnia, nawet gdy pada.", "Jeśli przyjaciele nie przyjdą, nie idę biegać i zostaję w domu."], a: 0 },
     { t: "order", tr: "Myślę, że trzeba było zacząć wcześniej.", words: ["もっと{早|はや}く", "{始|はじ}めれば", "よかったと", "{思|おも}っています。"] },
     { t: "type", q: "Uzupełnij formą ば czasownika {始|はじ}める: もっと{早|はや}く＿＿よかった。", a: ["はじめれば", "始めれば"], hint: "grupa RU: る → れば", ex: "{始|はじ}める → {始|はじ}めれば. ～ばよかった = „szkoda, że nie…”." },
     { t: "match", pairs: [["{五分|ごふん}{走|はし}ると", "gdy pobiegnę pięć minut (zawsze wtedy)"], ["{雨|あめ}が{降|ふ}ったら", "jeśli spadnie deszcz"], ["{続|つづ}けたいなら", "jeśli (skoro) chcesz wytrwać"], ["{靴|くつ}があれば", "jeśli ma się buty"]] }
@@ -17123,11 +17145,11 @@ STORIES.push({
     ["にっこり", "z uśmiechem, promiennie"]
   ],
   questions: [
-    { t: "mc", q: "Skąd Kenta wie, że nowy sąsiad to student z zagranicy?", opts: ["Usłyszał to od właściciela mieszkania.", "Widział jego legitymację.", "Ayaka mu powiedziała.", "Zgadł, bo widział ciężarówkę."], a: 0, ex: "{大家|おおや}さんによると…{留学生|りゅうがくせい}だそうだ – ～によると…そうだ to informacja z drugiej ręki („podobno, według…”)." },
-    { t: "mc", q: "Na jakiej podstawie Ayaka mówi 「{引|ひ}っ{越|こ}してきたみたいだ」?", opts: ["Na podstawie tego, co sama zobaczyła (ciężarówka, światło).", "Bo przeczytała to w ogłoszeniu.", "Bo sąsiad sam jej to powiedział.", "Bo właściciel jej o tym wspomniał."], a: 0, ex: "みたいだ / ようだ to wniosek z własnych obserwacji – widziała ciężarówkę i światło w oknie." },
-    { t: "mc", q: "「{話|はな}せるはずだよ」 – co Kenta ma na myśli?", opts: ["Logicznie powinien mówić, skoro studiuje w Japonii.", "Słyszał, że sąsiad mówi po japońsku.", "Ma nadzieję, że sąsiad mówi po japońsku.", "Sąsiad powinien się nauczyć japońskiego."], a: 0, ex: "～はずだ = „powinno tak być” na podstawie logicznego rozumowania (dostał się na japońską uczelnię)." },
+    { t: "mc", q: "Skąd Kenta wie, że nowy sąsiad to student z zagranicy?", opts: ["Usłyszał to od właściciela mieszkania.", "Widział jego legitymację studencką.", "Ayaka mu o tym powiedziała rano.", "Zgadł, bo widział ciężarówkę."], a: 0, ex: "{大家|おおや}さんによると…{留学生|りゅうがくせい}だそうだ – ～によると…そうだ to informacja z drugiej ręki („podobno, według…”)." },
+    { t: "mc", q: "Na jakiej podstawie Ayaka mówi 「{引|ひ}っ{越|こ}してきたみたいだ」?", opts: ["Na podstawie tego, co sama zobaczyła.", "Bo przeczytała to w ogłoszeniu.", "Bo sąsiad sam jej to powiedział.", "Bo właściciel jej o tym wspomniał."], a: 0, ex: "みたいだ / ようだ to wniosek z własnych obserwacji – widziała ciężarówkę i światło w oknie." },
+    { t: "mc", q: "「{話|はな}せるはずだよ」 – co Kenta ma na myśli?", opts: ["Logicznie powinien mówić, skoro studiuje w Japonii.", "Słyszał od kogoś, że sąsiad dobrze mówi po japońsku.", "Ma nadzieję, że sąsiad choć trochę mówi po japońsku.", "Sąsiad powinien jak najszybciej nauczyć się japońskiego."], a: 0, ex: "～はずだ = „powinno tak być” na podstawie logicznego rozumowania (dostał się na japońską uczelnię)." },
     { t: "mc", q: "Co było w pudłach Toma?", opts: ["Japońskie mangi.", "Podręczniki do japońskiego.", "Ubrania i naczynia.", "Prezenty dla sąsiadów."], a: 0, ex: "{全部|ぜんぶ}{日本|にほん}の{漫画|まんが}です – same japońskie komiksy." },
-    { t: "mc", q: "Ostatnie zdanie 「{日本語|にほんご}が{上手|じょうず}なはずですね」 znaczy tu:", opts: ["To dlatego (nic dziwnego, że) dobrze mówisz po japońsku.", "Na pewno będziesz dobrze mówić po japońsku.", "Podobno dobrze mówisz po japońsku.", "Powinieneś lepiej mówić po japońsku."], a: 0, ex: "はずだ może też oznaczać „to wyjaśnia sprawę” – gdy poznajemy powód czegoś, co już widzimy." },
+    { t: "mc", q: "Ostatnie zdanie 「{日本語|にほんご}が{上手|じょうず}なはずですね」 znaczy tu:", opts: ["Nic dziwnego, że dobrze mówisz po japońsku.", "Na pewno będziesz dobrze mówić po japońsku.", "Podobno dobrze mówisz po japońsku.", "Powinieneś lepiej mówić po japońsku."], a: 0, ex: "はずだ może też oznaczać „to wyjaśnia sprawę” – gdy poznajemy powód czegoś, co już widzimy." },
     { t: "listen", jp: "{困|こま}っているようだね。{手伝|てつだ}ってあげるべきかな。", opts: ["Wygląda na to, że ma kłopot. Może powinniśmy mu pomóc?", "Podobno ma kłopot. Nie musimy mu pomagać.", "Mamy kłopot. Może on nam pomoże?", "On na pewno nie ma kłopotu, sam sobie poradzi."], a: 0 },
     { t: "order", tr: "Skoro będzie mieszkał obok, powinniśmy się przywitać.", words: ["{隣|となり}に{住|す}むんだから、", "{挨拶|あいさつ}も", "するべきだよ。"] },
     { t: "type", q: "Uzupełnij (powinno się): {挨拶|あいさつ}もする＿＿だよ。", a: ["べき"], ex: "V-słownikowa + べきだ = „powinno się”. Przy する można też powiedzieć すべきだ." }
@@ -17169,8 +17191,8 @@ STORIES.push({
     { t: "mc", q: "Dlaczego pokaz przełożono?", opts: ["Z powodu tajfunu, przez który wezbrała rzeka.", "Bo zabrakło wolontariuszy.", "Bo komitet nie zdążył z przygotowaniami.", "Bo przyjechało za mało gości."], a: 0, ex: "{台風|たいふう}のため – ため(に) w stylu prasowym podaje przyczynę („z powodu”)." },
     { t: "mc", q: "「あんなに{頑張|がんば}ったのに」 – jakie uczucie wyraża のに?", opts: ["Rozczarowanie: wysiłek poszedł na marne.", "Radość z sukcesu.", "Cel: żeby się starać.", "Przypuszczenie: chyba się starali."], a: 0, ex: "～のに = „a przecież…” – wynik nie jest taki, jakiego się spodziewaliśmy, stąd żal." },
     { t: "mc", q: "Kto pomógł doprowadzić teren do porządku?", opts: ["Mieszkańcy, licealiści i pobliskie sklepy.", "Tylko członkowie komitetu.", "Firma sprzątająca z Tokio.", "Turyści, którzy przyjechali na pokaz."], a: 0, ex: "{町|まち}の{人々|ひとびと}, {高校生|こうこうせい}たち i {近|ちか}くの{店|みせ} – wszyscy pomogli. Stąd {皆|みな}の{協力|きょうりょく}のおかげで." },
-    { t: "mc", q: "Dlaczego w zdaniu 8 jest おかげで, a w zdaniu 3 せいで?", opts: ["おかげで – dobry skutek (dzięki), せいで – zły skutek (przez).", "Oba znaczą to samo, to tylko styl.", "おかげで – przyczyna w przeszłości, せいで – w przyszłości.", "せいで jest grzeczniejsze."], a: 0, ex: "{協力|きょうりょく}のおかげで – dzięki współpracy (pozytywny wynik); {台風|たいふう}のせいで – przez tajfun (negatywny wynik)." },
-    { t: "listen", jp: "{予定|よてい}が{変|か}わっても、{絶対|ぜったい}に{見|み}たかったんです。", opts: ["Nawet jeśli termin się zmienił, koniecznie chciałam to zobaczyć.", "Termin się zmienił, więc nie mogłam tego zobaczyć.", "Gdyby termin się zmienił, nie przyjechałabym.", "Chciałam zobaczyć, czy termin się zmieni."], a: 0 },
+    { t: "mc", q: "Dlaczego w zdaniu 8 jest おかげで, a w zdaniu 3 せいで?", opts: ["おかげで – dobry skutek, せいで – zły skutek.", "Oba znaczą to samo, to tylko styl.", "おかげで – przyczyna w przeszłości, せいで – w przyszłości.", "せいで jest grzeczniejsze."], a: 0, ex: "{協力|きょうりょく}のおかげで – dzięki współpracy (pozytywny wynik); {台風|たいふう}のせいで – przez tajfun (negatywny wynik)." },
+    { t: "listen", jp: "{予定|よてい}が{変|か}わっても、{絶対|ぜったい}に{見|み}たかったんです。", opts: ["Choć termin się zmienił, koniecznie chciałam to zobaczyć.", "Termin się zmienił, więc nie mogłam tego zobaczyć.", "Gdyby termin się zmienił, w ogóle bym nie przyjechała.", "Chciałam po prostu zobaczyć, czy termin się jeszcze zmieni."], a: 0 },
     { t: "order", tr: "Dzięki współpracy wszystkich teren wrócił do dawnego stanu w trzy dni.", words: ["{皆|みな}の{協力|きょうりょく}のおかげで、", "{会場|かいじょう}は", "{三日|みっか}で", "{元|もと}に{戻|もど}った。"] },
     { t: "type", q: "Wstaw (negatywna przyczyna – „przez”): {台風|たいふう}の＿＿{川|かわ}の{水|みず}が{増|ふ}えた。", a: ["せいで"], ex: "N + の + せいで – „przez N”, gdy skutek jest zły." },
     { t: "match", pairs: [["{延期|えんき}", "przełożenie terminu"], ["{会場|かいじょう}", "teren imprezy"], ["{協力|きょうりょく}", "współpraca"], ["{感謝|かんしゃ}", "wdzięczność"], ["{無料|むりょう}", "za darmo"]] }
@@ -17213,12 +17235,12 @@ STORIES.push({
     ["めっきり", "wyraźnie, zauważalnie"]
   ],
   questions: [
-    { t: "mc", q: "Jaka jest główna myśl autora?", opts: ["List odręczny nie znika, ale zmienia rolę: staje się prezentem niosącym uczucia.", "Listy odręczne są niepotrzebne i wkrótce znikną.", "E-maile są bardziej osobiste niż listy.", "Trzeba zakazać wysyłania kartek noworocznych."], a: 0, ex: "{手書|てが}きが{完全|かんぜん}になくなるわけではない oraz {特別|とくべつ}な{贈|おく}り{物|もの}になりつつある." },
-    { t: "mc", q: "「{減|へ}る{一方|いっぽう}だ」 znaczy:", opts: ["ciągle ubywa (i nic tego nie zatrzymuje)", "z jednej strony ubywa", "przestało ubywać", "ubywa tylko w jednym miejscu"], a: 0, ex: "V + {一方|いっぽう}だ = zmiana idzie w jednym kierunku coraz bardziej, zwykle w złą stronę." },
+    { t: "mc", q: "Jaka jest główna myśl autora?", opts: ["Listy odręczne nie znikną – stają się prezentem z uczuciami.", "Listy odręczne są dziś niepotrzebne i wkrótce całkiem znikną.", "E-maile są bardziej osobiste i szczere niż listy pisane ręcznie.", "Trzeba zakazać wysyłania kartek noworocznych, bo to strata papieru."], a: 0, ex: "{手書|てが}きが{完全|かんぜん}になくなるわけではない oraz {特別|とくべつ}な{贈|おく}り{物|もの}になりつつある." },
+    { t: "mc", q: "「{減|へ}る{一方|いっぽう}だ」 znaczy:", opts: ["ciągle tylko ubywa", "z jednej strony ubywa", "przestało ubywać", "ubywa tylko w jednym miejscu"], a: 0, ex: "V + {一方|いっぽう}だ = zmiana idzie w jednym kierunku coraz bardziej, zwykle w złą stronę." },
     { t: "mc", q: "「{変|か}わりつつある」 – jak to rozumieć?", opts: ["zmiana właśnie trwa", "zmiana już się zakończyła", "zmiana dopiero nastąpi w przyszłości", "nic się nie zmienia"], a: 0, ex: "V-ます-temat + つつある = proces jest w toku." },
     { t: "mc", q: "Co autor poczuł, czytając list od nauczyciela?", opts: ["Jakby słyszał jego głos.", "Że nauczyciel jest na niego zły.", "Że pismo jest nieczytelne.", "Że wolałby e-mail."], a: 0, ex: "{先生|せんせい}の{声|こえ}が{聞|き}こえてくるような{気|き}がした – „miałem wrażenie, że słyszę głos”." },
-    { t: "mc", q: "「{漢字|かんじ}は{読|よ}めるものの…」 – co wyraża ものの?", opts: ["co prawda (czytam), ale (pisać nie umiem)", "ponieważ czytam", "w miarę jak czytam", "jeśli umiem czytać"], a: 0, ex: "～ものの = „co prawda…, ale” – ustępstwo z n2-2." },
-    { t: "listen", jp: "{年|とし}を{取|と}るにつれて、こうした{小|ちい}さなものの{価値|かち}が{分|わ}かるようになった。", opts: ["Z wiekiem zacząłem rozumieć wartość takich drobnych rzeczy.", "Gdy byłem młody, ceniłem drobne rzeczy.", "Drobne rzeczy tracą wartość z upływem lat.", "Z wiekiem trudniej mi zrozumieć drobiazgi."], a: 0 },
+    { t: "mc", q: "「{漢字|かんじ}は{読|よ}めるものの…」 – co wyraża ものの?", opts: ["co prawda czytam, ale…", "ponieważ czytam, więc…", "w miarę jak czytam, coraz…", "jeśli umiem czytać, to…"], a: 0, ex: "～ものの = „co prawda…, ale” – ustępstwo z n2-2." },
+    { t: "listen", jp: "{年|とし}を{取|と}るにつれて、こうした{小|ちい}さなものの{価値|かち}が{分|わ}かるようになった。", opts: ["Z wiekiem zacząłem rozumieć wartość takich drobiazgów.", "Gdy byłem młody, bardzo ceniłem takie drobne rzeczy.", "Takie drobne rzeczy tracą wartość z upływem lat.", "Z wiekiem coraz trudniej mi zrozumieć takie drobiazgi."], a: 0 },
     { t: "order", tr: "Wraz z upowszechnieniem smartfonów sposoby kontaktu się zmieniają.", words: ["スマートフォンの{普及|ふきゅう}に", "{伴|ともな}って、", "{連絡|れんらく}の{手段|しゅだん}は", "{変|か}わりつつある。"] },
     { t: "type", q: "Uzupełnij (w miarę jak): {生活|せいかつ}が{便利|べんり}になる＿＿、{字|じ}を{書|か}く{機会|きかい}を{失|うしな}ってきた。", a: ["につれて", "につれ"], ex: "V-słownikowa + につれて = „w miarę jak” – jedna zmiana pociąga za sobą drugą." }
   ]
@@ -17258,12 +17280,12 @@ STORIES.push({
     ["{誓|ちか}う", "przysięgać"]
   ],
   questions: [
-    { t: "mc", q: "Dlaczego bohater nie pojechał taksówką?", opts: ["Miał w portfelu tylko tysiąc jenów.", "Nie było żadnej taksówki.", "Chciał trochę poćwiczyć.", "Kierowca odmówił kursu."], a: 0, ex: "{財布|さいふ}には{千円|せんえん}しかなく、タクシーに{乗|の}るわけにはいかない – za mało pieniędzy." },
-    { t: "mc", q: "「{帰|かえ}らざるを{得|え}なかった」 znaczy:", opts: ["nie miałem wyjścia, musiałem wrócić (pieszo)", "nie mogłem wrócić", "nie chciałem wracać", "mogłem nie wracać"], a: 0, ex: "V-ない-temat + ざるを{得|え}ない = „nie pozostaje nic innego, jak…” – przymus z okoliczności." },
+    { t: "mc", q: "Dlaczego bohater nie pojechał taksówką?", opts: ["Miał w portfelu tylko tysiąc jenów.", "Nie było żadnej wolnej taksówki na postoju.", "Chciał trochę poćwiczyć i pospacerować.", "Kierowca taksówki odmówił mu kursu."], a: 0, ex: "{財布|さいふ}には{千円|せんえん}しかなく、タクシーに{乗|の}るわけにはいかない – za mało pieniędzy." },
+    { t: "mc", q: "「{帰|かえ}らざるを{得|え}なかった」 znaczy:", opts: ["musiałem wrócić", "nie mogłem wrócić", "nie chciałem wracać", "mogłem nie wracać"], a: 0, ex: "V-ない-temat + ざるを{得|え}ない = „nie pozostaje nic innego, jak…” – przymus z okoliczności." },
     { t: "mc", q: "Co bohater zrobił PRZED wyruszeniem w drogę?", opts: ["Sprawdził trasę w aplikacji z mapą.", "Kupił wodę w konbini.", "Zadzwonił do domu.", "Poszedł szukać zgubionych pieniędzy."], a: 0, ex: "{確認|かくにん}した{上|うえ}で = „po sprawdzeniu, (dopiero) wtedy…”." },
-    { t: "mc", q: "Dlaczego bohater się roześmiał?", opts: ["Bo uświadomił sobie, że zgubił swój jedyny banknot.", "Bo zobaczył śmiesznego kota.", "Bo doręczyciel gazet go rozbawił.", "Bo dotarł do domu bardzo szybko."], a: 0, ex: "{自分|じぶん}の{間抜|まぬ}けさに、{笑|わら}わずにはいられなかった – nie mógł się powstrzymać od śmiechu nad własnym gapiostwem." },
+    { t: "mc", q: "Dlaczego bohater się roześmiał?", opts: ["Bo zrozumiał, że zgubił jedyny banknot.", "Bo zobaczył na ulicy śmiesznego kota.", "Bo doręczyciel gazet powiedział coś zabawnego.", "Bo dotarł do domu zaskakująco szybko."], a: 0, ex: "{自分|じぶん}の{間抜|まぬ}けさに、{笑|わら}わずにはいられなかった – nie mógł się powstrzymać od śmiechu nad własnym gapiostwem." },
     { t: "mc", q: "Jak bohater ocenia tę noc na końcu?", opts: ["Spacer w sumie nie był zły.", "To była najgorsza noc w życiu.", "Już nigdy nie wyjdzie wieczorem.", "Żałuje, że nie pożyczył pieniędzy."], a: 0, ex: "あの{夜|よる}の{散歩|さんぽ}は{悪|わる}くなかった." },
-    { t: "listen", jp: "{歩|ある}くと{決|き}めたからには、{楽|たの}しんでやろうと{思|おも}った。", opts: ["Skoro już postanowiłem iść, pomyślałem, że będę się tym cieszyć.", "Ponieważ lubię chodzić, postanowiłem iść.", "Postanowiłem iść, ale wcale nie było przyjemnie.", "Jeśli zdecyduję się iść, będę się cieszyć."], a: 0 },
+    { t: "listen", jp: "{歩|ある}くと{決|き}めたからには、{楽|たの}しんでやろうと{思|おも}った。", opts: ["Skoro postanowiłem iść, chciałem się tym cieszyć.", "Ponieważ lubię chodzić pieszo, postanowiłem iść.", "Postanowiłem iść, ale wcale nie było mi przyjemnie.", "Jeśli kiedyś zdecyduję się iść, będę się cieszyć."], a: 0 },
     { t: "order", tr: "Nie pozostawało nic innego, jak iść dalej.", words: ["もう、", "{歩|ある}き{続|つづ}ける", "しかない。"] },
     { t: "type", q: "Uzupełnij: {歩|ある}いて{帰|かえ}らざるを＿＿なかった。", a: ["え", "得"], ex: "ざるを{得|え}ない – {得|え} czytamy え." }
   ]
@@ -17303,9 +17325,9 @@ STORIES.push({
     ["つきましては", "w związku z tym (formalnie)"]
   ],
   questions: [
-    { t: "mc", q: "Dlaczego pani Hayashi prosi o zmianę terminu?", opts: ["W fabryce będzie przegląd urządzeń i nie zdążą przygotować prototypów.", "Pan Kimura jest chory.", "Sala konferencyjna jest zajęta.", "Pani Hayashi wyjeżdża w delegację."], a: 0, ex: "{工場|こうじょう}の{設備|せつび}{点検|てんけん}に{伴|ともな}い…{試作品|しさくひん}をご{用意|ようい}できなくなりました." },
-    { t: "mc", q: "O co pani Hayashi prosi pana Kimurę do piątku?", opts: ["O wybranie odpowiadającego mu terminu.", "O przesłanie prototypów.", "O rezerwację sali.", "O potwierdzenie zamówienia."], a: 0, ex: "ご{都合|つごう}のよい{日時|にちじ}を…お{知|し}らせいただけますでしょうか – najgrzeczniejszy szczebel prośby." },
-    { t: "mc", q: "Dlaczego o kierowniku fabryki napisano po prostu {森|もり}, bez さん?", opts: ["Bo to osoba z własnej firmy, a list jest do klienta (uchi–soto).", "Bo pani Hayashi go nie lubi.", "Bo jest młodszy od niej.", "To błąd w e-mailu."], a: 0, ex: "Wobec klienta o kolegach z własnej firmy mówimy bez さん i bez tytułów grzecznościowych." },
+    { t: "mc", q: "Dlaczego pani Hayashi prosi o zmianę terminu?", opts: ["Przegląd maszyn w fabryce opóźni prototypy.", "Pan Kimura jest chory i nie może przyjść.", "Sala konferencyjna jest zajęta przez inny dział.", "Pani Hayashi wyjeżdża w tym czasie w delegację."], a: 0, ex: "{工場|こうじょう}の{設備|せつび}{点検|てんけん}に{伴|ともな}い…{試作品|しさくひん}をご{用意|ようい}できなくなりました." },
+    { t: "mc", q: "O co pani Hayashi prosi pana Kimurę do piątku?", opts: ["O wybranie pasującego mu terminu.", "O przesłanie gotowych prototypów.", "O rezerwację sali konferencyjnej.", "O potwierdzenie nowego zamówienia."], a: 0, ex: "ご{都合|つごう}のよい{日時|にちじ}を…お{知|し}らせいただけますでしょうか – najgrzeczniejszy szczebel prośby." },
+    { t: "mc", q: "Dlaczego o kierowniku fabryki napisano po prostu {森|もり}, bez さん?", opts: ["Bo to ktoś z jej firmy, a pisze do klienta.", "Bo pani Hayashi go nie lubi i nie szanuje.", "Bo jest młodszy od niej i niższy stanowiskiem.", "To zwykły błąd – zapomniała dopisać さん."], a: 0, ex: "Wobec klienta o kolegach z własnej firmy mówimy bez さん i bez tytułów grzecznościowych." },
     { t: "mc", q: "「{日程|にってい}を{変更|へんこう}させていただけないでしょうか」 – to:", opts: ["bardzo uprzejma prośba o zgodę na zmianę terminu", "informacja, że termin już zmieniono", "odmowa zmiany terminu", "prośba, by klient sam zmienił termin bez konsultacji"], a: 0, ex: "Kauzatyw + ていただけないでしょうか = „czy pozwoliłby Pan, żebyśmy…” – prosimy o pozwolenie." },
     { t: "listen", jp: "{十月|じゅうがつ}{十五日|じゅうごにち}、{木曜日|もくようび}の{午後|ごご}{二時|にじ}から、または{十九日|じゅうくにち}、{月曜日|げつようび}の{午前|ごぜん}{十時|じゅうじ}からはいかがでしょうか。", opts: ["Czwartek 15.10 od 14:00 albo poniedziałek 19.10 od 10:00.", "Wtorek 15.10 od 12:00 albo piątek 19.10 od 10:00.", "Czwartek 5.10 od 14:00 albo poniedziałek 9.10 od 10:00.", "Czwartek 15.10 od 10:00 albo poniedziałek 19.10 od 14:00."], a: 0 },
     { t: "order", tr: "Czy mógłby Pan dać znać do piątku?", words: ["{金曜日|きんようび}までに", "お{知|し}らせ", "いただけますでしょうか。"] },
@@ -17349,11 +17371,11 @@ STORIES.push({
     ["{粘|ねば}り{強|づよ}い", "wytrwały, nieustępliwy"]
   ],
   questions: [
-    { t: "mc", q: "Po co mieszkańcy remontowali puste domy?", opts: ["Aby przyciągnąć rodziny z dziećmi i ocalić szkołę.", "Aby zarobić na turystach.", "Bo nakazało im to miasto.", "Aby zbudować nową szkołę."], a: 0, ex: "{学校|がっこう}を{守|まも}るべく – べく = „aby, w celu” (styl pisany)." },
-    { t: "mc", q: "「{行政|ぎょうせい}としてあるまじき{行為|こうい}」 – jak oceniono działanie miasta?", opts: ["Jako niedopuszczalne, niegodne administracji.", "Jako wzorowe dla administracji.", "Jako typowe dla administracji.", "Jako konieczne, choć bolesne."], a: 0, ex: "N としてあるまじき N = coś, czego ktoś w tej roli absolutnie nie powinien robić." },
-    { t: "mc", q: "Co oznacza {欠|か}くべからざる{存在|そんざい} w wypowiedzi pana Nishimury?", opts: ["coś niezbędnego, bez czego nie można się obejść", "coś, czego nie wolno dotykać", "coś, co powinno zniknąć", "coś drugorzędnego"], a: 0, ex: "べからざる + N = „którego nie można (pominąć)” → niezbędny." },
+    { t: "mc", q: "Po co mieszkańcy remontowali puste domy?", opts: ["Aby przyciągnąć rodziny z dziećmi i ocalić szkołę.", "Aby zarobić na turystach przyjeżdżających latem.", "Bo nakazało im to miasto w nowym planie.", "Aby zbudować w ich miejscu nową szkołę."], a: 0, ex: "{学校|がっこう}を{守|まも}るべく – べく = „aby, w celu” (styl pisany)." },
+    { t: "mc", q: "「{行政|ぎょうせい}としてあるまじき{行為|こうい}」 – jak oceniono działanie miasta?", opts: ["Jako niegodne administracji.", "Jako wzorowe dla administracji.", "Jako typowe dla administracji.", "Jako konieczne, choć bolesne."], a: 0, ex: "N としてあるまじき N = coś, czego ktoś w tej roli absolutnie nie powinien robić." },
+    { t: "mc", q: "Co oznacza {欠|か}くべからざる{存在|そんざい} w wypowiedzi pana Nishimury?", opts: ["coś niezbędnego", "coś, czego nie wolno dotykać", "coś, co powinno zniknąć", "coś drugorzędnego"], a: 0, ex: "べからざる + N = „którego nie można (pominąć)” → niezbędny." },
     { t: "mc", q: "Jak zakończyła się sprawa?", opts: ["Miasto wycofało plan połączenia szkół.", "Szkołę połączono ze szkołą na lądzie.", "Pan Nishimura został dyrektorem szkoły.", "Mieszkańcy przenieśli się na ląd."], a: 0, ex: "{町|まち}は{統合|とうごう}{計画|けいかく}を{撤回|てっかい}した." },
-    { t: "mc", q: "「{台風|たいふう}の{被害|ひがい}をものともせず」 znaczy:", opts: ["nie zważając na szkody od tajfunu", "z powodu szkód od tajfunu", "zanim przyszedł tajfun", "bojąc się tajfunu"], a: 0, ex: "N をものともせず = „nic sobie nie robiąc z (przeszkody)”." },
+    { t: "mc", q: "「{台風|たいふう}の{被害|ひがい}をものともせず」 znaczy:", opts: ["nie zważając na szkody", "z powodu szkód od tajfunu", "zanim tajfun narobił szkód", "bojąc się szkód od tajfunu"], a: 0, ex: "N をものともせず = „nic sobie nie robiąc z (przeszkody)”." },
     { t: "listen", jp: "{子|こ}どもの{声|こえ}が{聞|き}こえない{島|しま}に{未来|みらい}はない。", opts: ["Wyspa, na której nie słychać dzieci, nie ma przyszłości.", "Dzieci na wyspie nie słyszą głosu przyszłości.", "Na wyspie przyszłości nie słychać głosów dzieci.", "Dzieci z wyspy nie chcą myśleć o przyszłości."], a: 0 },
     { t: "order", tr: "Aby ocalić szkołę, rozpoczęli działania.", words: ["{学校|がっこう}を", "{守|まも}るべく、", "{活動|かつどう}を", "{始|はじ}めた。"] },
     { t: "type", q: "Wstaw (styl pisany: „aby, w celu”): {学校|がっこう}を{守|まも}る＿＿、{活動|かつどう}を{始|はじ}めた。", a: ["べく"], ex: "V-słownikowa + べく = „aby” w stylu pisanym. Dla する: すべく." }
@@ -17396,10 +17418,10 @@ STORIES.push({
   ],
   questions: [
     { t: "mc", q: "「{相談|そうだん}してくれればよかったものを」 – co czuje Yui?", opts: ["Żal i lekki wyrzut, że brat się z nią nie naradził.", "Radość, że brat sam podjął decyzję.", "Obojętność wobec decyzji brata.", "Nadzieję, że brat jeszcze się z nią naradzi."], a: 0, ex: "～ばよかったものを = „a wystarczyło przecież…” – żal lub wyrzut, że coś się nie stało." },
-    { t: "mc", q: "Dlaczego Naoki nie powiedział siostrze wcześniej?", opts: ["Myślał, że i tak będzie przeciw.", "Siostra była za granicą.", "Zapomniał.", "Rodzice mu zabronili."], a: 0, ex: "{相談|そうだん}したところで、{反対|はんたい}される – ～たところで = „nawet gdyby…, i tak nic by to nie dało”." },
-    { t: "mc", q: "Jaki warunek stawia Yui w sprawie rodziców?", opts: ["Przynajmniej raz na pół roku ma się z nimi zobaczyć.", "Ma ich odwiedzać co miesiąc.", "Ma im oddać pieniądze.", "Ma im nie mówić o odejściu z pracy."], a: 0, ex: "{毎月|まいつき}とは{言|い}わないまでも、せめて{半年|はんとし}に{一回|いっかい} – ないまでも: „może nie…, ale przynajmniej”." },
-    { t: "mc", q: "「プロといえども」 znaczy:", opts: ["nawet (choć to) zawodowcy", "ponieważ to zawodowcy", "jeśli chodzi o zawodowców", "zamiast zawodowców"], a: 0, ex: "N + といえども = „nawet N (od którego by się spodziewać czegoś innego)”." },
-    { t: "listen", jp: "{三人|さんにん}であれ{三千人|さんぜんにん}であれ、{一番|いちばん}{前|まえ}の{席|せき}で{聴|き}いてあげる。", opts: ["Czy trzech, czy trzy tysiące – będę słuchać z pierwszego rzędu.", "Jeśli przyjdzie trzy tysiące osób, usiądę z tyłu.", "Trzech albo trzy tysiące – nie przyjdę.", "Kupię trzy bilety w pierwszym rzędzie."], a: 0 },
+    { t: "mc", q: "Dlaczego Naoki nie powiedział siostrze wcześniej?", opts: ["Myślał, że i tak będzie przeciw.", "Siostra była wtedy za granicą.", "Po prostu o tym zapomniał.", "Rodzice zabronili mu o tym mówić."], a: 0, ex: "{相談|そうだん}したところで、{反対|はんたい}される – ～たところで = „nawet gdyby…, i tak nic by to nie dało”." },
+    { t: "mc", q: "Jaki warunek stawia Yui w sprawie rodziców?", opts: ["Ma ich odwiedzać co najmniej raz na pół roku.", "Ma ich odwiedzać przynajmniej raz w miesiącu.", "Ma im oddać pieniądze za studia.", "Ma im na razie nie mówić o odejściu z pracy."], a: 0, ex: "{毎月|まいつき}とは{言|い}わないまでも、せめて{半年|はんとし}に{一回|いっかい} – ないまでも: „może nie…, ale przynajmniej”." },
+    { t: "mc", q: "「プロといえども」 znaczy:", opts: ["nawet zawodowcy", "ponieważ to zawodowcy", "jeśli chodzi o zawodowców", "zamiast zawodowców"], a: 0, ex: "N + といえども = „nawet N (od którego by się spodziewać czegoś innego)”." },
+    { t: "listen", jp: "{三人|さんにん}であれ{三千人|さんぜんにん}であれ、{一番|いちばん}{前|まえ}の{席|せき}で{聴|き}いてあげる。", opts: ["Trzech czy trzy tysiące – posłucham z pierwszego rzędu.", "Jeśli przyjdzie trzy tysiące osób, usiądę gdzieś z tyłu.", "Trzech albo trzy tysiące – i tak nie przyjdę na koncert.", "Kupię trzy bilety w pierwszym rzędzie dla rodziny."], a: 0 },
     { t: "order", tr: "Cokolwiek kto by nie mówił, już zdecydowałem.", words: ["{誰|だれ}に", "{何|なん}と", "{言|い}われようが、", "もう{決|き}めたんだ。"] },
     { t: "type", q: "Uzupełnij: {誰|だれ}に{何|なん}と{言|い}われ＿＿が、もう{決|き}めたんだ。", a: ["よう"], ex: "Forma wolicjonalna + が/と = „bez względu na to, co…”. {言|い}われる → {言|い}われよう." },
     { t: "match", pairs: [["～といえども", "nawet (choć to)…"], ["～たところで", "nawet gdyby…, i tak nic"], ["～であれ～であれ", "czy to…, czy…"], ["～ものを", "a przecież wystarczyło…"], ["～ないまでも", "może nie…, ale przynajmniej"]] }
@@ -17441,10 +17463,10 @@ STORIES.push({
     ["{及|およ}ぶ", "dorównywać, sięgać"]
   ],
   questions: [
-    { t: "mc", q: "Co według tekstu oznacza {一期一会|いちごいちえ}?", opts: ["Każde spotkanie jest jedyne, więc trzeba w nie włożyć całe serce.", "Herbatę należy pić raz dziennie.", "Ludzie spotykają się zawsze dwa razy.", "Trzeba unikać przypadkowych spotkań."], a: 0, ex: "{二度|にど}と{繰|く}り{返|かえ}されぬもの – coś, co się nie powtórzy; {誠意|せいい}を{尽|つ}くすべし – należy okazać szczerość." },
+    { t: "mc", q: "Co według tekstu oznacza {一期一会|いちごいちえ}?", opts: ["Każde spotkanie zdarza się raz – trzeba dać mu całe serce.", "Herbatę należy pić tylko raz dziennie, rano, w ciszy.", "Ludzie, którzy się poznali, spotykają się zawsze dwa razy.", "Trzeba unikać przypadkowych spotkań z obcymi ludźmi."], a: 0, ex: "{二度|にど}と{繰|く}り{返|かえ}されぬもの – coś, co się nie powtórzy; {誠意|せいい}を{尽|つ}くすべし – należy okazać szczerość." },
     { t: "mc", q: "「{起|お}きるなり{湯|ゆ}を{沸|わ}かし」 – kiedy babcia gotowała wodę?", opts: ["Zaraz po wstaniu.", "Zanim wstała.", "Wieczorem przed snem.", "Gdy przychodzili goście."], a: 0, ex: "V-słownikowa + なり = „ledwie…, od razu…”." },
-    { t: "mc", q: "Czego autorka żałuje?", opts: ["Że odkładała przyjazd do babci i nie zdążyła się z nią zobaczyć.", "Że nie nauczyła się ceremonii herbacianej.", "Że przeprowadziła się do miasta.", "Że zapytała babcię o herbatę."], a: 0, ex: "{帰省|きせい}を{先延|さきの}ばしにしていた…{間|ま}に{合|あ}わなかった. Stąd przysłowie {後悔|こうかい}{先|さき}に{立|た}たず." },
-    { t: "mc", q: "「{祖母|そぼ}には{及|およ}ばずとも」 znaczy:", opts: ["choć (nawet jeśli) nie dorównuję babci", "ponieważ nie dorównuję babci", "aby dorównać babci", "babcia nie dorównuje mnie"], a: 0, ex: "～ずとも = ～なくても (klasyczne przeczenie + とも)." },
+    { t: "mc", q: "Czego autorka żałuje?", opts: ["Że odkładała wizytę u babci i już nie zdążyła.", "Że nie nauczyła się od babci ceremonii herbacianej.", "Że w ogóle przeprowadziła się do miasta.", "Że kiedyś zapytała babcię o herbatę."], a: 0, ex: "{帰省|きせい}を{先延|さきの}ばしにしていた…{間|ま}に{合|あ}わなかった. Stąd przysłowie {後悔|こうかい}{先|さき}に{立|た}たず." },
+    { t: "mc", q: "「{祖母|そぼ}には{及|およ}ばずとも」 znaczy:", opts: ["choć nie dorównuję babci", "ponieważ nie dorównuję babci", "aby dorównać babci", "babcia nie dorównuje mnie"], a: 0, ex: "～ずとも = ～なくても (klasyczne przeczenie + とも)." },
     { t: "listen", jp: "{都会|とかい}で{働|はたら}き{始|はじ}めると、{日々|ひび}は{矢|や}のごとく{過|す}ぎていった。", opts: ["Gdy zaczęłam pracować w mieście, dni mijały jak strzała.", "Praca w mieście była dla mnie jak strzała w serce.", "W mieście dni ciągnęły się bardzo powoli.", "Zanim zaczęłam pracę, minęło wiele dni."], a: 0 },
     { t: "order", tr: "Choć nie dorównuję babci, wkładam w to serce na swój sposób.", words: ["{祖母|そぼ}には", "{及|およ}ばずとも、", "{私|わたし}なりに", "{心|こころ}を{込|こ}めて。"] },
     { t: "type", q: "Dokończ przysłowie: {光陰|こういん}{矢|や}の＿＿", a: ["ごとし"], ex: "{光陰|こういん}{矢|や}のごとし = czas mknie jak strzała. ごとし = klasyczne „jak, niczym”." },
@@ -17491,9 +17513,9 @@ STORIES.push({
   ],
   questions: [
     { t: "match", pairs: [["ふわふわ", "puszysty, mięciutki"], ["さくさく", "chrupiący"], ["とろとろ", "rozpływający się, ciągnący"], ["わくわく", "podekscytowanie, niecierpliwe oczekiwanie"], ["はらはら", "niepokój, nerwy (o kogoś)"]] },
-    { t: "mc", q: "Dlaczego Haruto co chwilę patrzy na zegarek?", opts: ["Bo od trzeciej ma pracę dorywczą i czas jest na styk.", "Bo jedzenie długo nie przychodziło.", "Bo czeka na kolegę.", "Bo chce zdążyć na pociąg do domu."], a: 0, ex: "{三時|さんじ}からバイトなんだ。{時間|じかん}、ぎりぎりかも – ぎりぎり = na styk." },
+    { t: "mc", q: "Dlaczego Haruto co chwilę patrzy na zegarek?", opts: ["Bo o trzeciej zaczyna pracę dorywczą.", "Bo jedzenie bardzo długo nie przychodziło.", "Bo czeka na kolegę, który się spóźnia.", "Bo chce zdążyć na pociąg do domu."], a: 0, ex: "{三時|さんじ}からバイトなんだ。{時間|じかん}、ぎりぎりかも – ぎりぎり = na styk." },
     { t: "mc", q: "「こっちがはらはらするじゃん」 – co czuje Mio?", opts: ["Denerwuje się, czy Haruto zdąży.", "Cieszy się z pysznego jedzenia.", "Jest zła, że Haruto zjadł jej pankejka.", "Jest śpiąca."], a: 0, ex: "はらはらする = denerwować się, patrząc na kogoś w ryzykownej sytuacji. じゃん – potoczne „no przecież”." },
-    { t: "mc", q: "Jak zmienił się deszcz pod koniec historii?", opts: ["Z ulewy (ざあざあ) w cichy, drobny deszcz (しとしと).", "Z drobnego deszczu w ulewę.", "Przestał padać i wyszło słońce.", "Zmienił się w śnieg."], a: 0, ex: "Na początku: ざあざあ{降|ふ}る; na końcu: しとしとと{静|しず}かな{音|おと}." },
+    { t: "mc", q: "Jak zmienił się deszcz pod koniec historii?", opts: ["Z ulewy w cichy, drobny deszcz.", "Z drobnego deszczu w ulewę.", "Przestał padać i wyszło słońce.", "Zmienił się w śnieg."], a: 0, ex: "Na początku: ざあざあ{降|ふ}る; na końcu: しとしとと{静|しず}かな{音|おと}." },
     { t: "listen", jp: "ここのパンケーキ、ふわふわで{有名|ゆうめい}なんだって。", opts: ["Podobno tutejsze pankejki słyną z puszystości.", "Tutejsze pankejki są podobno chrupiące.", "Te pankejki są sławne, bo są duże.", "Słyszałam, że tu nie ma pankejków."], a: 0 },
     { t: "order", tr: "Ja wezmę tosta z rozpływającym się serem.", words: ["{俺|おれ}は", "チーズがとろとろの", "ホットサンドに", "しよう。"] },
     { t: "type", q: "Puszysty pankejk: ＿＿のパンケーキ (onomatopeja)", a: ["ふわふわ"], ex: "ふわふわ = miękki, puszysty, lekki jak chmurka." },
@@ -17540,9 +17562,9 @@ STORIES.push({
   ],
   questions: [
     { t: "match", pairs: [["ほんま", "= ほんとう – naprawdę"], ["めっちゃ", "= とても – bardzo"], ["ちゃう", "= ちがう / じゃない – nie (jest)"], ["ええ", "= いい – dobry"], ["おおきに", "= ありがとう – dziękuję"]] },
-    { t: "mc", q: "Po czym sprzedawca poznał, że Saki jest z Tokio?", opts: ["Powiedziała „お{願|ねが}いします” – tutejsi tak nie mówią.", "Miała walizkę z naklejką z Tokio.", "Zamówiła bardzo dużo takoyaki.", "Sama mu to powiedziała na początku."], a: 0, ex: "こっちの{人|ひと}は「お{願|ねが}いします」なんて{言|い}わへんねん – {言|い}わへん = {言|い}わない, ～ねん = ～んだ." },
-    { t: "mc", q: "「{東京|とうきょう}から{来|き}はった{人|ひと}」 – co wyraża ～はる?", opts: ["Lekki szacunek wobec osoby, o której się mówi.", "Przeczenie: osoba nie przyjechała.", "Przypuszczenie: chyba przyjechała.", "Rozkaz: niech przyjedzie."], a: 0, ex: "V + はる to kansaiski, łagodny odpowiednik keigo: {来|き}はった ≈ {来|こ}られた / いらっしゃった." },
-    { t: "mc", q: "Po co sprzedawca dodaje na końcu 「…{知|し}らんけど」?", opts: ["Żartobliwie łagodzi swoje śmiałe stwierdzenie („w sumie nie wiem”).", "Przyznaje, że nie zna ceny.", "Pyta Saki o zdanie.", "Obraża Saki."], a: 0, ex: "～{知|し}らんけど = „chociaż kto wie” – typowo kansaiski sposób, by nie brać odpowiedzialności za to, co się właśnie powiedziało." },
+    { t: "mc", q: "Po czym sprzedawca poznał, że Saki jest z Tokio?", opts: ["Powiedziała „お{願|ねが}いします” – tutejsi tak nie mówią.", "Miała walizkę z dużą naklejką z Tokio.", "Zamówiła od razu bardzo dużo takoyaki.", "Sama mu to powiedziała na samym początku."], a: 0, ex: "こっちの{人|ひと}は「お{願|ねが}いします」なんて{言|い}わへんねん – {言|い}わへん = {言|い}わない, ～ねん = ～んだ." },
+    { t: "mc", q: "「{東京|とうきょう}から{来|き}はった{人|ひと}」 – co wyraża ～はる?", opts: ["Szacunek wobec osoby, o której się mówi.", "Przeczenie: osoba nie przyjechała.", "Przypuszczenie: chyba przyjechała.", "Rozkaz: niech ta osoba przyjedzie."], a: 0, ex: "V + はる to kansaiski, łagodny odpowiednik keigo: {来|き}はった ≈ {来|こ}られた / いらっしゃった." },
+    { t: "mc", q: "Po co sprzedawca dodaje na końcu 「…{知|し}らんけど」?", opts: ["Żartem łagodzi swoje śmiałe słowa.", "Przyznaje, że nie zna ceny takoyaki.", "Pyta Saki, co o tym sądzi.", "Chce obrazić Saki i jej miasto."], a: 0, ex: "～{知|し}らんけど = „chociaż kto wie” – typowo kansaiski sposób, by nie brać odpowiedzialności za to, co się właśnie powiedziało." },
     { t: "mc", q: "Co sprzedawca obiecuje stałym klientom?", opts: ["Jedną kulkę takoyaki gratis.", "Zniżkę 50%.", "Lekcje dialektu z Kansai.", "Darmowy napój."], a: 0, ex: "{常連|じょうれん}さんには{一個|いっこ}おまけしたるで – したる = してやる (Kansai)." },
     { t: "listen", jp: "めっちゃ{熱|あつ}いから{気|き}ぃつけや。", opts: ["Strasznie gorące, uważaj.", "Strasznie pyszne, smacznego.", "Jest bardzo zimno, ubierz się.", "Bardzo dziękuję, przyjdź jeszcze."], a: 0 },
     { t: "type", q: "Standardowy japoński odpowiednik {言|い}わへん:", a: ["いわない", "言わない"], ex: "Kansai: V-ない-temat + へん → {言|い}わへん = {言|い}わない." },
@@ -18243,7 +18265,7 @@ window.KITDRILLS = Object.assign(window.KITDRILLS || {}, {
       why: ["Tak: najpierw most, potem みぎ.", "Skręt jest dopiero za mostem (わたって).", "Za mostem jest skręt w prawo, a nie prosto.", "O stacji nie było mowy."] },
     { t: "listen", skill: "Zwroty", sub: "droga", q: "Przechodzień nie zna drogi. Co radzi?",
       lines: [["m", "すみません、このへんはちょっと{分|わ}からないんです。"], ["m", "あそこの{交番|こうばん}で{聞|き}いてみてください。"]],
-      opts: ["Zapytać na posterunku policji", "Zapytać w konbini", "Wrócić na stację", "Pojechać taksówką"], a: 0,
+      opts: ["Zapytać na posterunku policji", "Zapytać sprzedawcę w konbini", "Wrócić na stację i tam zapytać", "Pojechać taksówką prosto do celu"], a: 0,
       ex: "Przechodzień: „Przepraszam, słabo znam tę okolicę. Proszę zapytać na tamtym posterunku.” こうばん to mała budka policji: wskażą drogę i pokażą ją na mapie.",
       why: ["Tak: こうばん to posterunek policji.", "O konbini nie było mowy.", "O stacji nie było mowy.", "O taksówce nie było mowy."] }
   ],
@@ -18275,7 +18297,7 @@ window.KITDRILLS = Object.assign(window.KITDRILLS || {}, {
       why: ["Tak: つぎ は うえの, tam jest przesiadka.", "Ginza to nazwa linii (ぎんざせん), a nie stacji, na której trzeba wysiąść.", "O końcu linii nie było mowy.", "つぎ znaczy „następna”."] },
     { t: "listen", skill: "Zwroty", sub: "pociag", q: "Bramka nie przepuszcza Cię z kartą IC. Co mówi pracownik?",
       lines: [["m", "{残高|ざんだか}が{足|た}りませんね。"], ["m", "あちらの{機械|きかい}でチャージしてください。"]],
-      opts: ["Za mało pieniędzy na karcie – doładować w automacie", "Karta jest zepsuta – trzeba kupić nową", "Bramka nie działa – iść do innej", "Bilet jest na inną linię"], a: 0,
+      opts: ["Brak środków na karcie – doładować w automacie", "Karta jest zepsuta – trzeba kupić nową w kasie", "Bramka nie działa – trzeba iść do innej bramki", "Bilet jest na inną linię – trzeba dopłacić"], a: 0,
       ex: "Pracownik: „Brakuje środków na karcie. Proszę doładować w tamtym automacie.” ざんだか = saldo, たりません = nie wystarcza, チャージ = doładowanie.",
       why: ["Tak: ざんだか が たりません, potem チャージ.", "Nikt nie mówi, że karta jest zepsuta.", "Bramka działa – na karcie jest za mało pieniędzy.", "O innej linii nie było mowy."] }
   ],
@@ -21375,7 +21397,7 @@ PAIRS.push({
     { t: "mc", q: "Jak powiesz: „Jutro nie przyjdę do pracy (biorę wolne).”", opts: ["{明日|あした}は{会社|かいしゃ}で{休|やす}みます。", "{明日|あした}は{会社|かいしゃ}を{休|やす}みます。", "{明日|あした}は{会社|かいしゃ}に{住|す}みます。"], a: 1,
       ex: "Nie przyjść do pracy = {会社|かいしゃ}を{休|やす}む. Z を {休|やす}む znaczy „opuścić, wziąć wolne”.",
       why: ["Z で to „jutro odpocznę W pracy” (np. w przerwie) – a ty w ogóle nie przychodzisz.", "", "{住|す}みます = „zamieszkam” – „jutro zamieszkam w firmie”."] },
-    { t: "listen", jp: "{今日|きょう}は{学校|がっこう}を{休|やす}みます。", opts: ["Dziś odpoczywam w szkole.", "Dziś nie idę do szkoły (biorę wolne).", "Mieszkam przy szkole."], a: 1,
+    { t: "listen", jp: "{今日|きょう}は{学校|がっこう}を{休|やす}みます。", opts: ["Dziś odpoczywam w szkole.", "Dziś biorę wolne i nie idę do szkoły.", "Mieszkam przy szkole."], a: 1,
       ex: "Słychać yasumimasu i {学校|がっこう}を – szkoła z を: nie idę, opuszczam lekcje.",
       why: ["„Odpoczywać w szkole” to {学校|がっこう}で{休|やす}みます – w nagraniu jest を.", "", "„Mieszkać” to {住|す}む (sumu); w nagraniu jest yasumimasu."] },
     { t: "listen", jp: "{家族|かぞく}はポーランドに{住|す}んでいます。", opts: ["Moja rodzina ma teraz wolne w Polsce.", "Moja rodzina mieszka w Polsce."], a: 1,
@@ -22167,7 +22189,7 @@ PAIRS.push({
       why: ["", "{休|やす}んでいます = odpoczywa – a niemowlę po prostu śpi."],
       ex: "Stan głębokiego snu → {眠|ねむ}っています. (W mowie potocznej usłyszysz też {寝|ね}ています.)" },
     { t: "listen", jp: "{明日|あした}はアルバイトを{休|やす}みます。",
-      opts: ["Jutro nie idę do pracy dorywczej (biorę wolne).", "Jutro po pracy dorywczej odpocznę.", "Jutro po pracy idę od razu spać."], a: 0,
+      opts: ["Jutro biorę wolne w pracy dorywczej.", "Jutro po pracy dorywczej odpocznę.", "Jutro po pracy idę od razu spać."], a: 0,
       why: ["", "To byłoby アルバイトのあとで{休|やす}みます; tu jest アルバイトを{休|やす}みます – opuszczasz pracę.", "„Iść spać” to {寝|ね}ます."],
       ex: "～を{休|やす}む (yasumu) = nie przyjść, wziąć wolne." },
     { t: "listen", jp: "ゆうべはよく{眠|ねむ}れましたか。",
@@ -22584,7 +22606,7 @@ PAIRS.push({
       why: ["", "Błąd: {終|お}える to „kończyć coś” – potrzebuje を i osoby, która kończy.", "To znaczy „(ktoś, np. nauczyciel) zakończył lekcję” – inny sens."],
       ex: "Lekcja kończy się sama → {授業|じゅぎょう}<b>が</b>{終|お}わりました." },
     { t: "listen", jp: "{夏休|なつやす}みが{終|お}わってしまいました。",
-      opts: ["Wakacje (niestety) się skończyły.", "Zakończyłem/am wakacje wcześniej.", "Wakacje jeszcze się nie skończyły."], a: 0,
+      opts: ["Wakacje niestety się skończyły.", "Zakończyłem/am wakacje wcześniej.", "Wakacje jeszcze się nie skończyły."], a: 0,
       why: ["", "„Zakończyłem/am” to ～を{終|お}えました – a tu słychać が i {終|お}わって.", "„Jeszcze się nie skończyły” to まだ{終|お}わっていません."],
       ex: "{夏休|なつやす}みが{終|お}わってしまいました – が + {終|お}わる, a ～てしまう dodaje żal: niestety już po wakacjach." },
     { t: "listen", jp: "これで{今日|きょう}の{授業|じゅぎょう}を{終|お}わります。",
@@ -22641,7 +22663,7 @@ PAIRS.push({
       why: ["", "„Wysunęła się” to {本|ほん}が{出|で}ました – z が.", "Prośba to {本|ほん}を{出|だ}してください."],
       ex: "Słychać {本|ほん}<b>を</b>{出|だ}しました (<i>dashimashita</i>) – ktoś (tu: ty) wyjął książkę." },
     { t: "listen", jp: "ごみはもう{出|だ}してありますよ。",
-      opts: ["Śmieci są już wystawione (ktoś to zrobił).", "Proszę wystawić śmieci.", "Ktoś właśnie wystawia śmieci."], a: 0,
+      opts: ["Śmieci są już wystawione.", "Proszę wystawić śmieci.", "Ktoś właśnie wystawia śmieci."], a: 0,
       why: ["", "Prośba to ごみを{出|だ}してください.", "„Właśnie wystawia” to ごみを{出|だ}しています."],
       ex: "{出|だ}してあります – przechodni + てある: ktoś celowo wystawił śmieci i już tam są." },
     { t: "type", q: "Wpisz te-formę od {出|だ}す: パスポートを＿＿ください。 (Proszę pokazać paszport.)", a: ["だして", "出して"], hint: "grupa U: す → して",
@@ -22748,7 +22770,7 @@ PAIRS.push({
       why: ["", "Krótki postój to {止|と}まる – a tu chodzi o nocleg w hotelu.", "Parkowanie to {車|くるま}を{止|と}める – tu nie ma を ani samochodu."],
       ex: "ホテルに{泊|と}まります (<i>tomarimasu</i>) – {泊|と}まる, czyli nocować. Brzmi jak {止|と}まる, ale hotel podpowiada sens." },
     { t: "listen", jp: "{車|くるま}はあそこに{止|と}めてあります。",
-      opts: ["Samochód stoi tam zaparkowany (ktoś go tam postawił).", "Samochód sam się tam zatrzymał.", "Proszę tam zaparkować samochód."], a: 0,
+      opts: ["Samochód stoi tam zaparkowany.", "Samochód sam się tam zatrzymał.", "Proszę tam zaparkować samochód."], a: 0,
       why: ["", "„Sam się zatrzymał” to {車|くるま}が{止|と}まりました.", "Prośba to {車|くるま}をあそこに{止|と}めてください."],
       ex: "{止|と}めてあります – przechodni + てある: ktoś celowo zaparkował samochód." },
     { t: "type", q: "Wpisz formę ない: ここに{車|くるま}を＿＿でください。 (Proszę tu nie parkować.)", a: ["とめない", "止めない"], hint: "{止|と}める – grupa RU: る → ない",
@@ -22854,7 +22876,7 @@ PAIRS.push({
       why: ["", "„Ktoś zepsuł” to だれかが{時計|とけい}を{壊|こわ}しました.", "Prośba to {壊|こわ}さないでください."],
       ex: "{壊|こわ}れています (<i>kowarete imasu</i>) – stan: zegar nie działa." },
     { t: "listen", jp: "{弟|おとうと}がドアを{壊|こわ}してしまいました。",
-      opts: ["Młodszy brat (niestety) zepsuł drzwi.", "Drzwi same się zepsuły.", "Drzwi są zepsute od dawna."], a: 0,
+      opts: ["Młodszy brat niestety zepsuł drzwi.", "Drzwi same się zepsuły.", "Drzwi są zepsute od dawna."], a: 0,
       why: ["", "„Same się zepsuły” to ドアが{壊|こわ}れました.", "„Są zepsute” to ドアが{壊|こわ}れています."],
       ex: "Słychać ドア<b>を</b>{壊|こわ}して – brat jest sprawcą, więc przechodni {壊|こわ}す." },
     { t: "type", q: "Wpisz formę ます w czasie przeszłym: {急|きゅう}にエアコンが＿＿。 (Nagle zepsuła się klimatyzacja.)", a: ["こわれました", "壊れました"], hint: "{壊|こわ}れる – grupa RU: る → ました",
@@ -24048,7 +24070,7 @@ Object.assign(EXPL, {
   "1lt137w": { ex: "きれい (kirei) wygląda jak przymiotnik い, ale to przymiotnik な. Z する łączy się przez に: きれいにする = „uczynić czystym, posprzątać”.", why: ["", "×きれいく nie istnieje: く jest dla przymiotników い, a きれい to przymiotnik な.", "きれいな stawiamy przed rzeczownikiem (きれいな{部屋|へや}), a nie przed する.", "きれいで = „czysty i…” – łączy zdania, nie tworzy „uczynić czystym”."] },
   "1sh67t9": { ex: "お{帰|かえ}りになります to sonkeigo od {帰|かえ}る (kaeru, „wracać”) – tak mówisz z szacunkiem o kierowniku. {部長|ぶちょう} (buchō) = „kierownik działu”, {三時|さんじ}ごろ = „około trzeciej”.", why: ["", "O sobie nie używa się お～になる (sonkeigo); tu wraca kierownik ({部長|ぶちょう}は).", "„Wyszedł” to {出|で}かけました; お{帰|かえ}りになります = „wróci” (forma nieprzeszła).", "Prośba to ～てください; w nagraniu jest zwykła informacja o powrocie."] },
   "11w2a5g": { ex: "お + temat ます + ください = bardzo grzeczne „proszę zrobić”: {書|か}く → お{書|か}きください „proszę napisać”. こちら = grzeczne „tu”, お{名前|なまえ} (onamae) = „pana / pani imię i nazwisko”.", why: ["", "„Jest napisane” to {書|か}いてあります; お～ください to prośba.", "„Napisałem” to {書|か}きました; お{書|か}きください to prośba skierowana do ciebie.", "Zakaz to ～ないでください; tu jest お{書|か}きください – prośba, żeby napisać."] },
-  "iyteov": { ex: "～てある = ktoś coś celowo zrobił i efekt trwa: {置|お}く (oku, „położyć”) → {置|お}いてあります „leżą (położone przez kogoś)”. {資料|しりょう} (shiryō) = „materiały, dokumenty”, {机|つくえ} (tsukue) = „biurko”.", why: ["", "Prośba to {置|お}いてください; ～てあります opisuje stan.", "„Spadły” to {落|お}ちました; {置|お}いてあります = „leżą położone”.", "W nagraniu nie ma przeczenia (ありません) – materiały są."] },
+  "185hbpk": { ex: "～てある = ktoś coś celowo zrobił i efekt trwa: {置|お}く (oku, „położyć”) → {置|お}いてあります „leżą (położone przez kogoś)”. {資料|しりょう} (shiryō) = „materiały, dokumenty”, {机|つくえ} (tsukue) = „biurko”.", why: ["", "Prośba to {置|お}いてください; ～てあります opisuje stan.", "„Spadły” to {落|お}ちました; {置|お}いてあります = „leżą położone”.", "W nagraniu nie ma przeczenia (ありません) – materiały są."] },
   "zvpguy": { ex: "ご{存|ぞん}じ (gozonji) to sonkeigo od {知|し}っている „znać, wiedzieć”. Osobę, którą się zna, oznaczamy を: {鈴木先生|すずきせんせい}をご{存|ぞん}じですか." },
   "1e9ixf8": { ex: "{出張|しゅっちょう} (shutchō) = „delegacja”. ～ている{間|あいだ}に = „w czasie gdy… (w jakimś momencie)” – list przyszedł raz, więc {間|あいだ}に, a nie samo {間|あいだ}. {手紙|てがみ} (tegami) = „list”." },
   "1617c1x": { ex: "{貼|は}る (haru) = „przykleić, przypiąć”. Przechodni + てある = ktoś to celowo zrobił, a efekt widać: ポスターが{貼|は}ってあります „plakat jest powieszony”. {壁|かべ} (kabe) = „ściana”, に – gdzie." },
@@ -24085,7 +24107,7 @@ Object.assign(EXPL, {
     why: ["", "Kana nie ma osobnego znaku na samo „k” – „k” zawsze idzie z samogłoską: か ka, き ki, く ku, け ke, こ ko.", "Całe słowo to zwykle kilka znaków, np. すし „susi” to dwa znaki: す + し.", "Nie zależy: か w każdym słowie i zdaniu czyta się tak samo – „ka”."] },
   "13zbfxn": { ex: "Słowa z innych języków (kawa, piwo, telewizor) zapisuje się katakaną – ma proste, kanciaste kreski. コーヒー czyta się „koohii” (z angielskiego „coffee”), a kreska ー przedłuża samogłoskę.",
     why: ["", "Hiragana (okrągłe znaki, np. あ, か, す) służy do słów japońskich, np. すし, ありがとう – nie do zapożyczeń.", "Kanji to znaki z Chin, które niosą znaczenie, np. {山|やま} „góra”; słów z innych języków nimi nie piszesz.", "Litery łacińskie (romaji) to tylko pomoc dla uczących się; w japońskich tekstach pisze się kaną i kanji."] },
-  "184mvsg": { ex: "🐾 (łapki = małe kroczki) czyta słowo sylaba po sylabie, np. す… し…, a potem całe – wolno i normalnie. Przydaje się przy dłuższych słowach. Pozostałe: 🔊 – normalnie, 🐢 – wolno, 🎤 – mówisz na głos, a komputer sprawdza, czy Cię zrozumiał.",
+  "1ynrl4": { ex: "🐾 (łapki = małe kroczki) czyta słowo sylaba po sylabie, np. す… し…, a potem całe – wolno i normalnie. Przydaje się przy dłuższych słowach. Pozostałe: 🔊 – normalnie, 🐢 – wolno, 🎤 – mówisz na głos, a komputer sprawdza, czy Cię zrozumiał.",
     why: ["", "Tłumaczenie widzisz w treści lekcji i w słówkach – 🐾 nic nie tłumaczy, tylko czyta na głos sylabami.", "Kanji poznasz dopiero później; 🐾 nic nie pokazuje, tylko czyta słowo sylaba po sylabie.", "Twój głos sprawdza przycisk 🎤 (mikrofon). 🐾 to łapki – małe kroczki, czyli czytanie sylabami."] },
   "1izpdfk": { ex: "こんにちは czyta się „konniciła” i znaczy „dzień dobry” (mówisz je w ciągu dnia). ち to „ci”, a ostatni znak は zwykle czyta się „ha”, ale w tym słowie wyjątkowo „ła”. ん trwa cały takt: ko-n-ni-ci-ła.",
     why: ["", "„Dziękuję” to ありがとう „arigatoo” – zaczyna się od „a”, a w nagraniu było „ko”.", "„Do widzenia” to さようなら „sajoonara”.", "„Sushi” to すし „susi” – tylko dwie krótkie sylaby."] },
@@ -24110,17 +24132,17 @@ Object.assign(EXPL, {
     why: ["", "„au” to あう – na końcu う z luźnymi ustami, a w nagraniu było okrągłe „o”.", "„oa” to おあ – odwrotna kolejność; nagranie zaczyna się od „a”.", "„aa” to ああ – długie a; w nagraniu po „a” było „o”."] },
   "ap1881": { ex: "いいえ czyta się „iie” i znaczy „nie”: długie „ii” (dwa razy dłużej niż „i”), potem „e”. To trzy znaki, więc trzy równe takty: i-i-e.",
     why: ["", "„ie” to いえ („dom”) – krótkie i, tylko dwa takty; w いいえ „i” trwa dwa razy dłużej.", "„ii” to いい („dobry”) – bez „e” na końcu.", "„ei” to えい – zaczyna się od „e”, a いいえ zaczyna się od długiego „i”."] },
-  "1gp3x3d": { ex: "Tylko う „u” różni się od polskiego: nie robisz dzióbka z ust, zostawiasz je luźne, prawie płaskie. Brzmi trochę ciemniej i ciszej niż polskie „u”. Pozostałe cztery czytasz jak po polsku.",
+  "pu0gl7": { ex: "Tylko う „u” różni się od polskiego: nie robisz dzióbka z ust, zostawiasz je luźne, prawie płaskie. Brzmi trochę ciemniej i ciszej niż polskie „u”. Pozostałe cztery czytasz jak po polsku.",
     why: ["", "あ „a” brzmi jak polskie „a” w „mama”.", "お „o” brzmi jak polskie „o” w „oko”.", "え „e” brzmi jak polskie „e” w „echo”."] },
-  "1fbdx6h": { ex: "Dwie takie same samogłoski obok siebie to jeden długi dźwięk: いい = „iii”, trzymane dwa razy dłużej niż „i”, bez przerwy. Długość zmienia znaczenie, np. いえ „ie” (dom) i いいえ „iie” (nie).",
+  "1wcyk7b": { ex: "Dwie takie same samogłoski obok siebie to jeden długi dźwięk: いい = „iii”, trzymane dwa razy dłużej niż „i”, bez przerwy. Długość zmienia znaczenie, np. いえ „ie” (dom) i いいえ „iie” (nie).",
     why: ["", "Krótkie „i” to samo い – brakuje drugiego taktu, a いい ma dwa.", "Nie robisz przerwy: to jeden płynny, długi dźwięk. Przerwę zapisuje się małym っ.", "W いい nie ma „j” – to czyste, długie „ii”, bez zamykania na końcu."] },
-  "389nmy": { ex: "Dwie różne samogłoski wymawiasz obie: あい = „a” + „i”, każda tak samo długa, w dwóch taktach. W szybkiej mowie brzmi blisko „aj”, ale ucz się wymawiać obie wyraźnie.",
+  "1soof0n": { ex: "Dwie różne samogłoski wymawiasz obie: あい = „a” + „i”, każda tak samo długa, w dwóch taktach. W szybkiej mowie brzmi blisko „aj”, ale ucz się wymawiać obie wyraźnie.",
     why: ["", "„aj” skraca い do „j”, a い to pełna samogłoska „i”, trwa cały takt.", "„ej” to ani あ „a”, ani い „i”; „e” zapisuje się znakiem え.", "Samo „a” to tylko あ – w あい jest jeszcze い „i”."] },
   "1448bhk": { ex: "Japońska kolejność samogłosek to a-i-u-e-o: あ い う え お. W tej kolejności idą wszystkie tabele znaków, np. か き く け こ (ka-ki-ku-ke-ko). Powtarzaj ją jak wyliczankę." },
   "km1bsj": { ex: "あ „a” (pętla z prawej), い „i” (dwie pionowe kreski), う „u” (kreseczka i łuk), え „e” (kreseczka i zygzak z ogonkiem), お „o” (jak あ, ale z kreseczką w prawym górnym rogu). Czytasz jak po polsku, tylko う z luźnymi ustami." },
 
   // ===== wym-2: dźwięki, które Polak musi znać =====
-  "tavu0l": { ex: "し czyta się jak polskie „si” w „siwy” – miękkie ś. Romaji „shi” to zapis angielski, więc nie czytaj go po polsku jako „szi”. すし to „susi”.",
+  "19o7n94": { ex: "し czyta się jak polskie „si” w „siwy” – miękkie ś. Romaji „shi” to zapis angielski, więc nie czytaj go po polsku jako „szi”. すし to „susi”.",
     why: ["", "„szi” brzmi twardo; japońskie し jest miękkie jak „ś” w „siwy”.", "Polskie „chi” (z gardła) to zupełnie inny dźwięk; w romaji „chi” to ち, które czytasz „ci”.", "„sy” jest twarde; japońskie し to miękkie „si”."] },
   "7jbuft": { ex: "ち czyta się jak polskie „ci” w „cisza” (miękkie ć). Romaji „chi” to zapis angielski – nie czytaj go jak „chi” w „chirurg”. ちかてつ (metro) to więc „cikatecu”.",
     why: ["", "Polskie „chi” to h z gardła; w ち nie ma żadnego „h”, to miękkie „ci”.", "„czy” jest twarde; japońskie ち jest miękkie jak „ć” w „cisza”.", "„ki” to き – zupełnie inny znak (dwie poziome kreski i łuk)."] },
@@ -24132,17 +24154,17 @@ Object.assign(EXPL, {
     why: ["", "Polskiego „w” (zęby na wardze) w japońskim nie ma; romaji „w” czytasz jak „ł”.", "„f” jest tylko w ふ „fu”; わ zaczyna się od „ł”, bez dmuchania.", "Bez przerwy: „ł” i „a” to jedna sylaba „ła”, jak w polskim „ława”."] },
   "1lf2a1m": { ex: "じ czyta się jak polskie „dzi” w „dziś” (dź). To し („si”) z dwiema kreseczkami ゛, które robią dźwięk dźwięczny: si → dzi. ふじさん (góra Fudżi) czytasz „fudzisan”.",
     why: ["", "Romaji „j” to nie polskie „j”: じ czytasz „dzi”, a nie „ji” ani „ij”.", "„ż” jest twarde; じ to miękkie „dź”: „dzi” jak w „dziś”.", "„zi” jak w „zima” jest blisko, ale じ ma na początku lekkie „d”: „dzi” jak w „dziś”."] },
-  "1woc5fz": { ex: "Japońskie r to jedno lekkie stuknięcie czubkiem języka tuż za górnymi zębami – brzmi między polskim „r” a „l”. さくら czytasz „sakura”, ale r tylko muśnij, bez „rrr”.",
+  "1n12kfn": { ex: "Japońskie r to jedno lekkie stuknięcie czubkiem języka tuż za górnymi zębami – brzmi między polskim „r” a „l”. さくら czytasz „sakura”, ale r tylko muśnij, bez „rrr”.",
     why: ["", "Polskie „rrr” to kilka uderzeń języka – za mocne. Japońskie r to jedno lekkie stuknięcie.", "Angielskie r zwija język do tyłu i nie dotyka podniebienia; japońskie dotyka – raz i lekko.", "„ł” robisz ustami (to japońskie わ „ła”); przy r język raz stuka o dziąsła za zębami."] },
-  "hd7mg1": { ex: "すし czytasz „susi”: す = „su”, し = „si” jak w „siwy”. Romaji „sushi” to zapis angielski – po polsku „suszi” brzmi za twardo.",
+  "x4hbxc": { ex: "すし czytasz „susi”: す = „su”, し = „si” jak w „siwy”. Romaji „sushi” to zapis angielski – po polsku „suszi” brzmi za twardo.",
     why: ["", "„suszi” ma twarde „sz”; japońskie し to miękkie „si” jak w „siwy”.", "„sisu” to odwrotna kolejność – w nagraniu najpierw す „su”, potem し „si”.", "„susu” to すす – drugi znak to し „si”, nie す „su”."] },
-  "5z5swt": { ex: "ちかてつ (metro) czytasz „cikatecu”: ち = „ci” (jak w „cisza”), か = „ka”, て = „te”, つ = „cu” (jak w „cukier”). Romaji: chikatetsu.",
+  "azdkyt": { ex: "ちかてつ (metro) czytasz „cikatecu”: ち = „ci” (jak w „cisza”), か = „ka”, て = „te”, つ = „cu” (jak w „cukier”). Romaji: chikatetsu.",
     why: ["", "To romaji „chikatetsu” czytane po polsku: ち to miękkie „ci”, nie „czi”, a つ to „cu”, nie „tsu”.", "„ki” to き, a „tu” w japońskim nie ma; tu są ち „ci” i つ „cu”.", "„si” to し, a „su” to す; w nagraniu były ち „ci” i つ „cu” – z „c”, nie z „s”."] },
-  "1bs7bul": { ex: "わたし (ja) czytasz „łatasi”: わ = „ła” (romaji „w” to polskie „ł”), た = „ta”, し = „si” jak w „siwy”. Romaji: watashi.",
+  "1kna1h3": { ex: "わたし (ja) czytasz „łatasi”: わ = „ła” (romaji „w” to polskie „ł”), た = „ta”, し = „si” jak w „siwy”. Romaji: watashi.",
     why: ["", "Polskie „w” (zęby na wardze) tu nie pasuje; わ to „ła”.", "Japoński nie ma „l”, a わ zaczyna się od „ł” (usta), nie od języka.", "し to „si” z „i” na końcu, nie samo „sz”; słowo kończy się samogłoską."] },
-  "1s5qx2k": { ex: "おちゃ (herbata) czytasz „ocia”: お = „o”, ちゃ = „cia” jak w „ciasto” (ち + małe ゃ to jedna sylaba). Romaji: ocha.",
+  "1ultmnw": { ex: "おちゃ (herbata) czytasz „ocia”: お = „o”, ちゃ = „cia” jak w „ciasto” (ち + małe ゃ to jedna sylaba). Romaji: ocha.",
     why: ["", "„sia” to しゃ (np. w しゃしん); tu jest ち „ci”, więc „cia”.", "„oka” to おか – z か „ka”, a w nagraniu było ちゃ „cia”.", "„cza” jest twarde; ちゃ to miękkie „cia” jak w „ciasto”."] },
-  "qm2c0d": { ex: "しゃしん (zdjęcie) czytasz „siasin”: しゃ = „sia” jak w „siano” (し + małe ゃ to jedna sylaba), し = „si”, ん = „n”. Romaji: shashin.",
+  "170w63c": { ex: "しゃしん (zdjęcie) czytasz „siasin”: しゃ = „sia” jak w „siano” (し + małe ゃ to jedna sylaba), し = „si”, ん = „n”. Romaji: shashin.",
     why: ["", "„sa” to さ – twarde s; tu jest miękkie しゃ „sia”.", "To romaji „shashin” czytane po polsku; „sh” to miękkie „ś”, więc „siasin”.", "„cia” to ちゃ – zaczyna się od „c”; しゃ zaczyna się od miękkiego „s”."] },
   "1hv1xw6": { ex: "Romaji „ts” to polskie „c”, więc つなみ czytasz „cunami”: つ = „cu” (jak w „cukier”), な = „na”, み = „mi”. Tak samo mówimy to słowo po polsku." },
   "1cjjstv": { ex: "Romaji „y” to polskie „j”, więc やま (góra) czytasz „jama”: や = „ja”, ま = „ma”. Tak samo ゆ = „ju”, よ = „jo”." },
@@ -24163,7 +24185,7 @@ Object.assign(EXPL, {
     why: ["", "„Piwo” to ビール „biiru” – długie i (kreska ー); w nagraniu „i” było krótkie."] },
   "d54m8p": { ex: "ほん (książka) ma 2 takty: ほ „ho” + ん „n”. ん to osobna sylaba i trwa tyle samo co ほ – nie połykaj go. Tak samo にほん ma 3 takty: ni-ho-n.",
     why: ["", "Po polsku „hon” to jedna sylaba, ale w japońskim ん liczy się osobno – razem 2 takty.", "3 takty ma np. にほん (ni-ho-n); ほん to tylko 2 znaki.", "4 takty to za dużo – ほん to dwa znaki: ほ i ん."] },
-  "9n31a9": { ex: "きって ma 3 takty: き „ki”, małe っ (cisza, jeden takt) i て „te”. Każdy znak, także っ, trwa tyle samo. Małe っ poznasz po rozmiarze – jest mniejsze niż zwykłe つ „cu”.",
+  "1v46dq2": { ex: "きって ma 3 takty: き „ki”, małe っ (cisza, jeden takt) i て „te”. Każdy znak, także っ, trwa tyle samo. Małe っ poznasz po rozmiarze – jest mniejsze niż zwykłe つ „cu”.",
     why: ["", "2 takty ma きて „kite” (przyjdź) – bez pauzy っ.", "4 takty to za dużo: き + っ + て to trzy znaki.", "Jeden takt to jeden znak, a tu są trzy: き, っ, て."] },
   "wk3a1v": { ex: "Na końcu です (i ます) „u” prawie znika – mówisz „des”, a nie wyraźne „desu”. Ciche „u” słychać też w środku słów, np. すき brzmi prawie jak „ski”.",
     why: ["", "Wyraźne „u” brzmi sztucznie; w zwykłej mowie po „s” na końcu „u” prawie znika.", "す to „su” z „s”, nie „z” („zu” to ず z kreseczkami ゛).", "で to „de”, nie „di” – japońskie e jest zawsze czystym „e”."] },
@@ -24218,7 +24240,7 @@ Object.assign(EXPL, {
   "r1yrmp": { ex: "きく „kiku” = słuchać, こえ „koe” = głos, あき „aki” = jesień, いく „iku” = iść, jechać, おおきい „ookii” = duży (długie o i długie i). Wiersz K czytasz jak po polsku, tylko け twardo: „ke”." },
 
   // ===== h-sa: さ し す せ そ =====
-  "ydhd4f": { ex: "し czyta się „si” jak w „siwy” – miękkie ś. To jedyny znak w wierszu S, który nie brzmi jak „s + samogłoska”. Kształt: jedna kreska jak haczyk na ryby, zagięta w prawo.",
+  "pnuf9d": { ex: "し czyta się „si” jak w „siwy” – miękkie ś. To jedyny znak w wierszu S, który nie brzmi jak „s + samogłoska”. Kształt: jedna kreska jak haczyk na ryby, zagięta w prawo.",
     why: ["", "„szi” jest za twarde – takiego dźwięku w japońskim nie ma; し jest miękkie jak „ś”.", "„sy” jest twarde; japońskie し to miękkie „si”.", "„ci” to ち – z poziomą kreską i brzuszkiem; し to tylko jeden haczyk."] },
   "102t39y": { ex: "さ czyta się „sa” jak po polsku. Kształt: jedna pozioma kreska przecięta ukośną, a na dole łuk otwarty w prawo jak „c”. き „ki” ma dwie poziome kreski, a ち „ci” – brzuszek wybrzuszony w prawo.",
     why: ["", "き to „ki” – ma dwie poziome kreski, さ tylko jedną.", "ち to „ci” – dolny łuk jest wybrzuszony w prawo (jak dół cyfry 5), a w さ otwarty w prawo jak „c”.", "そ to „so” – jeden ciągły zygzak, bez kreski w poprzek."] },
@@ -24582,7 +24604,7 @@ Object.assign(EXPL, {
     why: ["", "ごちそうさまでした „gocisoosama desita” mówi się PO jedzeniu – „dziękuję za posiłek”.", "おやすみなさい „ojasumi nasai” to „dobranoc” – przed snem.", "さようなら „sajoonara” to „do widzenia” – przy rozstaniu."] },
   "19d9ch7": { ex: "おはようございます „ohajoo gozaimasu” to „dzień dobry” rano (mniej więcej do 10–11). Do sąsiada mówisz grzecznie, z ございます; do bliskich wystarczy krótkie おはよう.",
     why: ["", "こんばんは „konbanła” to „dobry wieczór” – mówi się wieczorem, nie rano.", "おやすみなさい „ojasumi nasai” to „dobranoc” – przed snem.", "いただきます „itadakimasu” mówi się przed jedzeniem."] },
-  "18fpdtb": { ex: "すみません „sumimasen” to i „przepraszam”, i „dziękuję za fatygę” – gdy ktoś się dla ciebie trudzi. Możesz też po prostu podziękować: ありがとうございます „arigatoo gozaimasu”. Oba zwroty pasują.",
+  "3nxuto": { ex: "すみません „sumimasen” to i „przepraszam”, i „dziękuję za fatygę” – gdy ktoś się dla ciebie trudzi. Możesz też po prostu podziękować: ありがとうございます „arigatoo gozaimasu”. Oba zwroty pasują.",
     why: ["", "ごめんなさい „gomennasai” to przeprosiny za własną winę, raczej do bliskich – a tu nikt nic złego nie zrobił.", "はじめまして „hadzimemasite” mówi się przy pierwszym poznaniu kogoś.", "いいえ „iie” to „nie” – nie pasuje jako reakcja na uprzejmość."] },
   "jkgkzz": { ex: "おはようございます „ohajoo gozaimasu” to „dzień dobry” rano. おはよう ma długie „joo” (よう), a ございます to grzeczne zakończenie; końcowe „u” w す prawie znika: „…mas”.",
     why: ["", "すみません to „sumimasen” – przepraszam; w nagraniu było długie „ohajoo…”.", "いいえ to „iie” – „nie”, krótkie słowo z długim „ii”.", "いただきます to „itadakimasu” – mówione przed jedzeniem; też kończy się na „-masu”."] },
@@ -24603,7 +24625,7 @@ Object.assign(EXPL, {
   "s3mt4a": { ex: "ごちそうさまでした „gocisoosama desita” mówisz po jedzeniu – „dziękuję za posiłek”. ちそう to „cisoo” z długim „o”, a w した „i” prawie znika: „deśta”. Wpisz gochisousamadeshita." },
   "1wv04cx": { ex: "はじめまして „hadzimemasite” to „miło mi” przy pierwszym spotkaniu (dosłownie „po raz pierwszy”). じ to „dzi” (romaji ji). Wpisz h-a-j-i-m-e-m-a-s-h-i-t-e. Drugi raz już tego nie mówisz." },
   "98y3g5": { ex: "よろしくおねがいします „jorosiku onegai simasu” mówisz na koniec przedstawiania się – „proszę o życzliwość, liczę na dobrą znajomość”. Po polsku najbliżej „miło mi”. Kolejność: はじめまして → imię → よろしくおねがいします." },
-  "hclc7j": { ex: "Powtórka: おはようございます – dzień dobry rano, こんにちは „konniciła” – dzień dobry, こんばんは „konbanła” – dobry wieczór, さようなら – do widzenia, ありがとうございます – dziękuję. W こんにちは i こんばんは końcowe は czytasz „ła”." },
+  "1ylgul7": { ex: "Powtórka: おはようございます – dzień dobry rano, こんにちは „konniciła” – dzień dobry, こんばんは „konbanła” – dobry wieczór, さようなら – do widzenia, ありがとうございます – dziękuję. W こんにちは i こんばんは końcowe は czytasz „ła”." },
   "3etvf4": { ex: "Powtórka: すみません – przepraszam (też: dziękuję za fatygę), ごめんなさい – przepraszam za swoją winę, はい „hai” – tak, いいえ „iie” – nie, おやすみなさい – dobranoc." },
 });
 
@@ -24703,7 +24725,7 @@ Object.assign(EXPL, {
   "2y4sre": {"ex":"シェフ „siefu” znaczy „szef kuchni” (z franc. chef). シェ = シ „si” + mała ェ = „sie” (romaji she), フ „fu”.","why":["","„Finlandia” to フィンランド „finrando”, a w nagraniu było シェフ „siefu”.","Sieć to ウェブ „łebu” – też ma małą ェ, ale po ウ: „łe”.","„Kawiarnia” to カフェ „kafe”, a w nagraniu było シェフ „siefu”."]},
   "c0e4fq": {"ex":"チェック „ciekku” znaczy „sprawdzenie” (z ang. check). チェ = チ „ci” + mała ェ = „cie”, ッ – pauza (kk), ク „ku”.","why":["","フィンランド czyta się „finrando” („Finlandia”) – w nagraniu było チェック „ciekku”.","ウェブ czyta się „łebu” („sieć, web”) – w nagraniu było チェック „ciekku”.","ディズニー to „dizunii” (Disney), a w nagraniu było „ciek-ku”."]},
   "k52wz6": {"ex":"おはようございます „ohajoo gozaimasu” to „dzień dobry” rano. おはよう ma długie „joo” (よう), a ございます to grzeczne zakończenie; końcowe „u” w す prawie znika: „…mas”.","why":["","はい czyta się „hai” („tak”) – w nagraniu było おはようございます „ohajoogozaimasu”.","ごちそうさまでした czyta się „gocisoosamadesita” („dziękuję za posiłek”) – w nagraniu było おはようございます „ohajoogozaimasu”.","いただきます to „itadakimasu” – mówione przed jedzeniem; też kończy się na „-masu”."]},
-  "1wtmmpu": {"ex":"ありがとうございます „arigatoo gozaimasu” to grzeczne „dziękuję”. とう to długie „too”. Do kolegi czy rodziny wystarczy samo ありがとう.","why":["","„Dobry wieczór” to こんばんは „konbanła”, a w nagraniu było „arigatoo…”.","„Dzień dobry” to こんにちは „konniciła”, a w nagraniu było ありがとうございます „arigatoogozaimasu”.","„Przepraszam” to すみません „sumimasen”, a w nagraniu było ありがとうございます „arigatoogozaimasu”."]},
+  "276zee": {"ex":"ありがとうございます „arigatoo gozaimasu” to grzeczne „dziękuję”. とう to długie „too”. Do kolegi czy rodziny wystarczy samo ありがとう.","why":["","„Dobry wieczór” to こんばんは „konbanła”, a w nagraniu było „arigatoo…”.","„Dzień dobry” to こんにちは „konniciła”, a w nagraniu było ありがとうございます „arigatoogozaimasu”.","„Przepraszam” to すみません „sumimasen”, a w nagraniu było ありがとうございます „arigatoogozaimasu”."]},
   "8lmr1r": {"ex":"すみません „sumimasen” to „przepraszam”, ale też „przepraszam, proszę pana/pani” (gdy wołasz kelnera) i „dziękuję za fatygę”. To jeden z najczęstszych zwrotów grzecznościowych.","why":["","ごちそうさまでした to „gocisoosama desita” – mówione po jedzeniu.","こんにちは czyta się „konniciła” („dzień dobry”) – w nagraniu było すみません „sumimasen”.","こんばんは czyta się „kombanła” („dobry wieczór”) – w nagraniu było すみません „sumimasen”."]},
   "ofvj4s": {"ex":"おやすみなさい „ojasumi nasai” to „dobranoc” – mówisz, idąc spać albo żegnając się późnym wieczorem. Do bliskich wystarczy おやすみ.","why":["","„Do widzenia” to さようなら „sajoonara”, a w nagraniu było おやすみなさい „ojasuminasai”.","„Dzień dobry” to こんにちは „konniciła”, a w nagraniu było おやすみなさい „ojasuminasai”.","„Miło mi; proszę o życzliwość” to よろしくおねがいします „jorosikuonegaisimasu”, a w nagraniu było おやすみなさい „ojasuminasai”."]},
   "1o9ptfr": {"ex":"いただきます „itadakimasu” mówisz przed jedzeniem – to taki japoński „smacznego”, ale mówi go ten, kto zaraz je. だ to た z ゛ = „da”; końcowe „u” prawie znika: „itadakimas”.","why":["","いいえ to „iie” – „nie”; też zaczyna się od い, ale jest krótkie.","はい czyta się „hai” („tak”) – w nagraniu było いただきます „itadakimasu”.","すみません czyta się „sumimasen” („przepraszam”) – w nagraniu było いただきます „itadakimasu”."]}
@@ -25222,7 +25244,7 @@ Object.assign(EXPL, {
     ex: "をめぐって wymaga sprawy spornej, wokół której toczy się dyskusja lub konflikt. Zwykłą rozmowę o pogodzie opisze {天気|てんき}について{話|はな}した („tenki ni tsuite hanashita”).",
     why: ["", "Naturalne: „Spór wokół budżetu trwał dalej”. {予算|よさん} („yosan”) – budżet, {議論|ぎろん} („giron”) – dyskusja.", "Naturalne: „Wybuchł spór o ziemię”. をめぐる + rzeczownik; {争|あらそ}い („arasoi”) – spór.", "Naturalne: „W firmie trwa konflikt wokół obsady stanowisk”. {人事|じんじ} („jinji”) – sprawy kadrowe."]
   },
-  "1qw6yto": {
+  "ytqeao": {
     ex: "に{関|かん}しては = „jeśli chodzi o, w sprawie” – formalne wskazanie tematu. ご{覧|らん}ください („goran kudasai”) – grzeczne „proszę zobaczyć”. {個人情報|こじんじょうほう} („kojin jōhō”) – dane osobowe, {取|と}り{扱|あつか}い („toriatsukai”) – przetwarzanie, obsługa.",
     why: ["", "W nagraniu nie ma przeczenia – to odesłanie do strony po szczegóły.", "ご{覧|らん}ください znaczy „proszę zobaczyć”, a nie „proszę podać”.", "Nic nie mówi się o przebudowie. ホームページ pada tylko jako miejsce z informacjami."]
   },
@@ -25272,7 +25294,7 @@ Object.assign(EXPL, {
     ex: "うえに dodaje cechę w tym samym kierunku: zaleta + zaleta albo wada + wada. {広|ひろ}い („hiroi”, przestronny) to zaleta, a {暗|くら}い („kurai”, ciemny) – wada, więc potrzeba kontrastu: {広|ひろ}いけど{暗|くら}い.",
     why: ["", "Poprawne: zaleta + zaleta – „przestronny, a do tego jasny”. {明|あか}るい („akarui”) – jasny.", "Poprawne: wada + wada – „ciasny, a do tego ciemny”. {狭|せま}い („semai”) – ciasny.", "Poprawne: dwie zalety – blisko stacji i tani czynsz. {家賃|やちん} („yachin”) – czynsz."]
   },
-  "3xb781": {
+  "1aj9v25": {
     ex: "ばかりか = „nie tylko…, ale nawet” – dokłada coś gorszego w tym samym kierunku. {挨拶|あいさつ} („aisatsu”) – powitanie, {目|め}を{合|あ}わせる („me o awaseru”) – spojrzeć w oczy, ～ようとしない – nawet nie próbuje.",
     why: ["", "{挨拶|あいさつ}をしない – przeczenie: nie wita się wcale.", "{合|あ}わせようとしない – w oczy też nie patrzy. Oba fakty są negatywne.", "Oba czasowniki są w przeczeniu (しない), więc to dokładne przeciwieństwo nagrania."]
   },
@@ -25381,7 +25403,7 @@ Object.assign(EXPL, {
     ex: "V-よう + ものなら = „niech no tylko…, a (stanie się coś złego)” – ostrzeżenie. Inaczej niż forma możliwościowa + ものなら („gdyby się dało”). {遅刻|ちこく} („chikoku”) – spóźnienie, {叱|しか}られる („shikarareru”) – zostać zbesztanym.",
     why: ["", "Nic się jeszcze nie stało – しようものなら to warunek, a {叱|しか}られる jest twierdzące.", "To znaczenie ma forma możliwościowa + ものなら. Po {遅刻|ちこく}しよう (forma wolicjonalna) jest ostrzeżenie.", "Spóźnić się może słuchacz, a kierownik go gani ({叱|しか}られる – strona bierna)."]
   },
-  "hjwiwf": {
+  "e835qb": {
     ex: "V + ことはない = „nie ma potrzeby…” – pocieszenie. {悩|なや}む („nayamu”) – martwić się, zadręczać, {相談|そうだん}して („sōdan shite”) – potoczna prośba „poradź się (mnie)”. {一人|ひとり}で („hitori de”) – samemu.",
     why: ["", "{相談|そうだん}して = „przyjdź się poradzić” – mówiący oferuje pomoc, a nie mówi, że poradzisz sobie bez niej.", "Odwrotnie: いつでも{相談|そうだん}して = „radź się zawsze, kiedy chcesz”.", "ことはない = „nie ma potrzeby”, a nie „to ważne”."]
   },
@@ -25438,12 +25460,12 @@ Object.assign(EXPL, {
     why: ["", "{引|ひ}き{下|さ}げる to „obniżyć” (podnieść = {引|ひ}き{上|あ}げる), a eksport spadł.", "Eksperci mówią さらに{下|さ}がる – „spadnie jeszcze bardziej”.", "1,2% to prognoza ({見通|みとお}し) na przyszły rok ({来年度|らいねんど}), a nie wynik tego roku."],
     tr: "Dwudziestego rząd obniżył prognozę wzrostu gospodarczego na przyszły rok budżetowy do 1,2%. Główną przyczyną jest spadek eksportu. Wśród ekspertów pojawia się też opinia, że wzrost będzie jeszcze niższy."
   },
-  "ssfsa3": {
+  "shckup": {
     ex: "{誠|まこと}に{勝手|かって}ながら („makoto ni katte nagara”) – „przepraszamy za niedogodność” – stała formułka przed ogłoszeniem przerwy. {休業|きゅうぎょう} („kyūgyō”) – przerwa w działalności, {以降|いこう} („ikō”) – od (tego dnia), {順次|じゅんじ} („junji”) – po kolei.",
     why: ["", "{休業|きゅうぎょう}させていただきます = „pozwolimy sobie zrobić przerwę” – firma będzie zamknięta.", "{以降|いこう} („ikō”) = „od (tej daty)”. Od 6 stycznia firma zacznie odpowiadać na zapytania.", "Przerwa obejmuje tylko {年末年始|ねんまつねんし} (koniec i początek roku), a 6 stycznia to powrót do pracy."],
     tr: "Przepraszamy za utrudnienia, ale w okresie końca i początku roku firma będzie nieczynna. Na zapytania przesłane w tym czasie odpowiemy po kolei od 6 stycznia."
   },
-  "1az9n2b": {
+  "1cb00w9": {
     ex: "Styl notki: {関係者|かんけいしゃ}によると („według osób zaangażowanych”) – nieoficjalne źródło; ～をめどに („o medo ni”) – „z myślą o terminie”; ～{方向|ほうこう}で{調整|ちょうせい}している – „przygotowują się do”. {経営統合|けいえいとうごう} („keiei tōgō”) – fuzja.",
     why: ["", "Oficjalny komunikat ({正式|せいしき}な{発表|はっぴょう}) dopiero będzie, w przyszłym miesiącu. Kwiecień to planowany termin fuzji.", "Nikt niczego nie odwołuje: w przyszłym miesiącu ma się ukazać oficjalny komunikat.", "Chodzi o plan na przyszły rok ({来年|らいねん}{四月|しがつ}), a {統合|とうごう} to połączenie, nie przejęcie."]
   },
@@ -25493,7 +25515,7 @@ Object.assign(EXPL, {
     ex: "Strona bierna z ukrytym „ja” jako ofiarą pokazuje, że czyjeś działanie ci przeszkadzało: {隣|となり}の{人|ひと}に{弾|ひ}かれた = „sąsiad grał (a mnie to przeszkadzało)”. {弾|ひ}く („hiku”) – grać na instrumencie.",
     why: ["", "To neutralny fakt: „sąsiad grał na pianinie” – nic nie mówi o tym, że to przeszkadzało.", "～てもらった to przysługa: sąsiad zagrał dla ciebie, na twoją prośbę – odwrotność kłopotu.", "{弾|ひ}けた to forma potencjalna: „sąsiad umiał / zdołał zagrać”."]
   },
-  "mtnun9": {
+  "b54730": {
     ex: "{来|く}る jest nieprzechodni, a jednak ma stronę bierną {来|こ}られる („korareru”). Taka bierna zawsze znaczy „spotkało mnie to i był kłopot” – kolega przyszedł nie w porę. Wygląda jak potencjalna, ale osoba z に wskazuje bierną.",
     why: ["", "„Kolega mógł przyjść” to {友達|ともだち}が{来|こ}られた (potencjalna, z が). Tu jest に – strona bierna.", "To kolega przyszedł do mówiącego (sprawca z に), a nie odwrotnie.", "Pomoc to przysługa: {友達|ともだち}に{来|き}てもらった. Strona bierna od {来|く}る wyraża kłopot."]
   },
@@ -25868,7 +25890,7 @@ Object.assign(EXPL, {
     ex: "～てしまいました wyraża żal – stało się coś niechcianego. {忘|わす}れる („wasureru”) to też „zostawić gdzieś przez zapomnienie”. {傘|かさ} („kasa”) – parasol, {電車|でんしゃ}の{中|なか} – w pociągu.",
     why: ["", "„Wziąć ze sobą” to {持|も}っていく. {忘|わす}れる = zapomnieć, zostawić.", "Brak podmiotu w japońskim zwykle oznacza mówiącego, a ～てしまいました – jego żal.", "W nagraniu nie ma przeczenia (～ませんでした); jest {忘|わす}れてしまいました."]
   },
-  "ds0fjk": {
+  "nlcdit": {
     ex: "～てある opisuje stan, który ktoś celowo przygotował: {貼|は}る („haru”, przyklejać) → {貼|は}ってある – „jest przyklejona (przez kogoś)”. {壁|かべ} („kabe”) – ściana, {地図|ちず} („chizu”) – mapa.",
     why: ["", "„Właśnie przykleja” to {地図|ちず}を{貼|は}っている (z を). ～てある to gotowy stan po czynności.", "„Odkleiła się” to はがれた. W nagraniu jest {貼|は}ってある – mapa wisi.", "Prośba to {貼|は}ってください. ～てあります to opis stanu."]
   },
@@ -25973,7 +25995,7 @@ Object.assign(EXPL, {
     ex: "Prośba „proszę nie…” = forma ない + でください. {忘|わす}れる („wasureru”, zapominać) to grupa RU: る → ない, więc {忘|わす}れないでください. {傘|かさ} („kasa”) – parasol.",
     why: ["", "To prośba odwrotna: „Proszę zapomnieć parasola” (forma て + ください).", "でください łączy się z formą ない, a nie z grzeczną ません.", "なくて to „nie robiąc / bo nie” – z ください daje błąd. Prośba „proszę nie” to ないで."]
   },
-  "hrcyce": {
+  "1ee0zxg": {
     ex: "{休|やす}む („yasumu”) ma dwa znaczenia: „odpoczywać” oraz „wziąć wolne, nie przyjść do pracy lub szkoły”. Rozstrzyga って na końcu: to potoczne と{言|い}ってた, czyli przytoczenie czyichś słów – „Tanaka mówi, że dziś nie przyjdzie”.",
     why: ["", "Tu brakuje と{思|おも}う („myślę”). って znaczy, że ktoś to powiedział – przekazujesz cudze słowa, a nie swoje przypuszczenie.", "Prośba „odpocznij” to {休|やす}んで (forma て). Tu jest {休|やす}む + って – przekazane słowa, a nie polecenie.", "Pytanie miałoby か albo の. って przekazuje, co Tanaka powiedział o sobie, a nie pytanie do ciebie."]
   },
@@ -26353,7 +26375,7 @@ Object.assign(EXPL, {
     why: ["", "を ma już {書|か}き{方|かた}. {方|かた} zmienia czasownik w rzeczownik, więc kanji łączy się przez の.", "が oznacza podmiot – kanji nie jest tu tym, kto coś robi.", "に to miejsce lub odbiorca – nie łączy dwóch rzeczowników."],
     tr: "Proszę mi pokazać, jak się pisze kanji."
   },
-  "qf250y": {
+  "a6wivv": {
     ex: "～とく to potoczny skrót od ～ておく: {買|か}って + おく → {買|か}っとく = „kupię zawczasu”. ね na końcu – „dobrze?”.",
     why: ["", "Przeszłość byłaby {買|か}っといた ({買|か}っておいた). {買|か}っとく mówi o tym, co dopiero zrobi.", "Zakaz to {買|か}わないで. Tu jest twierdzące {買|か}っとく.", "„Spróbuję kupić” to {買|か}ってみる. とく to skrót od ておく."]
   },
@@ -26806,7 +26828,7 @@ Object.assign(EXPL, {
     tr: "Jutro mam pracę, wiesz.",
     why: ["", "Przeczenie w Kansai to {仕事|しごと}ちゃう albo {仕事|しごと}やない. やねん jest twierdzące.", "やねん to stwierdzenie, nie pytanie; pytanie brzmiałoby {仕事|しごと}なん?", "Czas przeszły to {仕事|しごと}やってん (= だったんだ). Samo やねん dotyczy teraźniejszości lub przyszłości."]
   },
-  "d81wp3": {
+  "xuhadi": {
     ex: "なんでやねん („nande yanen”, standard: なんでだよ!) to klasyczne {突|つ}っ{込|こ}み („tsukkomi”) – riposta „trzeźwego” partnera w duecie {漫才|まんざい} („manzai”) na absurd kolegi (ボケ, „boke”). W życiu mówi się to żartem do znajomych, gdy ktoś plecie bzdury.",
     tr: "No co ty! (dosłownie: Niby czemu?!)",
     why: ["", "Podziękowanie po kansaisku to おおきに. なんでやねん to riposta na absurd.", "Do szefa nie mówi się なんでやねん – to żart między znajomymi, a nie przeprosiny (すみません).", "Pytanie o drogę to np. {駅|えき}はどこですか. なんでやねん nie jest prawdziwym pytaniem."]
@@ -26888,7 +26910,7 @@ Object.assign(EXPL, {
     ex: "ドタキャン („dotakyan”) to skrót od {土壇場|どたんば} („dotanba” – ostatnia chwila) + キャンセル: odwołanie w ostatniej chwili. Bierna ～された z {友達|ともだち}に – „kolega mi odwołał” (i ucierpiałem/am). Neutralnie: {直前|ちょくぜん}にキャンセルされた.",
     why: ["", "Spóźnienie to {遅刻|ちこく}. ドタキャン to odwołanie w ostatniej chwili.", "Bierna された i {友達|ともだち}に: to kolega odwołał, i to w ostatniej chwili, nie tydzień wcześniej.", "W nagraniu jest ドタキャン – spotkanie w ogóle się nie odbyło."]
   },
-  "8ptfl3": {
+  "1046mag": {
     ex: "コスパ („kosupa”) = コストパフォーマンス – stosunek jakości do ceny. {最強|さいきょう} („saikyō”, dosł. „najsilniejszy”) w slangu = „najlepszy, bezkonkurencyjny”. ～し – „i jeszcze”, wylicza powody. Neutralnie: {値段|ねだん}のわりにおいしいね.",
     why: ["", "{安|やす}くて znaczy „tani”, nie drogi ({高|たか}い).", "おいしい to „smaczny”; nie ma przeczenia.", "Kawy (コーヒー) nie ma w nagraniu; {最強|さいきょう} odnosi się do コスパ."]
   },
@@ -27074,7 +27096,7 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n4-2 Prognoza pogody =====
-  "6mir26": {
+  "1rwsczb": {
     ex: "{明日|あした}は{土曜日|どようび}だ。{友達|ともだち}と{海|うみ}に{行|い}きたい。 {海|うみ} („umi”) = morze. Forma ～たい = „chcę”: {行|い}きたい = „chcę jechać”.",
     why: ["", "Góry to {山|やま} („yama”) – w tym tekście ich nie ma. Jest {海|うみ}, morze.", "Kino to {映画館|えいがかん} („eigakan”) – w tekście nie pada. Haruka chciała nad {海|うみ}.", "Zoo to {動物園|どうぶつえん} („dōbutsuen”) – nie ma go w tekście."]
   },
@@ -27087,7 +27109,7 @@ Object.assign(EXPL, {
     why: ["", "Deszcz ({雨|あめ}) tylko zapowiadano. W sobotę: {雨|あめ}はぜんぜん{降|ふ}らなかった.", "Silny wiatr zapowiadano w piątek. W sobotę: {風|かぜ}も{弱|よわ}かった – wiatr był słaby.", "Śnieg to {雪|ゆき} („yuki”) – w tekście nie ma o nim mowy."],
     tr: "Jaka była pogoda w sobotę?"
   },
-  "1g08tft": {
+  "1xkkpqc": {
     ex: "Ai pisze w wiadomości: {今|いま}、{海|うみ}にいるよ！ – „jestem teraz nad morzem!”. {海|うみ}にいる = „być nad morzem” (いる – o ludziach i zwierzętach).",
     why: ["", "W domu były Haruka i jej brat. Ai napisała: {海|うみ}にいるよ.", "Ai nie przyszła do Haruki – wysłała wiadomość znad morza.", "Była sobota, a szkoła ({学校|がっこう}) w tekście nie pada."]
   },
@@ -27146,7 +27168,7 @@ Object.assign(EXPL, {
     ex: "Haruka: {私|わたし}は{肉|にく}と{野菜|やさい}を{買|か}っておくね。 {肉|にく} („niku”) = mięso, {野菜|やさい} („yasai”) = warzywa, と = „i”. ～ておく = zrobić coś zawczasu, przed grillem.",
     why: ["", "Talerze i kubki przyniesie Naoki: {皿|さら}と{割|わ}り{箸|ばし}と{紙|かみ}コップ.", "Pierogi zrobi Piotr: ピエロギを{作|つく}ろう.", "Napoje ({飲|の}み{物|もの}) w rozmowie nie padają."]
   },
-  "635w3h": {
+  "6iec2h": {
     ex: "Naoki: {僕|ぼく}は{皿|さら}と{割|わ}り{箸|ばし}と{紙|かみ}コップを{持|も}って{行|い}くよ。 {持|も}って{行|い}く = „zabrać ze sobą, przynieść”. {皿|さら} („sara”) – talerz, {割|わ}り{箸|ばし} („waribashi”) – jednorazowe pałeczki, {紙|かみ}コップ – papierowy kubek.",
     why: ["", "Mięso i warzywa kupi Haruka: {私|わたし}は{肉|にく}と{野菜|やさい}を{買|か}っておくね.", "Pierogi (ピエロギ) zrobi Piotr, a nie Naoki.", "Prognozę ({天気予報|てんきよほう}) się sprawdza ({見|み}ておく), a nie przynosi."],
     tr: "Co przyniesie Naoki?"
@@ -27187,7 +27209,7 @@ Object.assign(EXPL, {
     ex: "Anna widzi na scenie wysokiego pana: あの{人|ひと}…{寮|りょう}の{管理人|かんりにん}さんみたい… {管理人|かんりにん} („kanrinin”) = zarządca, kierownik budynku, {寮|りょう} („ryō”) = akademik. ～みたい = „wygląda na to, że…”.",
     why: ["", "Kolegi Kenty na scenie nie było. Anna rozpoznaje {寮|りょう}の{管理人|かんりにん}さん.", "Nauczyciel to {先生|せんせい} – nie pada w tekście.", "W telewizji był, ale tylko raz, w wiadomościach – jako ratownik kota, a nie gwiazda."]
   },
-  "oskwse": {
+  "1k9qi32": {
     ex: "{去年|きょねん}、ニュースに{出|で}たそうだよ。{寮|りょう}の{猫|ねこ}を{木|き}から{助|たす}けた{時|とき}に。 {木|き} („ki”) = drzewo, {助|たす}ける („tasukeru”) = ratować, ～そうだ = „podobno”.",
     why: ["", "Śpiewał dobrze, ale na festiwalu. Do wiadomości trafił przez {猫|ねこ} – kota.", "O konkursie w tekście nie ma mowy.", "Aktor to {俳優|はいゆう} („haiyū”) – nie pada. Był w wiadomościach (ニュース) przez kota."]
   },
@@ -27249,7 +27271,7 @@ Object.assign(EXPL, {
     why: ["", "{一回|いっかい} („ikkai”) to raz. W liście: {二回|にかい} – dwa razy.", "{三回|さんかい} („sankai”) to trzy razy. W liście: {二回|にかい}.", "{毎日|まいにち} („mainichi”) to codziennie, a Ewa robi zupę tylko {週|しゅう}に{二回|にかい}."],
     tr: "Ile razy w tygodniu Ewa robi zupę miso?"
   },
-  "1em0891": {
+  "cfllox": {
     ex: "{教|おし}えていただいたとおりに{作|つく}っているのに、なぜか{同|おな}じ{味|あじ}になりません。 ～とおりに = „dokładnie tak, jak”, ～のに = „chociaż, a mimo to”, なぜか = „z jakiegoś powodu”. {味|あじ} („aji”) = smak.",
     why: ["", "Ewa nie pisze, że zupa jest słona – tylko że smak nie jest {同|おな}じ (ten sam).", "Miso najwyraźniej ma, skoro gotuje zupę {週|しゅう}に{二回|にかい}.", "O opinii rodziny w Polsce nic nie pisze. Dziwi ją tylko inny {味|あじ}."]
   },
@@ -27269,7 +27291,7 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n3-1 Blog: pół roku biegania =====
-  "1igdsjj": {
+  "3owz2g": {
     ex: "{健康|けんこう}{診断|しんだん}で「もう{少|すこ}し{運動|うんどう}すれば、{体|からだ}がもっと{元気|げんき}になりますよ」と{言|い}われました。 {健康|けんこう}{診断|しんだん} („kenkō shindan”) = badania kontrolne, {運動|うんどう} („undō”) = ruch. {言|い}われました = „usłyszałam” (strona bierna). Potem それで = „więc”.",
     why: ["", "Koleżanka ({先輩|せんぱい}) pojawia się później – poradziła biegać z przyjaciółmi, gdy Maria już biegała.", "O maratonie (マラソン) w blogu nie ma ani słowa.", "Buty ({靴|くつ}) Maria wspomina dopiero na końcu, jako radę dla czytelników."]
   },
@@ -27285,7 +27307,7 @@ Object.assign(EXPL, {
     ex: "{実|じつ}は、もっと{早|はや}く{始|はじ}めればよかったと{思|おも}っています。 ～ばよかった = „szkoda, że nie…, trzeba było…” – żal z powodu przeszłości. {始|はじ}めれば („hajimereba”) to forma ば od {始|はじ}める.",
     why: ["", "Wręcz przeciwnie: お{金|かね}もかかりません – bieganie nic nie kosztuje.", "Maria pisze, że z przyjaciółmi łatwiej wytrwać – sama ma ochotę odpuścić ({休|やす}みたくなる).", "Zasady o deszczu Maria nie krytykuje – pisze tylko, że po deszczowych dniach trudno wrócić."]
   },
-  "km4haw": {
+  "qzdtgt": {
     ex: "{一人|ひとり}だと = „gdy jestem sama” (と – zawsze, gdy). {休|やす}みたくなる = „zaczynam chcieć odpuścić”. {待|ま}っていれば = „jeśli czekają” (forma ば). ～しかない = „nie ma innego wyjścia, jak…”.",
     why: ["", "Odwrotnie: {休|やす}みたくなる (chcę odpuścić) dotyczy biegania w pojedynkę, a nie z przyjaciółmi.", "„Każdego dnia” to {毎日|まいにち} – nie pada w nagraniu. Jest {待|ま}っていれば – „jeśli czekają”.", "„Jeśli nie przyjdą” to {来|こ}なければ. W nagraniu: {待|ま}っていれば{行|い}くしかない – muszę iść."]
   },
@@ -27301,15 +27323,15 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n3-2 Nowy sąsiad =====
-  "11p6knf": {
+  "1x1yafu": {
     ex: "Kenta: {大家|おおや}さんによると、{外国|がいこく}から{来|き}た{留学生|りゅうがくせい}だそうだよ。 {大家|おおや} („ōya”) = właściciel mieszkania. ～によると…そうだ = „według…, podobno” – wiadomość z drugiej ręki. {留学生|りゅうがくせい} („ryūgakusei”) = student z zagranicy.",
     why: ["", "O legitymacji nie ma mowy – Kenta podaje źródło: {大家|おおや}さんによると.", "Ayaka sama się zastanawia: {日本語|にほんご}は{話|はな}せるのかな – nie wiedziała, kim jest sąsiad.", "Ciężarówkę widziała Ayaka i wywnioskowała z niej tylko przeprowadzkę, a nie to, kim jest sąsiad."]
   },
-  "c46pw4": {
+  "17ekmmg": {
     ex: "Ayaka wyjaśnia: {昨日|きのう}、{大|おお}きいトラックが{止|と}まっていたし、{夜|よる}は{電気|でんき}がついていたから。 ～みたいだ (= ～ようだ) to wniosek z tego, co sama zobaczyła: ciężarówka i światło ({電気|でんき}, „denki”).",
     why: ["", "O ogłoszeniu nie ma mowy. Informację z drugiej ręki wyraża raczej ～そうだ, a nie ～みたいだ.", "Ayaka jeszcze nie rozmawiała z sąsiadem – poznają go dopiero na końcu.", "Od właściciela ({大家|おおや}さん) wiadomość ma Kenta – i mówi wtedy ～そうだ."]
   },
-  "1mpt8fo": {
+  "1cnkgmq": {
     ex: "{日本|にほん}の{大学|だいがく}に{入|はい}ったんだから、{話|はな}せるはずだよ。 ～んだから = „skoro”, ～はずだ = „powinno tak być” – wniosek z logiki, a nie z obserwacji. {話|はな}せる = „umie mówić”.",
     why: ["", "Kenta niczego nie słyszał – to logiczny wniosek. Zasłyszaną wiadomość wyraża ～そうだ.", "Nadzieję wyraża np. {話|はな}せるといいな. はず mówi o oczekiwaniu opartym na faktach.", "Rada „powinien się nauczyć” to {覚|おぼ}えるべきだ. はず nie wyraża obowiązku."]
   },
@@ -27317,7 +27339,7 @@ Object.assign(EXPL, {
     ex: "Tom: {全部|ぜんぶ}{日本|にほん}の{漫画|まんが}です。 {漫画|まんが} („manga”) = komiks, {全部|ぜんぶ} („zenbu”) = wszystko. Dodaje: {日本語|にほんご}は{漫画|まんが}で{覚|おぼ}えました – japońskiego nauczył się z mangi.",
     why: ["", "Podręcznik to {教科書|きょうかしょ} – nie pada. Tom uczył się z {漫画|まんが}.", "O ubraniach i naczyniach nie ma mowy – {全部|ぜんぶ} („wszystko”) to mangi.", "Prezentów w tekście nie ma. W pudłach były same {漫画|まんが}."]
   },
-  "1d0n8lq": {
+  "1x7qbia": {
     ex: "Tom wyjaśnia: {日本語|にほんご}は{漫画|まんが}で{覚|おぼ}えました, a w odpowiedzi pada なるほど („aha, rozumiem”). Gdy fakt już widzimy, a właśnie poznaliśmy jego przyczynę, ～はずだ znaczy „nic dziwnego, że…, to wyjaśnia”.",
     why: ["", "To nie przewidywanie – Tom już dobrze mówi. Rozmówcy właśnie poznali przyczynę.", "„Podobno” to ～そうだ albo ～らしい. Tu słyszą Toma na własne uszy.", "„Należy, trzeba” to ～べきだ. はず nie jest radą ani obowiązkiem."]
   },
@@ -27346,11 +27368,11 @@ Object.assign(EXPL, {
     ex: "Pomagali {町|まち}の{人々|ひとびと} (mieszkańcy), {高校生|こうこうせい}たち (licealiści) i {近|ちか}くの{店|みせ} (sklepy – darmowe onigiri). Podsumowanie: {皆|みな}の{協力|きょうりょく}のおかげで – „dzięki współpracy wszystkich”.",
     why: ["", "Nie tylko komitet – sprzątać zaczęli {町|まち}の{人々|ひとびと}, mieszkańcy miasteczka.", "Firmy z Tokio w tekście nie ma. Z Tokio przyjechała tylko kobieta, która oglądała pokaz.", "Turyści przyjechali na sam pokaz, gdy teren był już posprzątany."]
   },
-  "17julvj": {
+  "1ymirw4": {
     ex: "Obie formy podają przyczynę, ale różni je ocena skutku. {協力|きょうりょく}のおかげで („okage de”) – dzięki współpracy, skutek dobry. {台風|たいふう}のせいで („sei de”) – przez tajfun, skutek zły. Neutralnie, w stylu prasowym: のため.",
     why: ["", "Nie są wymienne: {台風|たいふう}のおかげで brzmiałoby, jakby tajfun zrobił coś dobrego (albo ironicznie).", "W tym tekście obie dotyczą przeszłości. Różnica leży w ocenie skutku, a nie w czasie.", "Uprzejmość nie gra tu roli. せいで ma odcień zarzutu – wskazuje winnego."]
   },
-  "rgwmvu": {
+  "1xai02a": {
     ex: "{変|か}わっても = „nawet jeśli się zmienił” (forma te + も). {絶対|ぜったい}に („zettai ni”) = koniecznie, {見|み}たかった = „chciałam zobaczyć”. ～んです dodaje wyjaśnienie i emocję.",
     why: ["", "„Nie mogłam zobaczyć” to {見|み}られなかった. W nagraniu: {見|み}たかった – chciałam zobaczyć.", "„Gdyby…, nie przyjechałabym” to warunek z przeczeniem. W nagraniu jest ～ても i chęć.", "„Czy się zmieni” to {変|か}わるかどうか. ～ても znaczy „nawet jeśli”."]
   },
@@ -27366,11 +27388,11 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n2-1 Felieton: list od nauczyciela =====
-  "1brrt5j": {
+  "j1xsqb": {
     ex: "Kluczowe zdania: {手書|てが}きが{完全|かんぜん}になくなるわけではないだろう („pismo odręczne raczej nie zniknie całkiem”; ～わけではない = „nie znaczy to, że”) oraz {気持|きも}ちを{届|とど}ける{特別|とくべつ}な{贈|おく}り{物|もの}になりつつある („staje się prezentem niosącym uczucia”).",
     why: ["", "Autor wprost temu przeczy: {完全|かんぜん}になくなるわけではない – nie zniknie całkiem.", "Odwrotnie: e-mail dochodzi w kilka sekund, a w liście zawarty jest {書|か}いた{人|ひと}の{時間|じかん}.", "Autor tylko stwierdza, że kartek ({年賀状|ねんがじょう}) ubywa – niczego nie chce zakazywać."]
   },
-  "i11ep3": {
+  "6q8yxk": {
     ex: "Forma słownikowa + {一方|いっぽう}だ = „coraz bardziej, bez przerwy w jednym kierunku” – zwykle o niekorzystnej zmianie. {年賀状|ねんがじょう}を{出|だ}す{人|ひと}も{減|へ}る{一方|いっぽう}だ = ludzi wysyłających kartki noworoczne wciąż ubywa. {減|へ}る („heru”) = ubywać.",
     why: ["", "„Z jednej strony” to {一方|いっぽう}で łączące dwa zdania. Na końcu zdania ～{一方|いっぽう}だ znaczy „coraz bardziej”.", "Odwrotnie – {一方|いっぽう}だ mówi, że zmiana trwa i się nasila.", "{一方|いっぽう} nie oznacza tu jednego miejsca, tylko jeden kierunek zmiany."]
   },
@@ -27382,11 +27404,11 @@ Object.assign(EXPL, {
     ex: "{先生|せんせい}の{声|こえ}が{聞|き}こえてくるような{気|き}がした。 ～ような{気|き}がする = „mam wrażenie, jakby…”. {声|こえ} („koe”) = głos, {聞|き}こえてくる = „dochodzić do uszu”.",
     why: ["", "O złości nauczyciela nie ma mowy. List przypomniał autorowi jego głos – to ciepłe wspomnienie.", "Pismo jest tylko {少|すこ}し{震|ふる}えた („lekko drżące”), ale autor czyta je bez kłopotu.", "Wręcz przeciwnie – autor docenia list i odpowie {手書|てが}きで, ręcznie."]
   },
-  "zpsr1c": {
+  "juew5d": {
     ex: "～ものの = „co prawda…, ale” – przyznajemy jedno i dodajemy coś przeciwnego. {漢字|かんじ}は{読|よ}めるものの、いざ{書|か}こうとすると{思|おも}い{出|だ}せない = „kanji co prawda czytam, ale gdy mam pisać, nie mogę sobie przypomnieć”.",
     why: ["", "„Ponieważ” to ので albo から. ものの łączy dwie przeciwne rzeczy, a nie przyczynę i skutek.", "„W miarę jak” to につれて albo にしたがって – te formy też są w tekście.", "„Jeśli” to ～ば albo ～なら. ものの mówi o czymś, co jest faktem."]
   },
-  "wdq7ia": {
+  "pajvzn": {
     ex: "{年|とし}を{取|と}る („toshi o toru”) = starzeć się. ～につれて = „w miarę jak”. {価値|かち} („kachi”) = wartość. ～ようになった = „zacząłem (umieć)…” – zmiana stanu.",
     why: ["", "„Gdy byłem młody” to {若|わか}い{頃|ころ}. W nagraniu: {年|とし}を{取|と}るにつれて – z wiekiem.", "„Tracą wartość” to {価値|かち}がなくなる. W nagraniu: {価値|かち}が{分|わ}かる – rozumiem wartość.", "„Trudniej zrozumieć” to {分|わ}かりにくくなった. W nagraniu: {分|わ}かるようになった – zacząłem rozumieć."]
   },
@@ -27399,11 +27421,11 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n2-2 Ostatni pociąg =====
-  "yy9i23": {
+  "1fmh4h8": {
     ex: "{財布|さいふ}には{千円|せんえん}しかなく、タクシーに{乗|の}るわけにはいかない。 ～しかない = „tylko”, ～わけにはいかない = „nie mogę sobie pozwolić” (z powodów praktycznych). Tysiąc jenów nie starczy na 10 km taksówką.",
     why: ["", "Nie pisze, że taksówek nie było – po prostu nie mógł sobie na nią pozwolić: {乗|の}るわけにはいかない.", "Spacer nie był planem – {歩|ある}いて{帰|かえ}らざるを{得|え}なかった, czyli musiał iść.", "O kierowcy w tekście nie ma mowy. Bohater w ogóle nie wsiadł."]
   },
-  "1wzc8zw": {
+  "zx6vek": {
     ex: "Temat ない + ざるを{得|え}ない = „nie pozostaje nic innego, jak…” – przymus wynikający z sytuacji. {帰|かえ}る → {帰|かえ}らない → {帰|かえ}らざるを{得|え}ない. {得|え} czyta się tu „e”.",
     why: ["", "„Nie mogłem wrócić” to {帰|かえ}れなかった. Podwójne przeczenie ざるを{得|え}ない daje „musiałem”.", "Niechęć to {帰|かえ}りたくなかった. ざるを{得|え}ない mówi o przymusie, a nie o chęci.", "„Mogłem nie wracać” to {帰|かえ}らなくてもよかった – znaczenie odwrotne."]
   },
@@ -27411,7 +27433,7 @@ Object.assign(EXPL, {
     ex: "{地図|ちず}アプリで{道|みち}を{確認|かくにん}した{上|うえ}で、…{歩|ある}き{出|だ}した。 Forma ta + {上|うえ}で = „po zrobieniu…, (dopiero wtedy)”. {確認|かくにん} („kakunin”) = sprawdzenie, {地図|ちず} („chizu”) = mapa.",
     why: ["", "Wodę chciał kupić dopiero po godzinie marszu: {一時間|いちじかん}ほど{歩|ある}いたころ.", "Telefonu do domu w tekście nie ma.", "To, że zgubił banknot, odkrył dopiero w konbini, w trakcie drogi."]
   },
-  "sdwgb0": {
+  "1uz85ef": {
     ex: "W konbini odkrył: {千円札|せんえんさつ}がない (nie ma banknotu 1000 jenów). Potem: {自分|じぶん}の{間抜|まぬ}けさに、{笑|わら}わずにはいられなかった. ～ずにはいられない = „nie mogę się powstrzymać od…”. {間抜|まぬ}け („manuke”) = gapa.",
     why: ["", "Kot ({猫|ねこ}) był na pustej ulicy handlowej, ale nic śmiesznego nie robił.", "Doręczyciel gazet tylko powiedział „dzień dobry” – już przy domu, nad ranem.", "Szybko nie było: dotarł, gdy niebo zaczęło jaśnieć ({空|そら}が{明|あか}るくなり{始|はじ}めた)."]
   },
@@ -27419,7 +27441,7 @@ Object.assign(EXPL, {
     ex: "Ostatnie zdanie: でも{正直|しょうじき}に{言|い}うと、あの{夜|よる}の{散歩|さんぽ}は{悪|わる}くなかった。 {正直|しょうじき}に{言|い}うと = „szczerze mówiąc”, {散歩|さんぽ} („sanpo”) = spacer, {悪|わる}くなかった = „nie był zły”.",
     why: ["", "Wręcz przeciwnie – {悪|わる}くなかった, „nie było źle”.", "Obiecał sobie tylko nie powtórzyć błędu ({失敗|しっぱい}), a nie siedzieć wieczorami w domu.", "O pożyczaniu pieniędzy nie ma mowy."]
   },
-  "11yowkn": {
+  "1x4oaid": {
     ex: "～からには = „skoro już (postanowiłem), to…” – po nim idzie postanowienie. {決|き}める („kimeru”) = zdecydować. {楽|たの}しんでやろう = „będę się tym cieszyć!” (forma wolicjonalna). と{思|おも}った = „pomyślałem”.",
     why: ["", "„Ponieważ lubię chodzić” to {歩|ある}くのが{好|す}きだから. からには nie podaje upodobania, tylko podjętą decyzję.", "W nagraniu nie ma „ale nie było przyjemnie” – jest postanowienie: {楽|たの}しんでやろう.", "„Jeśli zdecyduję” to {決|き}めたら. からには mówi o decyzji już podjętej."]
   },
@@ -27432,15 +27454,15 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n2-3 E-mail: zmiana terminu spotkania =====
-  "1obdm9i": {
+  "18okbb2": {
     ex: "{工場|こうじょう}の{設備|せつび}{点検|てんけん}に{伴|ともな}い、{当日|とうじつ}は{試作品|しさくひん}をご{用意|ようい}できなくなりました。 {設備|せつび}{点検|てんけん} („setsubi tenken”) = przegląd urządzeń, ～に{伴|ともな}い = „w związku z”, {試作品|しさくひん} („shisakuhin”) = prototyp.",
     why: ["", "O zdrowiu pana Kimury nie ma mowy. Kłopot leży po stronie nadawcy: こちらの{都合|つごう}で.", "Sala jest wolna: spotkanie będzie {前回|ぜんかい}と{同|おな}じく w {会議室|かいぎしつ} na 3. piętrze.", "O delegacji nie ma mowy. Przyczyna: {工場|こうじょう}の{設備|せつび}{点検|てんけん}."]
   },
-  "xfyyk": {
+  "1sbvhhf": {
     ex: "ご{都合|つごう}のよい{日時|にちじ}を、{今週|こんしゅう}{金曜日|きんようび}までにお{知|し}らせいただけますでしょうか。 ご{都合|つごう}のよい = „dogodny (dla Pana)”, {日時|にちじ} („nichiji”) = data i godzina. お{知|し}らせいただけますでしょうか = bardzo grzeczne „czy mógłby Pan dać znać”.",
     why: ["", "Prototypów ({試作品|しさくひん}) właśnie nie da się przygotować – to firma pani Hayashi miała je pokazać.", "Salę zapewnia firma pani Hayashi: {弊社|へいしゃ}…{会議室|かいぎしつ}を{予定|よてい}しております.", "O zamówieniu ({注文|ちゅうもん}) w e-mailu nie ma mowy."]
   },
-  "1mmjssb": {
+  "ihgllo": {
     ex: "Zasada uchi–soto: wobec kogoś z zewnątrz (klient = soto) ludzi z własnej firmy (uchi) stawiamy niżej – bez さん, {様|さま} i tytułów. Stąd {工場長|こうじょうちょう}の{森|もり} („Mori”) i ～させていただく – uniżona forma o działaniach swoich ludzi.",
     why: ["", "O sympatii nic nie wiadomo – brak さん wynika z etykiety, a nie z emocji.", "Wiek nie ma tu znaczenia. Nawet o prezesie własnej firmy wobec klienta mówi się bez さん.", "To nie błąd, tylko poprawny język biznesowy (uchi–soto)."]
   },
@@ -27464,15 +27486,15 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n1-1 Szkoła na wyspie ocalona =====
-  "xr1d2k": {
+  "5bc7bv": {
     ex: "{島民|とうみん}たちは{学校|がっこう}を{守|まも}るべく、{移住者|いじゅうしゃ}を{呼|よ}び{込|こ}む{活動|かつどう}を{始|はじ}めた – べく = „aby” (styl pisany). Potem: {空|あ}き{家|や}を…{修理|しゅうり}し、{子育|こそだ}て{世代|せだい}に{格安|かくやす}で{貸|か}し{出|だ}した – tanio dla rodzin z dziećmi.",
     why: ["", "O turystach nie ma mowy – domy wynajmowano {子育|こそだ}て{世代|せだい} (rodzinom z dziećmi), i to {格安|かくやす}.", "Miasto chciało szkołę połączyć z inną. Mieszkańcy działali z własnej inicjatywy, przeciw temu planowi.", "Szkoła już istniała – chodziło o to, by dalej działała ({存続|そんぞく})."]
   },
-  "1eu5gh7": {
+  "cxyglt": {
     ex: "N としてあるまじき N = „coś, czego ktoś w tej roli absolutnie nie powinien robić” – mocna krytyka. Tu: forsowanie planu {住民|じゅうみん}への{説明|せつめい}もないまま (bez wyjaśnień dla mieszkańców). {行政|ぎょうせい} („gyōsei”) = administracja, {行為|こうい} („kōi”) = czyn.",
     why: ["", "Odwrotnie – zdanie wcześniej mówi o {批判|ひはん}の{声|こえ} (głosach krytyki). あるまじき to potępienie.", "„Typowe” to ありがちな. まじき to przeczący obowiązek: „nie wolno, nie powinno się”.", "Konieczność wyrażałoby np. やむを{得|え}ない. あるまじき nie usprawiedliwia, tylko potępia."]
   },
-  "ak27q1": {
+  "53a8zs": {
     ex: "べからざる to przecząca forma べき (styl klasyczny): {欠|か}くべからざる = „którego nie można pominąć”. {欠|か}く („kaku”) = brakować, pominąć, więc {欠|か}くべからざる{存在|そんざい} = „coś absolutnie niezbędnego”. {存在|そんざい} („sonzai”) = byt, obecność.",
     why: ["", "Zakaz dotykania to {触|さわ}るべからず. Tu czasownik to {欠|か}く – „brakować, pominąć”.", "Odwrotnie: bez szkoły i dzieci wyspa {未来|みらい}はない – nie ma przyszłości.", "Drugorzędne to {二次的|にじてき}な. べからざる podkreśla, że rzecz jest niezbędna."]
   },
@@ -27480,7 +27502,7 @@ Object.assign(EXPL, {
     ex: "これを{受|う}け、{町|まち}は{統合|とうごう}{計画|けいかく}を{撤回|てっかい}した。 {撤回|てっかい} („tekkai”) = wycofanie, {統合|とうごう} („tōgō”) = połączenie (szkół). これを{受|う}け = „w reakcji na to” – na wzrost liczby uczniów do {十一人|じゅういちにん}.",
     why: ["", "Połączenia nie było – plan {撤回|てっかい}した, czyli wycofano.", "Pan Nishimura był duszą akcji ({中心|ちゅうしん}), ale o dyrektorze szkoły nie ma mowy.", "Odwrotnie – rodziny przenosiły się NA wyspę ({移住|いじゅう})."]
   },
-  "iwhi89": {
+  "8bctx2": {
     ex: "N をものともせず = „nic sobie nie robiąc z (trudności)”, „nie zważając na”. Zdanie: {台風|たいふう}で{屋根|やね}が{飛|と}ばされる{被害|ひがい}をものともせず、{作業|さぎょう}は{一日|いちにち}も{休|やす}まず{続|つづ}けられた – mimo zerwanych dachów pracowano bez przerwy.",
     why: ["", "Przyczynę („z powodu”) wyraża ～によって albo ～のため. ものともせず mówi o pokonaniu przeszkody.", "„Zanim” to ～{前|まえ}に. ものともせず nie mówi o czasie.", "Strach to ～を{恐|おそ}れて. ものともせず znaczy dokładnie odwrotnie – bez lęku."]
   },
@@ -27501,19 +27523,19 @@ Object.assign(EXPL, {
     ex: "Yui: {出|だ}す{前|まえ}に、{一言|ひとこと}{相談|そうだん}してくれればよかったものを。 ～ばよかったものを = „a przecież wystarczyło…” – żal połączony z wyrzutem, że ktoś czegoś nie zrobił. {一言|ひとこと} („hitokoto”) = jedno słowo.",
     why: ["", "ものを wyraża niezadowolenie z tego, co się stało – a nie radość.", "Obojętność nie pasuje: Yui wyrzuca bratu, że jej nie zapytał.", "～ばよかった mówi o przeszłości, której nie da się zmienić – wypowiedzenie już złożone ({昨日|きのう}{出|だ}した)."]
   },
-  "ckqm5w": {
+  "evs7o6": {
     ex: "Naoki: {相談|そうだん}したところで、{反対|はんたい}されるのは{分|わ}かってたからさ。 Forma ta + ところで = „nawet gdybym (to zrobił), i tak nic by to nie dało”. {反対|はんたい}される = „spotkać się ze sprzeciwem”.",
     why: ["", "O wyjeździe siostry nie ma mowy – Naoki przychodzi do jej pokoju.", "Nie zapomniał – świadomie milczał, bo spodziewał się sprzeciwu ({反対|はんたい}).", "Rodzice niczego nie zabronili – Yui dopiero prosi, żeby ich odwiedzał."]
   },
-  "p20rhu": {
+  "19ftuzz": {
     ex: "{毎月|まいつき}とは{言|い}わないまでも、せめて{半年|はんとし}に{一回|いっかい}はお{父|とう}さんたちに{顔|かお}を{見|み}せること。 ～ないまでも = „może nie…, ale przynajmniej”; せめて = „chociaż”. {顔|かお}を{見|み}せる = pokazać się, odwiedzić.",
     why: ["", "Właśnie co miesiąc ({毎月|まいつき}) Yui NIE wymaga – とは{言|い}わないまでも.", "O pieniądzach nie ma mowy. Warunek: {顔|かお}を{見|み}せる – pokazywać się rodzicom.", "O ukrywaniu decyzji nie ma mowy – chodzi tylko o odwiedziny."]
   },
-  "108zyh7": {
+  "1yqq29k": {
     ex: "N + といえども = „nawet N (choć można by się spodziewać czegoś innego)”. プロといえども、{音楽|おんがく}だけで{生活|せいかつ}できる{人|ひと}はほんの{一握|ひとにぎ}り – nawet wśród zawodowców z muzyki żyje garstka ({一握|ひとにぎ}り, „hitonigiri” – garść).",
     why: ["", "„Ponieważ” to ～だから. といえども wprowadza ustępstwo, a nie przyczynę.", "„Jeśli chodzi o” to ～といえば albo ～なら. といえども znaczy „nawet”.", "„Zamiast” to ～の{代|か}わりに."]
   },
-  "123j75d": {
+  "yxp2ac": {
     ex: "AであれBであれ = „czy A, czy B – bez różnicy”. {三千人|さんぜんにん} („sanzennin”) = trzy tysiące osób, {一番|いちばん}{前|まえ}の{席|せき} = pierwszy rząd. ～てあげる = zrobić coś dla kogoś; {聴|き}く (z tym kanji) = słuchać uważnie, np. muzyki.",
     why: ["", "{一番|いちばん}{前|まえ} to „sam przód”, a nie tył ({後|うし}ろ). Liczba widzów nie ma znaczenia.", "Yui obiecuje przyjść: {聴|き}いてあげる – „posłucham”. Przeczenia w nagraniu nie ma.", "O kupowaniu biletów nie ma mowy. {三人|さんにん} to liczba widzów, a nie biletów."]
   },
@@ -27529,7 +27551,7 @@ Object.assign(EXPL, {
   },
 
   // ===== s-n1-3 Esej: filiżanka herbaty =====
-  "n812in": {
+  "4qp0p3": {
     ex: "{一期一会|いちごいちえ} („ichigo ichie”): {今日|きょう}のこの{出会|であ}いは{二度|にど}と{繰|く}り{返|かえ}されぬものと{心得|こころえ}、{誠意|せいい}を{尽|つ}くすべし. ぬ = klasyczne ない, べし = „należy”. {誠意|せいい} („seii”) = szczerość, {尽|つ}くす = dać z siebie wszystko.",
     why: ["", "Babcia piła herbatę codziennie, ale {一期一会|いちごいちえ} mówi o spotkaniach, a nie o herbacie.", "Odwrotnie: {二度|にど}と{繰|く}り{返|かえ}されぬ – nigdy się nie powtórzy.", "Nie chodzi o unikanie – każde spotkanie należy cenić i dać mu całe serce."]
   },
@@ -27537,11 +27559,11 @@ Object.assign(EXPL, {
     ex: "Forma słownikowa + なり = „ledwie…, od razu…” (styl pisany). {祖母|そぼ}は{毎朝|まいあさ}、{起|お}きるなり{湯|ゆ}を{沸|わ}かし – zaraz po wstaniu gotowała wodę. {湯|ゆ} („yu”) = gorąca woda, {沸|わ}かす („wakasu”) = zagotować.",
     why: ["", "„Zanim wstała” to {起|お}きる{前|まえ}に. なり = tuż PO.", "Wieczór to {夜|よる}, a w tekście jest {毎朝|まいあさ} – „każdego ranka”.", "O gościach w tekście nie ma mowy – babcia parzyła herbatę codziennie rano."]
   },
-  "vy40d4": {
+  "1ehqpux": {
     ex: "{忙|いそが}しさを{理由|りゆう}に{帰省|きせい}を{先延|さきの}ばしにしていた („pod pretekstem pracy odkładałam przyjazd do domu”), a potem {間|ま}に{合|あ}わなかった („nie zdążyłam”). Stąd przysłowie {後悔|こうかい}{先|さき}に{立|た}たず – żal przychodzi zawsze po fakcie.",
     why: ["", "O nauce ceremonii herbacianej ({茶道|さどう}) autorka nic nie pisze.", "Samej pracy w mieście ({都会|とかい}) nie żałuje – żałuje, że przez nią odkładała wizyty.", "Pytanie o herbatę dało jej ważną odpowiedź babci – tego nie żałuje."]
   },
-  "1owmu6h": {
+  "1iqf016": {
     ex: "～ずとも = klasyczne ～なくても („nawet jeśli nie”). {及|およ}ぶ („oyobu”) = dorównać, sięgać; {祖母|そぼ}には{及|およ}ばずとも = „choćbym nie dorównywała babci”. Dalej: {私|わたし}なりに – „na swój sposób”.",
     why: ["", "„Ponieważ nie dorównuję” to {及|およ}ばないので. とも dodaje ustępstwo – „nawet jeśli”.", "Cel („aby dorównać”) to {及|およ}ぶように. ～ず to przeczenie, a nie cel.", "Kierunek jest odwrotny: {祖母|そぼ}には{及|およ}ばず – to autorka nie dorównuje babci."]
   },
@@ -27564,7 +27586,7 @@ Object.assign(EXPL, {
   "gyn07h": {
     ex: "W tekście: パンケーキ、ふわふわ (puszyste), パンがさくさく (chrupiący chleb), チーズがとろとろ (rozpływający się ser), {朝|あさ}からずっとわくわく (podekscytowanie), こっちがはらはらする (nerwy o kogoś). Podwojone sylaby to typowe japońskie słowa dźwiękonaśladowcze."
   },
-  "nejal0": {
+  "1i1ewzc": {
     ex: "Haruto: {実|じつ}は{三時|さんじ}からバイトなんだ。{時間|じかん}、ぎりぎりかも。 バイト = skrót od アルバイト (praca dorywcza). ぎりぎり = „na styk, w ostatniej chwili”. かも = „może”.",
     why: ["", "Jedzenie przyszło po ok. 10 minutach ({十分|じゅっぷん}ほどして) – nikt nie narzekał.", "Haruto na nikogo nie czeka – spieszy się do pracy ({三時|さんじ}からバイト).", "Nie jedzie do domu – {店|みせ} (sklep, w którym pracuje) jest tuż obok."]
   },
@@ -27572,7 +27594,7 @@ Object.assign(EXPL, {
     ex: "はらはらする = „denerwować się, patrząc na kogoś w ryzykownej sytuacji” – tu Mio boi się, że Haruto nie zdąży. こっちが = „to ja (się denerwuję)”. じゃん – potoczne „no przecież!”.",
     why: ["", "Radość z jedzenia to raczej わくわく albo {最高|さいこう}! はらはら to nerwy.", "Haruto jadł swoją kanapkę ({残|のこ}りのサンド), a nie jej pankejka.", "Senność (うとうと) pojawia się dopiero na końcu, gdy Mio jest sama."]
   },
-  "a5pwd4": {
+  "2it88c": {
     ex: "Na początku: {雨|あめ}がざあざあ{降|ふ}る – leje jak z cebra (ざあざあ = szum ulewy). Na końcu: しとしとと{静|しず}かな{音|おと}に{変|か}わっていた – zmienił się w cichy, drobny deszcz (しとしと).",
     why: ["", "Kierunek jest odwrotny: na początku ざあざあ (ulewa), na końcu しとしと (drobny deszczyk).", "Deszcz nie przestał – wciąż słychać {静|しず}かな{音|おと}, cichy szum.", "Śnieg to {雪|ゆき} – w tekście go nie ma."]
   },
@@ -27595,15 +27617,15 @@ Object.assign(EXPL, {
   "1iv64i3": {
     ex: "Z rozmowy: ほんまにおいしい (naprawdę pyszne), めっちゃ{熱|あつ}い (bardzo gorące), {東京|とうきょう}の{人|ひと}ちゃう? (nie z Tokio?), {来|き}たらええやん (dobrze by było przyjść), おおきに (dzięki). To typowe słowa dialektu Kansai."
   },
-  "1o9m2qy": {
+  "1u6jnu": {
     ex: "Sprzedawca: こっちの{人|ひと}は「お{願|ねが}いします」なんて{言|い}わへんねん。「{八個|はっこ}ちょうだい」で{終|お}わりや。 {言|い}わへん = {言|い}わない, ～ねん = ～んだ. W Osace mówi się prościej: ちょうだい („daj”).",
     why: ["", "O walizce w tekście nie ma mowy. Zdradził ją sposób mówienia.", "Saki zamówiła zwykłe {八個|はっこ} – osiem kulek.", "Saki potwierdza Tokio dopiero po pytaniu: {東京|とうきょう}の{人|ひと}ちゃう?"]
   },
-  "ws70z9": {
+  "832c8e": {
     ex: "V + はる to kansaiski, łagodny szacunek wobec osoby, o której się mówi: {来|き}はった ≈ {来|こ}られた / いらっしゃった. Podobnie ぺらぺらになってはった – „zaczął mówić płynnie”, z nutą szacunku.",
     why: ["", "Przeczenie w Kansai to ～へん ({言|い}わへん). はる nie neguje.", "Przypuszczenie to ～やろ (= だろう). はる wyraża szacunek.", "Polecenie w Kansai brzmi np. {来|き}てや. はる to uprzejmość, a nie rozkaz."]
   },
-  "dtm7a3": {
+  "1j3hfw7": {
     ex: "{知|し}らん = {知|し}らない. Po śmiałym stwierdzeniu たこ{焼|や}きは{野菜|やさい}みたいなもんや sprzedawca dodaje …{知|し}らんけど („chociaż kto wie”) – typowy kansaiski żart: mówię coś pewnie, ale nie biorę za to odpowiedzialności.",
     why: ["", "O cenie nie ma mowy – {知|し}らんけど dotyczy żartu o warzywach.", "To nie pytanie – brak か. To zastrzeżenie na końcu własnej wypowiedzi.", "To nie obraza – Saki parska śmiechem ({吹|ふ}き{出|だ}した)."]
   },
@@ -32279,7 +32301,7 @@ Object.assign(window.GRAM, {
      why: ["", "{降|ふ}らせる to forma kauzatywna („sprawić, że pada”).", "{降|ふ}れる to forma potencjalna – nie pasuje do „złapał mnie deszcz”.", "W stronie czynnej byłoby {雨|あめ}が{降|ふ}りました; po {雨|あめ}に potrzebna jest forma bierna."] },
    { id: "a-pass-06", t: "type", label: "Wpisz formę bierną", q: "Wpisz formę bierną (～ました) od {盗|ぬす}む:<br>{電車|でんしゃ}の{中|なか}で{財布|さいふ}を＿＿。", tr: "W pociągu ukradziono mi portfel.", a: ["ぬすまれました", "盗まれました"], hint: "Grupa U: ostatnie -u zamienia się na -a.",
      ex: "{盗|ぬす}む (grupa U): -mu → -ma + れる → {盗|ぬす}まれる. Rzecz zostaje z を, a poszkodowanym jest mówiący." },
-   { id: "a-pass-07", t: "listen", label: "Posłuchaj i wybierz", jp: "{弟|おとうと}に{日記|にっき}を{読|よ}まれました。", opts: ["Młodszy brat przeczytał mój pamiętnik (bez pozwolenia).", "Młodszy brat dostał mój pamiętnik do przeczytania.", "Młodszy brat nie umie przeczytać pamiętnika."], a: 0,
+   { id: "a-pass-07", t: "listen", label: "Posłuchaj i wybierz", jp: "{弟|おとうと}に{日記|にっき}を{読|よ}まれました。", opts: ["Młodszy brat przeczytał mój pamiętnik bez pozwolenia.", "Młodszy brat dostał mój pamiętnik do przeczytania.", "Młodszy brat nie umie przeczytać pamiętnika."], a: 0,
      ex: "{読|よ}む → {読|よ}まれる (bierna, „-mare-”) i {読|よ}ませる (kauzatywna, „-mase-”). Tu brat zrobił coś, czego mówiący doświadczył – strona bierna.",
      why: ["", "To byłaby forma kauzatywna {読|よ}ませました („dać przeczytać”, z „-mase-”), a w nagraniu słychać {読|よ}まれました („-mare-”).", "W nagraniu nie ma przeczenia ani formy potencjalnej – {読|よ}まれました to strona bierna."] },
    { id: "a-pass-08", t: "mc", label: "Wybierz formę", q: "{世界中|せかいじゅう}でこのアプリが＿＿。", tr: "Ta aplikacja jest używana na całym świecie.", opts: ["{使|つか}われています", "{使|つか}っています", "{使|つか}わせています"], a: 0,
@@ -32627,7 +32649,7 @@ Object.assign(window.GRAM, {
      ex: "Rada na czas PRZED wyjazdem, nawiązująca do planu rozmówcy → {行|い}くなら. {行|い}ったら znaczyłoby „po przyjeździe”, a płaszcz zabiera się, zanim się wyjedzie." },
    { id: "d-jouken-25", t: "order", label: "Ułóż zdanie", tr: "Jeśli zamierzasz jeździć w Japonii pociągami, bardzo przyda się ta karta.", words: ["{日本|にほん}で{電車|でんしゃ}に", "{乗|の}るなら、", "このカードが{便利|べんり}ですよ。"],
      ex: "Najpierw plan rozmówcy (A なら), potem rada (B): {乗|の}るなら、このカードが{便利|べんり}です." },
-   { id: "d-jouken-26", t: "listen", label: "Posłuchaj i wybierz", jp: "{日本|にほん}に{来|く}るなら、{連絡|れんらく}してください。", opts: ["Jeśli wybierasz się do Japonii, proszę dać znać (zawczasu).", "Jak już przyjedziesz do Japonii, proszę dać znać.", "Ponieważ przyjeżdżasz do Japonii, proszę dać znać."], a: 0,
+   { id: "d-jouken-26", t: "listen", label: "Posłuchaj i wybierz", jp: "{日本|にほん}に{来|く}るなら、{連絡|れんらく}してください。", opts: ["Jeśli wybierasz się do Japonii, proszę dać znać zawczasu.", "Jak już przyjedziesz do Japonii, proszę dać znać.", "Ponieważ przyjeżdżasz do Japonii, proszę dać znać."], a: 0,
      ex: "{来|く}るなら = „jeśli masz zamiar przyjechać” – wiadomość ma przyjść jeszcze przed przyjazdem.",
      why: ["", "„Jak już przyjedziesz” to {来|き}たら; w nagraniu słychać {来|く}るなら.", "„Ponieważ” to ～から albo ～ので, a w nagraniu jest なら."] },
    { id: "d-jouken-27", t: "mc", label: "Wybierz formę", q: "「{頭|あたま}が{痛|いた}いんです。」「＿＿、{今日|きょう}は{早|はや}く{帰|かえ}ったほうがいいですよ。」", tr: "„Boli mnie głowa.” „Skoro boli, lepiej dziś wcześniej wrócić do domu.”", opts: ["{痛|いた}いなら", "{痛|いた}いと", "{痛|いた}いのに"], a: 0,
@@ -33377,7 +33399,7 @@ Object.assign(window.GRAM, {
      ex: "{招待|しょうたい}する → {招待|しょうたい}される → {招待|しょうたい}されました." },
    { id: "c-ukemi-25", t: "match", label: "Dopasuj pary", pairs: [["{褒|ほ}められる", "ktoś mnie chwali"], ["{叱|しか}られる", "ktoś mnie beszta"], ["{盗|ぬす}まれる", "ktoś mi coś kradnie"], ["{踏|ふ}まれる", "ktoś mi nadeptuje na nogę"], ["{降|ふ}られる", "deszcz mnie łapie"]],
      ex: "Strona bierna pokazuje czynność z perspektywy tego, kogo ona spotyka." },
-   { id: "c-ukemi-26", t: "mc", label: "Co znaczy to zdanie?", q: "{知|し}らない{人|ひと}に{写真|しゃしん}を{見|み}られました。", opts: ["Nieznajomy zobaczył moje zdjęcie (i było to niezręczne).", "Udało się zobaczyć zdjęcie nieznajomego.", "Na moją prośbę pokazano nieznajomemu zdjęcie.", "Nieznajomy zrobił mi zdjęcie."], a: 0,
+   { id: "c-ukemi-26", t: "mc", label: "Co znaczy to zdanie?", q: "{知|し}らない{人|ひと}に{写真|しゃしん}を{見|み}られました。", opts: ["Nieznajomy zobaczył moje zdjęcie i było mi niezręcznie.", "Udało się zobaczyć zdjęcie nieznajomego.", "Na moją prośbę pokazano nieznajomemu zdjęcie.", "Nieznajomy zrobił mi zdjęcie."], a: 0,
      ex: "{見|み}られる bywa bierne albo potencjalne – tu sprawca z に ({知|し}らない{人|ひと}に) pokazuje stronę bierną: ktoś zobaczył twoje zdjęcie.",
      why: ["", "Znaczenie „móc zobaczyć” nie łączy się ze sprawcą na に; to nieznajomy patrzył.", "Prośbę wyraziłoby ～てもらう; strona bierna mówi raczej o czymś niechcianym.", "„Zrobić zdjęcie” to {撮|と}る – tu jest {見|み}る (patrzeć)."] },
    { id: "c-ukemi-27", t: "order", label: "Ułóż zdanie", tr: "Nauczyciel pochwalił młodszego brata i brat bardzo się cieszy.", words: ["{弟|おとうと}は{先生|せんせい}に", "{褒|ほ}められて、", "とても", "{喜|よろこ}んでいます。"],
@@ -33591,7 +33613,7 @@ Object.assign(window.GRAM, {
    { id: "d-kotoni-08", t: "mc", label: "Wybierz formę", q: "{兄|あに}は{夜|よる}、{甘|あま}いものを＿＿ことにしました。", tr: "Starszy brat postanowił nie jeść wieczorami słodyczy.", opts: ["{食|た}べない", "{食|た}べません", "{食|た}べなくて"], a: 0,
      ex: "„Postanowić, że się czegoś nie robi” → forma ～ない + ことにする: {食|た}べないことにしました.",
      why: ["", "Przed こと nie stawia się formy grzecznej – tylko prostą: {食|た}べない.", "Forma ～なくて nie łączy się z こと; potrzebna jest forma ～ない."] },
-   { id: "d-kotoni-09", t: "listen", label: "Posłuchaj i wybierz", jp: "{来月|らいげつ}、{結婚|けっこん}することになりました。", opts: ["W przyszłym miesiącu biorę ślub (tak ustalono).", "Planuję kiedyś wziąć ślub.", "W zeszłym miesiącu był mój ślub.", "Ślub w przyszłym miesiącu został odwołany."], a: 0,
+   { id: "d-kotoni-09", t: "listen", label: "Posłuchaj i wybierz", jp: "{来月|らいげつ}、{結婚|けっこん}することになりました。", opts: ["Ustalono, że w przyszłym miesiącu biorę ślub.", "Planuję kiedyś wziąć ślub.", "W zeszłym miesiącu był mój ślub.", "Ślub w przyszłym miesiącu został odwołany."], a: 0,
      ex: "～ことになりました brzmi skromnie: „tak się ułożyło, ustalono”. Tak Japończycy często ogłaszają ważne wiadomości – nawet o własnych sprawach.",
      why: ["", "Zdanie nie mówi o planach „kiedyś” – sprawa jest już ustalona, a termin to {来月|らいげつ}.", "{来月|らいげつ} to przyszły miesiąc, a nie zeszły.", "Nie ma tu przeczenia ani odwołania – ślub się odbędzie."] },
    { id: "d-kotoni-10", t: "listen", label: "Posłuchaj i wybierz", jp: "{毎晩|まいばん}{寝|ね}る{前|まえ}に{本|ほん}を{読|よ}むことにしています。", opts: ["Mam zwyczaj czytać książkę co wieczór przed snem.", "Dziś wieczorem przed snem przeczytam książkę.", "W szkole każą czytać przed snem.", "Czasem czytam książkę przed snem."], a: 0,
@@ -33608,7 +33630,7 @@ Object.assign(window.GRAM, {
      ex: "Własny, stały zwyczaj → ～ことにしています." },
    { id: "d-kotoni-15", t: "type", label: "Wpisz zakończenie", q: "(Zasada w firmie)<br>{会社|かいしゃ}に{入|はい}るときは、カードを{見|み}せる＿＿。", tr: "Przy wejściu do firmy obowiązuje pokazanie karty.", a: ["ことになっています", "ことになっている"], hint: "Kto ustalił tę zasadę?",
      ex: "Reguła ustalona przez firmę → ～ことになっています." },
-   { id: "d-kotoni-16", t: "mc", label: "Co znaczy to zdanie?", q: "{田中|たなか}さんは{会社|かいしゃ}を{辞|や}めることになりました。", opts: ["Ustalono, że pan Tanaka odchodzi z firmy (tak się ułożyło).", "Pan Tanaka zawsze chciał odejść z firmy.", "Pan Tanaka ma zasadę, że nie zmienia pracy.", "Pan Tanaka odszedł z firmy dawno temu."], a: 0,
+   { id: "d-kotoni-16", t: "mc", label: "Co znaczy to zdanie?", q: "{田中|たなか}さんは{会社|かいしゃ}を{辞|や}めることになりました。", opts: ["Ustalono, że pan Tanaka odchodzi z firmy.", "Pan Tanaka zawsze chciał odejść z firmy.", "Pan Tanaka ma zasadę, że nie zmienia pracy.", "Pan Tanaka odszedł z firmy dawno temu."], a: 0,
      ex: "～ことになりました = „wyszło, ustalono, że…” – często decyzja okoliczności albo innych osób.",
      why: ["", "Zdanie nie mówi o chęciach – ～ことになりました to ustalenie, które właśnie zapadło.", "Zasadę wyraziłoby ～ことにしている, a tu jest jedna konkretna sprawa: odejście z firmy.", "～ことになりました mówi o świeżym ustaleniu, a nie o czymś sprzed lat."] },
    { id: "d-kotoni-17", t: "type", label: "Wpisz formę", q: "Wpisz {帰|かえ}る w odpowiedniej formie:<br>もう{電車|でんしゃ}がないので、タクシーで＿＿ことにしました。", tr: "Pociągów już nie ma, więc wracam taksówką – postanowione.", a: ["かえる", "帰る"], hint: "Przed こと: jaka forma czasownika?",
@@ -33621,7 +33643,7 @@ Object.assign(window.GRAM, {
    { id: "d-kotoni-20", t: "mc", label: "Wybierz formę", q: "{子|こ}どもが{生|う}まれてから、{夜|よる}は{早|はや}く{帰|かえ}る＿＿。", tr: "Odkąd urodziło się dziecko, mam zasadę, że wieczorem wracam wcześnie.", opts: ["ことにしています", "ことになっています", "ことがあります"], a: 0,
      ex: "Własny stały zwyczaj, przyjęty po zmianie w życiu → ～ことにしています.",
      why: ["", "～ことになっている to zasada ustalona przez innych (firmę, szkołę) – a tu chodzi o własny zwyczaj mówiącego.", "～ことがある znaczy „czasem się zdarza” – a tu mowa o stałej zasadzie."] },
-   { id: "d-kotoni-21", t: "listen", label: "Posłuchaj i wybierz", jp: "{来週|らいしゅう}から{新|あたら}しい{先生|せんせい}が{来|く}ることになっています。", opts: ["Od przyszłego tygodnia ma przyjść nowy nauczyciel (tak ustalono).", "Od przyszłego tygodnia chcę mieć nowego nauczyciela.", "Nowy nauczyciel przyszedł w zeszłym tygodniu.", "Nowy nauczyciel czasem przychodzi w tygodniu."], a: 0,
+   { id: "d-kotoni-21", t: "listen", label: "Posłuchaj i wybierz", jp: "{来週|らいしゅう}から{新|あたら}しい{先生|せんせい}が{来|く}ることになっています。", opts: ["Ustalono, że od przyszłego tygodnia przyjdzie nowy nauczyciel.", "Od przyszłego tygodnia chcę mieć nowego nauczyciela.", "Nowy nauczyciel przyszedł w zeszłym tygodniu.", "Nowy nauczyciel czasem przychodzi w tygodniu."], a: 0,
      ex: "～ことになっている mówi też o tym, co jest zaplanowane i ustalone: „ma przyjść”.",
      why: ["", "Nie ma tu chęci (～たい) – ～ことになっている to ustalony plan.", "{来週|らいしゅう} to przyszły tydzień – zdanie mówi o przyszłości, nie o przeszłości.", "„Czasem” wyraziłoby ～ことがある; tu jest ustalenie."] },
    { id: "d-kotoni-22", t: "match", label: "Dopasuj pary", pairs: [["{行|い}くことにした", "moja decyzja: jadę"], ["{行|い}くことになった", "ustalono, że jadę"], ["{走|はし}ることにしている", "mam zwyczaj biegać"], ["{走|はし}ることになっている", "zasada: trzeba biegać"], ["{行|い}かないことにした", "moja decyzja: nie jadę"]],
@@ -34319,7 +34341,7 @@ Object.assign(window.GRAM, {
    { id: "c-teoku-18", t: "listen", label: "Posłuchaj i wybierz", jp: "{寒|さむ}くなるから、{暖房|だんぼう}をつけておきましょう。", opts: ["Zrobi się zimno, więc włączmy wcześniej ogrzewanie.", "Zrobi się zimno, więc wyłączmy ogrzewanie.", "Jest gorąco, więc włączmy klimatyzację.", "Ogrzewanie jest już włączone."], a: 0,
      ex: "～ておきましょう = zróbmy zawczasu. つける = włączyć.",
      why: ["", "つける to „włączyć”, a nie „wyłączyć” (けす).", "Słychać {寒|さむ}くなる (zrobi się zimno) i {暖房|だんぼう} (ogrzewanie).", "To propozycja (～ましょう), a nie informacja o tym, co już jest."] },
-   { id: "c-teoku-19", t: "mc", label: "Co to znaczy?", q: "Co znaczy: 「ここに{名前|なまえ}を{書|か}いておいてください。」", opts: ["Proszę (wcześniej) wpisać tu imię.", "Proszę spróbować wpisać tu imię.", "Proszę nie wpisywać tu imienia.", "Imię jest już tu wpisane."], a: 0,
+   { id: "c-teoku-19", t: "mc", label: "Co to znaczy?", q: "Co znaczy: 「ここに{名前|なまえ}を{書|か}いておいてください。」", opts: ["Proszę zawczasu wpisać tu imię.", "Proszę spróbować wpisać tu imię.", "Proszę nie wpisywać tu imienia.", "Imię jest już tu wpisane."], a: 0,
      ex: "～ておいてください = proszę zrobić to zawczasu, żeby było gotowe na później.",
      why: ["", "Próba to ～てみてください; tu jest ～ておいてください.", "Zakaz brzmiałby {書|か}かないでください.", "To prośba (ください), a nie opis tego, co już jest."] },
    { id: "c-teoku-20", t: "order", label: "Ułóż zdanie", tr: "Przed snem przygotuję ubrania na jutro.", words: ["{寝|ね}る{前|まえ}に{明日|あした}の{服|ふく}を", "{用意|ようい}", "して", "おきます。"],
@@ -34331,7 +34353,7 @@ Object.assign(window.GRAM, {
    { id: "c-teoku-23", t: "mc", label: "Wybierz formę", q: "{後|あと}で{使|つか}うから、はさみはここに＿＿。", tr: "Nożyczki będą potrzebne później, więc zostawię je tutaj.", opts: ["{置|お}いておきます", "{置|お}いてみます", "{置|お}きすぎます"], a: 0,
      ex: "{後|あと}で{使|つか}うから – z myślą o później: {置|お}いて + おきます.",
      why: ["", "～てみる to „na próbę” – a nożyczki zostawiasz, bo będą potrzebne.", "～すぎる to „za dużo” – w zdaniu nie ma mowy o przesadzie."] },
-   { id: "c-teoku-24", t: "listen", label: "Posłuchaj i wybierz", jp: "しょうゆ、{買|か}っといたよ。", opts: ["Sos sojowy jest już kupiony (na zapas).", "Kup, proszę, sos sojowy.", "Sos sojowy się skończył.", "Spróbuję kupić sos sojowy."], a: 0,
+   { id: "c-teoku-24", t: "listen", label: "Posłuchaj i wybierz", jp: "しょうゆ、{買|か}っといたよ。", opts: ["Sos sojowy jest już kupiony na zapas.", "Kup, proszę, sos sojowy.", "Sos sojowy się skończył.", "Spróbuję kupić sos sojowy."], a: 0,
      ex: "{買|か}っといた = {買|か}っておいた (potocznie): kupione zawczasu.",
      why: ["", "To nie prośba – といた to forma przeszła: już kupione.", "Słychać {買|か}っといた (kupione), a nie „skończył się”.", "Próba to ～てみる; tu słychać ～といた (= ておいた)."] },
    { id: "c-teoku-25", t: "type", label: "Wpisz formę", q: "Wpisz ～ておきます ({伝|つた}える):<br>{会議|かいぎ}の{時間|じかん}は、{私|わたし}から{部長|ぶちょう}に＿＿。", tr: "Godzinę zebrania ja wcześniej przekażę kierownikowi.", a: ["つたえておきます", "伝えておきます"], hint: "{伝|つた}える to grupa RU.",
@@ -34467,7 +34489,7 @@ Object.assign(window.GRAM, {
    { id: "c-tari-17", t: "listen", label: "Posłuchaj i wybierz", jp: "アンナさんは{夏休|なつやす}みに{海|うみ}で{泳|およ}いだり、{山|やま}に{登|のぼ}ったりしました。", opts: ["Anna w wakacje m.in. pływała w morzu i chodziła po górach.", "Anna w wakacje najpierw pływała w morzu, a potem weszła na górę.", "Anna chce w wakacje pływać w morzu i chodzić po górach.", "Anna w wakacje nie pływała ani nie chodziła po górach."], a: 0,
      ex: "～たり～たりしました: przykładowe rzeczy, które Anna robiła w wakacje, bez kolejności.",
      why: ["", "„Najpierw…, potem…” wyraża forma て ({泳|およ}いで、{登|のぼ}りました); たり nie mówi o kolejności.", "Chęć to ～たい ({泳|およ}ぎたい); tu słychać しました – to już się wydarzyło.", "Przeczenie brzmiałoby ～なかったり albo ～ませんでした; tu obie czynności są twierdzące."] },
-   { id: "c-tari-18", t: "listen", label: "Posłuchaj i wybierz", jp: "{会議中|かいぎちゅう}に{電話|でんわ}をしたりしないでください。", opts: ["Proszę nie rozmawiać przez telefon (ani robić takich rzeczy) w czasie zebrania.", "Proszę zadzwonić w czasie zebrania.", "W czasie zebrania można rozmawiać przez telefon.", "Proszę zadzwonić po zebraniu."], a: 0,
+   { id: "c-tari-18", t: "listen", label: "Posłuchaj i wybierz", jp: "{会議中|かいぎちゅう}に{電話|でんわ}をしたりしないでください。", opts: ["Proszę nie rozmawiać przez telefon ani nie robić takich rzeczy w czasie zebrania.", "Proszę zadzwonić w czasie zebrania.", "W czasie zebrania można rozmawiać przez telefon.", "Proszę zadzwonić po zebraniu."], a: 0,
      ex: "～たりしないでください to łagodna prośba, żeby czegoś takiego nie robić.",
      why: ["", "Na końcu słychać しないでください – to prośba, żeby czegoś NIE robić.", "To nie jest pozwolenie (～てもいいです), tylko prośba, żeby tego nie robić.", "„Po zebraniu” to {会議|かいぎ}の{後|あと}で; tu słychać {会議中|かいぎちゅう}に – w czasie zebrania."] },
    { id: "c-tari-19", t: "match", label: "Dopasuj pary", pairs: [["{行|い}ったり{来|き}たり", "tam i z powrotem"], ["{降|ふ}ったり{止|や}んだり", "raz pada, raz przestaje"], ["{暑|あつ}かったり{寒|さむ}かったり", "raz gorąco, raz zimno"], ["{泣|な}いたり{笑|わら}ったり", "raz płacz, raz śmiech"], ["{食|た}べたり{飲|の}んだり", "jedzenie, picie i tak dalej"]],
@@ -34941,7 +34963,7 @@ Object.assign(window.GRAM, {
    { id: "c-youni-naru-07", t: "mc", label: "Wybierz zakończenie", q: "けんたは{前|まえ}は{野菜|やさい}が{嫌|きら}いでしたが、{今|いま}は{食|た}べられる＿＿。", tr: "Kenta kiedyś nie lubił warzyw, ale teraz już może je jeść.", opts: ["ようになりました", "ことになりました", "ようにしましょう"], a: 0,
      ex: "Kiedyś tak, teraz inaczej – zmiana, która przyszła z czasem. Forma potencjalna + ようになりました.",
      why: ["", "ことになりました mówi o czymś ustalonym lub zdecydowanym przez innych, a tu zmienił się gust Kenty.", "～ようにしましょう to propozycja na przyszłość, a zdanie opisuje zmianę, która już nastąpiła."] },
-   { id: "c-youni-naru-08", t: "listen", label: "Posłuchaj i wybierz", jp: "{日本語|にほんご}のニュースが{少|すこ}しわかるようになりました。", opts: ["Teraz już trochę rozumiem wiadomości po japońsku (wcześniej nie).", "Staram się trochę rozumieć wiadomości po japońsku.", "Chcę rozumieć wiadomości po japońsku.", "Wiadomości po japońsku są coraz trudniejsze."], a: 0,
+   { id: "c-youni-naru-08", t: "listen", label: "Posłuchaj i wybierz", jp: "{日本語|にほんご}のニュースが{少|すこ}しわかるようになりました。", opts: ["Teraz już trochę rozumiem wiadomości po japońsku, a wcześniej nie.", "Staram się trochę rozumieć wiadomości po japońsku.", "Chcę rozumieć wiadomości po japońsku.", "Wiadomości po japońsku są coraz trudniejsze."], a: 0,
      ex: "わかるようになりました – „zaczęło do mnie docierać, teraz już rozumiem”. To zmiana, która przyszła z czasem.",
      why: ["", "Wysiłek („staram się”) to ～ようにしています; w nagraniu jest ようになりました.", "Chęć to ～たい; w nagraniu słychać o zmianie, która już nastąpiła.", "W nagraniu jest わかるようになりました – rozumienie się poprawiło."] },
    { id: "c-youni-naru-09", t: "type", label: "Przekształć", q: "Zamień na „staram się nie…”:<br>{夜|よる}{遅|おそ}くコーヒーを{飲|の}みません。<br>→ {夜|よる}{遅|おそ}くコーヒーを＿＿。", tr: "Staram się nie pić kawy późnym wieczorem.", a: ["のまないようにしています", "飲まないようにしています", "のまないようにしてます", "飲まないようにしてます"], hint: "Forma ない + wzór nawyku.",
@@ -37769,7 +37791,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-23 21:17";
+window.APP_VERSION = "2026-10-24 01:30";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -37816,6 +37838,42 @@ function migrateMist() {
 
 /* ===================== czytanie po polsku ===================== */
 const PART_PL = { "は": "ła", "へ": "e", "を": "o" }, PART_RO = { "は": "wa", "へ": "e", "を": "o" };
+// słówko z kilku słów → części [{w: zapis, r: czytanie, part}] do czytania ze spacjami: zwrot z Zestawu przetrwania (p.w),
+// partykuła を/が/に/で w wyrażeniu (約束 を 守る, 気分 が 悪い), zakończenia ございます/でした/なさい/ください/ありません
+// (ありがとう ございます, ごちそうさま でした), よろしく …; zwykłe słowo – jedna część
+const WP_PUN = /[。、？！?!…「」『』\s]/g;
+const WP_SUF = [[/^(.+?)(ございます)$/, 2], [/^(.+さま)(でした)$/, 3], [/^(.+)(なさい)$/, 4], [/^(.+)(ください)$/, 3], [/^(.+)(ありません)$/, 3], [/^(.+ます)(が)$/, 2]];
+let _WPH = null;
+function wordParts(w, r) {
+  r = String(r == null ? "" : r); w = w == null ? r : String(w);
+  if (!_WPH) { _WPH = new Map(); (window.PHRASES || []).forEach(p => { if (p.w && !/\{|ダニエル/.test(p.w)) { const k = p.w.replace(WP_PUN, ""); if (!_WPH.has(k)) _WPH.set(k, p.w); } }); }
+  const ph = _WPH.get(K2H(r).replace(WP_PUN, "")) || _WPH.get(r.replace(WP_PUN, ""));
+  if (ph && !/[\s]/.test(r)) {
+    const t = ph.replace(/[。、？！?!…「」『』]/g, "").split(/\s+/).filter(Boolean);
+    if (t.length > 1) return t.map((x, i) => ({ w: i === t.length - 1 ? w : x, r: x, part: !!PH_PART[x] }));
+  }
+  // partykuła: を zawsze, が/に/で tylko przed kanji (曲がる, 茹でる to jedno słowo); kawałek zapisu ↔ czytanie przez dopasowanie kany
+  const m = w.match(/^(.+?)(を|[がにで](?=[おご]?[一-鿿々〆]))(.+)$/);
+  if (m && (m[2] === "を" || HAS_KANJI.test(w))) {
+    const re = s => new RegExp("^" + s.replace(/[一-鿿々〆ヶ]+/g, "\u0000").replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\u0000/g, ".+") + "$");
+    const rx = re(m[1]), ry = re(m[3]), hits = [];
+    for (let i = r.indexOf(m[2]); i > 0; i = r.indexOf(m[2], i + 1)) if (rx.test(r.slice(0, i)) && ry.test(r.slice(i + 1))) hits.push(i);
+    if (hits.length === 1) { const i = hits[0]; return [...wordParts(m[1], r.slice(0, i)), { w: m[2], r: m[2], part: true }, ...wordParts(m[3], r.slice(i + 1))]; }
+  }
+  for (const [re, min] of WP_SUF) {
+    const x = r.match(re);
+    if (x && morae(x[1]).length >= min && w.endsWith(x[2])) return [...wordParts(w.slice(0, -x[2].length), x[1]), { w: x[2], r: x[2] }];
+  }
+  if (/^よろしく./.test(r) && w.startsWith("よろしく")) return [{ w: "よろしく", r: "よろしく" }, ...wordParts(w.slice(4), r.slice(4))];
+  return [{ w, r }];
+}
+// części → [po polsku, romaji] ze spacjami; samodzielne を/は/へ jako „o”, „ła”/wa, „e”
+function partsRead(parts) {
+  const pl = [], ro = [];
+  parts.forEach(p => { const k = p.part && PH_PART[p.r]; pl.push(k ? k[0] : toPolish(p.r, p.w)); ro.push(k ? k[1] : toRomaji(p.r)); });
+  return [pl.join(" "), ro.join(" ")];
+}
+const wordRead = (w, r) => partsRead(wordParts(w, r));
 // krótki japoński (słowo, zwrot) → [po polsku, romaji]; dla długich zdań pusto (wystarczy furigana),
 // chyba że to zwrot z Zestawu przetrwania z podziałem na słowa (phraseRead w src/kit.js)
 function plRead(s) {
@@ -37830,7 +37888,7 @@ function plRead(s) {
   if (PART_PL[r]) return [PART_PL[r], PART_RO[r]];
   const m = r.match(/^(.+?)(は|へ|を)$/);
   if (m && r.length > 2 && !/(こんにち|こんばん)は$/.test(r)) return [toPolish(m[1]) + " " + PART_PL[m[2]], toRomaji(m[1]) + " " + PART_RO[m[2]]];
-  return [toPolish(r, w), toRomaji(r)];   // konnichiwa, konbanwa (toRomaji)
+  return wordRead(w, r);   // konnichiwa, konbanwa (toRomaji); ありがとう ございます – ze spacjami
 }
 // „czytaj …” · romaji; gdy romaji to to samo co czytanie po polsku (biiru, sakana), jedno wystarczy
 function readLine(s) {
@@ -38207,7 +38265,8 @@ function renderItem(card, it, report, onNext, ctx = {}) {
     let bank = shuffle(it.words.map((w, i) => ({ w, i })));
     if (bank.every((b, k) => b.i === k) && bank.length > 1) bank.reverse();
     let ans = [];
-    card.innerHTML = head + (ordInstr ? `<div class="qq">${esc(it.tr)}</div><p class="small muted" style="margin:0">Stukaj klocki po kolei. Stuknięty klocek wraca na dół.</p>` : `<div class="qq">„${esc(it.tr)}”</div><p class="small muted" style="margin:0">Stukaj klocki po kolei, żeby ułożyć to zdanie po japońsku. Stuknięty klocek w zdaniu wraca na dół.</p>`) + `
+    // dtr – polecenie bez odpowiedzi w treści („Ułóż z sylab po japońsku: „do widzenia”” + 🔊), tr z romaji zostaje w danych (exSig)
+    card.innerHTML = head + (ordInstr ? `<div class="qq">${esc(it.dtr || it.tr)}${it.speakQ ? " " + sayBtn(it.speakQ, { raw: true }) : ""}</div><p class="small muted" style="margin:0">Stukaj klocki po kolei. Stuknięty klocek wraca na dół.</p>` : `<div class="qq">„${esc(it.tr)}”</div><p class="small muted" style="margin:0">Stukaj klocki po kolei, żeby ułożyć to zdanie po japońsku. Stuknięty klocek w zdaniu wraca na dół.</p>`) + `
       <div class="tiles ans"></div><div class="tiles bank" style="margin-top:8px"></div><div class="try"></div>
       <div class="qnav">${P ? `<button class="btn sm idk">Nie wiem</button>` : ""}<button class="btn chk pri" disabled>Sprawdź</button></div>`;
     const A = $(".ans", card), B = $(".bank", card), chk = $(".chk", card);
@@ -38241,7 +38300,9 @@ function renderItem(card, it, report, onNext, ctx = {}) {
     const idk = $(".idk", card); if (idk) idk.onclick = () => { rep(false, ""); ans = []; end(false); };
   } else if (it.t === "type") {
     const latin = !!it.latin;
-    card.innerHTML = head + `<div class="qq">${ruby(qMark(it.q))} ${it.speakQ ? sayBtn(it.speakQ, { raw: true }) : ""}</div>
+    // dq – to, co uczeń widzi zamiast q, gdy q zdradza odpowiedź („„hai” – wpisz romaji”); q zostaje w danych (exSig).
+    // Bez syntezy mowy dyktando jest niewykonalne – wtedy dawne polecenie z romaji
+    card.innerHTML = head + `<div class="qq">${ruby(qMark(it.dq && TTS.ok ? it.dq : it.q))} ${it.speakQ ? sayBtn(it.speakQ, { raw: true }) : ""}</div>
       ${it.tr ? `<div class="qtr">„${esc(it.tr)}”</div>` : ""}
       <div style="margin-top:14px"><input class="tinput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="${latin ? "wpisz łacinką…" : "romaji, np. taberu"}"></div>
       <div class="small muted" style="margin-top:6px">${latin ? "" : "Romaji zamienia się w hiraganę w trakcie pisania (n na końcu: nn). Możesz też pisać japońską klawiaturą."}${it.hint && P ? ` <button class="btn sm hintb">💡 Podpowiedź</button><span class="hintt"></span>` : ""}</div>
@@ -39896,10 +39957,10 @@ document.addEventListener("click", e => {
     if (lab) out.push("Polecenie: " + txt(lab));
     let q = "";
     if (it.t === "listen") q = it.lines ? `Słuchanie rozmowy. Pytanie: ${txt(it.q || "")}\nNagranie (uczeń je słyszy, tekst widzi dopiero po odpowiedzi): ${it.lines.map(l => txt(l[1])).join(" / ")}` : "Uczeń słyszy nagranie: " + txt(it.jp);
-    else if (it.t === "order") q = (typeof isOrdInstr === "function" && isOrdInstr(it) ? `Ułóż z klocków. Polecenie: ${txt(it.tr)}.` : `Ułóż zdanie po japońsku z klocków. Znaczenie: „${txt(it.tr)}”.`) + ` Klocki: ${(it.words || []).map(txt).join(" | ")}`;
+    else if (it.t === "order") q = (typeof isOrdInstr === "function" && isOrdInstr(it) ? `Ułóż z klocków. Polecenie: ${txt(it.dtr || it.tr)}.${it.dtr && it.speakQ ? ` Uczeń może posłuchać nagrania: ${txt(it.speakQ)}.` : ""}` : `Ułóż zdanie po japońsku z klocków. Znaczenie: „${txt(it.tr)}”.`) + ` Klocki: ${(it.words || []).map(txt).join(" | ")}`;
     else if (it.t === "match") q = "Dopasuj pary: " + (it.pairs || []).map(p => txt(p[0]) + " = " + txt(p[1])).join("; ");
     else if (it.t === "write") q = `Napisz palcem znak ${it.ch} – „${txt(it.m)}”${it.r ? ` (${txt(it.r)})` : ""}; sprawdzana jest kolejność kresek.`;
-    else q = txt(it.q) || (c.q ? txt(c.q) : "");
+    else q = it.dq ? `${txt(it.dq)}${it.speakQ ? ` (uczeń słyszy nagranie: ${txt(it.speakQ)})` : ""}` : txt(it.q) || (c.q ? txt(c.q) : "");
     if (q) out.push("Pytanie: " + q);
     if (it.tr && it.t !== "order") out.push(`Tłumaczenie zdania: „${txt(it.tr)}”`);
     if ((it.t === "mc" || it.t === "listen") && Array.isArray(it.opts)) {
@@ -40439,7 +40500,7 @@ document.addEventListener("click", e => {
   }
   function ctxLine() {
     const it = cur.it || {};
-    let q = it.t === "order" ? it.tr : it.t === "write" ? it.ch + " – " + (it.m || "") : it.t === "listen" && !it.lines ? "🔊 " + txt(it.jp) : (it.q || cur.q || it.tr || "");
+    let q = it.t === "order" ? it.dtr || it.tr : it.dq ? it.dq : it.t === "write" ? it.ch + " – " + (it.m || "") : it.t === "listen" && !it.lines ? "🔊 " + txt(it.jp) : (it.q || cur.q || it.tr || "");
     q = cut(txt(q).replace(/\s+/g, " "), 90);
     return `${H(it.label || (typeof TYPE_LABEL !== "undefined" && TYPE_LABEL[it.t]) || "Zadanie")}${q ? `: <span class="jp">${H(q)}</span>` : ""}`;
   }
@@ -43322,20 +43383,24 @@ function kitSearch(s) {
   const sk = K2H(romajiToKana(s, true));
   return Object.values(KIT().ph).filter(p => { const jp = persona(p.jp); return plain(jp).includes(s) || K2H(reading(jp)).includes(sk) || persona(p.pl).toLowerCase().includes(s) || (p.use || "").toLowerCase().includes(s); });
 }
+// zwrot w liście: osobny blok (kreska między zwrotami), najpierw tekst – japoński, czytanie, znaczenie, uwaga – przyciski z boku;
+// znaczek stylu tylko gdy nie „uprzejmie” (uprzejme są prawie wszystkie – mówi o tym zdanie nad listą)
+const kitPill = p => p.style && p.style !== "u" ? ` <span class="pill st-${p.style}">${esc(STYLE_NAME[p.style] || "")}</span>` : "";
+const KIT_POLITE = `<p class="small muted ksub">Wszystkie są uprzejme – pasują do każdego. Znaczek ma tylko zwrot potoczny (do bliskich) albo keigo.</p>`;
 function kitRowSay(p) {
   const jp = persona(p.jp), alt = (p.alt || []).map(a => persona(a));
-  return `<div class="kitrow"><div class="kitb">${sayBtn(kitSay(p), { raw: true })}${slowBtn(kitSay(p))}${recBtn(jp, { alts: alt })}</div>
-    <div class="kitt"><div class="jp kjp">${ruby(jp)} <span class="pill st-${p.style || "u"}">${esc(STYLE_NAME[p.style] || "")}</span></div>${kitPron(p)}
-    <div><b>${esc(persona(p.pl))}</b></div>${p.use ? `<div class="small muted">${esc(persona(p.use))}</div>` : ""}
-    ${alt.length ? `<div class="small">Też: ${alt.map(a => `<span class="jp">${ruby(a)}</span>`).join(" · ")}</div>` : ""}</div></div>`;
+  return `<div class="kitrow"><div class="kitt"><div class="jp kjp">${ruby(jp)}${kitPill(p)}</div>${kitPron(p)}
+    <div class="kpl">${esc(persona(p.pl))}</div>${p.use ? `<div class="knote">${esc(persona(p.use))}</div>` : ""}
+    ${alt.length ? `<div class="knote">Też: ${alt.map(a => `<span class="jp">${ruby(a)}</span>`).join(" · ")}</div>` : ""}</div>
+    <div class="kitb">${sayBtn(kitSay(p), { raw: true })}${slowBtn(kitSay(p))}${recBtn(jp, { alts: alt })}</div></div>`;
 }
 function kitRowHear(p) {
   const K = KIT(), jp = persona(p.jp);
   const rep = (p.reply || []).map(id => K.ph[id]).filter(Boolean);
-  return `<div class="kitrow"><div class="kitb">${sayBtn(kitSay(p), { raw: true })}${slowBtn(kitSay(p))}</div>
-    <div class="kitt"><div class="jp kjp">${ruby(jp)} <span class="pill st-${p.style || "u"}">${esc(STYLE_NAME[p.style] || "")}</span></div>
-    <div><b>${esc(persona(p.pl))}</b></div>${p.note ? `<div class="small muted">${esc(persona(p.note))}</div>` : ""}
-    ${rep.length ? `<div class="small kreply">Odpowiedź: ${rep.map(r => `<button class="chip" data-say="${SAY.push({ text: kitSay(r), o: { raw: true } }) - 1}">🔊 <span class="jp">${ruby(persona(r.jp))}</span></button>`).join("")}</div>` : ""}</div></div>`;
+  return `<div class="kitrow"><div class="kitt"><div class="jp kjp">${ruby(jp)}${kitPill(p)}</div>${kitPron(p)}
+    <div class="kpl">${esc(persona(p.pl))}</div>${p.note ? `<div class="knote">${esc(persona(p.note))}</div>` : ""}
+    ${rep.length ? `<div class="small kreply">Odpowiedź: ${rep.map(r => `<button class="chip" data-say="${SAY.push({ text: kitSay(r), o: { raw: true } }) - 1}">🔊 <span class="jp">${ruby(persona(r.jp))}</span></button>`).join("")}</div>` : ""}</div>
+    <div class="kitb">${sayBtn(kitSay(p), { raw: true })}${slowBtn(kitSay(p))}</div></div>`;
 }
 function viewSit(id) {
   const K = KIT(), s = K.sit[id]; if (!s) return viewKit();
@@ -43352,12 +43417,12 @@ function viewSit(id) {
       ${life ? `<p class="small">🇯🇵 Więcej w module <a href="#/japonia/${life.id}">${esc(life.title)}</a>: scenka, słuchanie, prawdziwe napisy.</p>` : ""}
       <div class="row"><button class="btn sm kfl">🃏 Fiszki</button><button class="btn sm pri kqz">⚡ Quiz</button>${D && D.length ? `<button class="btn sm kdr">${drill[1]}</button>` : ""}<button class="btn sm kadd">➕ Do powtórek</button><button class="btn sm klis">🎧 W drodze</button></div>
       ${s.roleplay ? `<details class="aid"><summary>🤖 Przećwicz z czatem AI</summary>${aiBoxHTML(Object.assign({ title: s.title, phrases: says.map(p => p.jp).slice(0, 10) }, s.roleplay))}</details>` : ""}</div>
-    ${says.length ? `<h2>🗣 Mówisz</h2><div class="card kitlist">${says.map(kitRowSay).join("")}</div>` : ""}
+    ${says.length ? `<h2>🗣 Mówisz</h2>${KIT_POLITE}<div class="card kitlist">${says.map(kitRowSay).join("")}</div>` : ""}
     ${hears.length ? `<h2>👂 Usłyszysz</h2><p class="small muted">Tak mówią do Ciebie inni – często szybko i grzecznościowo. Wystarczy rozumieć sens i znać odpowiedź.</p><div class="card kitlist">${hears.map(kitRowHear).join("")}</div>` : ""}`;
   const back = "#/przetrwanie/" + id;
   // f – dzień, w którym pierwszy raz skończony był quiz, ćwiczenie albo fiszki (łączenie: wcześniejsza data); krok planu „🛟 Zwroty” zrobiony (S-12)
   const fin = () => { S.kit = S.kit || {}; const o = S.kit[id] = Object.assign({}, S.kit[id]); if (!o.f) { o.f = today(); saveState(); } };
-  $(".kfl").onclick = () => flashcards(app(), says.concat(hears).map(p => ({ front: persona(p.jp), back: persona(p.pl), say: kitSay(p), sub: (STYLE_NAME[p.style] || "") + (p.use ? " · " + persona(p.use) : "") })), back, fin);
+  $(".kfl").onclick = () => flashcards(app(), says.concat(hears).map(p => ({ front: persona(p.jp), back: persona(p.pl), say: kitSay(p), rd: kitPron(p), sub: [p.style && p.style !== "u" ? STYLE_NAME[p.style] : "", persona(p.use || p.note || "")].filter(Boolean).join(" · ") })), back, fin);
   const qopts = { mode: "practice", src: "kit:" + id, back, lv: "life", nextHref: back, nextLabel: s.title };
   $(".kqz").onclick = () => {
     const make = () => genPhraseQuiz(id, 12);
@@ -43486,7 +43551,7 @@ function viewLife(id, tab) {
 function lifePhrases(m) { return (m.sits || []).flatMap(s => (KIT().bySit[s] || [])); }
 function lifeZwroty(root, m) {
   const ph = lifePhrases(m), says = ph.filter(p => p.kind === "say"), hears = ph.filter(p => p.kind === "hear");
-  root.innerHTML = `${says.length ? `<h2>🗣 Mówisz</h2><div class="card kitlist">${says.map(kitRowSay).join("")}</div>` : ""}
+  root.innerHTML = `${says.length ? `<h2>🗣 Mówisz</h2>${KIT_POLITE}<div class="card kitlist">${says.map(kitRowSay).join("")}</div>` : ""}
     ${hears.length ? `<h2>👂 Usłyszysz</h2><div class="card kitlist">${hears.map(kitRowHear).join("")}</div>` : ""}
     ${(m.vocab || []).length ? `<h2>📚 Słówka</h2><div class="row" style="margin-bottom:8px"><button class="btn sm lvadd">➕ Słówka do powtórek</button>${says.length ? `<button class="btn sm lpadd">➕ Zwroty do powtórek</button>` : ""}</div>
       <div class="card"><table class="voc">${m.vocab.map(v => `<tr><td>${sayBtn(v[1], { raw: true })}</td><td class="w">${ruby(wordMarkup(v[0], v[1]))}</td><td>${esc(v[2])}${S.settings.romaji ? ` <span class="small muted">${esc(toRomaji(v[1]))}</span>` : ""}</td></tr>`).join("")}</table></div>` : ""}`;
@@ -49618,10 +49683,11 @@ function vocabTab(l, o = {}) {
       <td>${esc(v[2])}</td><td class="a">${sayBtn(v[1], { raw: true })}${plp ? sylBtn(v[1]) : slowBtn(v[1])} ${recBtn(wordMarkup(v[0], v[1]))}</td></tr>${x ? `<tr class="vx"><td colspan="3">${x}</td></tr>` : ""}`; }).join("")}</table></div>
     ${o.foot !== undefined ? o.foot : `<p class="small muted">Słówka z tej lekcji trafiły do <a href="#/review">Powtórek</a> 🔁.</p>`}`;
 }
-// romaji · czytaj „…” przy słówku (v = [zapis, czytanie, znaczenie]); gdy oba zapisy są takie same – tylko „czytaj”
+// romaji · czytaj „…” przy słówku (v = [zapis, czytanie, znaczenie]) – zawsze oba, także gdy brzmią tak samo (sumimasen),
+// żeby każda linijka zaczynała się od zapisu łacinką; zwroty ze spacjami (arigatou gozaimasu)
 function vocabRead(v, plp) {
-  const ro = toRomaji(v[1]), pl = toPolish(v[1], v[0]);
-  return !plp ? esc(ro) : ro === pl ? `<b>czytaj „${esc(pl)}”</b>` : `${esc(ro)} · <b>czytaj „${esc(pl)}”</b>`;
+  const [pl, ro] = wordRead(v[0], v[1]);
+  return !plp ? esc(ro) : `${esc(ro)} · <b>czytaj „${esc(pl)}”</b>`;
 }
 // o.back – powrót z fiszek i treningu, o.src – źródło pomyłek, o.quiz – własny trening (lista dodatkowa: słówka i jej ćwiczenia)
 function bindVocab(root, l, L, o = {}) {
@@ -49640,7 +49706,7 @@ function bindVocab(root, l, L, o = {}) {
   players.push({ stop: () => { stop = true; } });
   $(".rom", root).onchange = e => { S.settings.romaji = e.target.checked; saveState(); route(); };
   const cx = $(".ctxon", root); if (cx) cx.onchange = e => { S.settings.ctx = e.target.checked; saveState(); route(); };
-  $(".flashb", root).onclick = () => flashcards(root, l.vocab.map(v => ({ front: wordMarkup(v[0], v[1]), back: v[2], say: v[1], sub: stripTags(vocabRead(v, true)), x: [v[0], v[1]] })), back, o.onDone);
+  $(".flashb", root).onclick = () => flashcards(root, l.vocab.map(v => ({ front: wordMarkup(v[0], v[1]), back: v[2], say: v[1], rd: `<div class="small muted">${vocabRead(v, true)}</div>`, x: [v[0], v[1]] })), back, o.onDone);
   const make = o.quiz || (() => genVocab(l.vocab, vocabPool(L), Math.min(16, l.vocab.length)));
   $(".vquiz", root).onclick = () => runQuiz(root, make(), { mode: "practice", src: o.src || l.id, back, lv: L.id, regen: o.quiz ? make : undefined, onFinish: o.onDone });
 }
@@ -49650,9 +49716,11 @@ function flashcards(root, cards, back, onDone) {
   function draw() {
     focusMode(true, root.id === "tab");   // fiszki: samo zadanie na ekranie (route() zdejmie tryb po wyjściu)
     const c = cards[i];
-    const front = dir === 0 ? `<div class="fjp">${ruby(c.front)}</div>` : `<div class="fpl">${esc(c.back)}</div>`;
+    // c.rd – jak to czytać (HTML), zawsze pod japońskim: na przodzie karty JP→PL (nie zdradza znaczenia), na odwrocie PL→JP
+    const jpS = `<div class="fjp">${ruby(c.front)}</div>${c.rd ? `<div class="frd">${c.rd}</div>` : ""}`, subS = c.sub ? `<div class="muted">${esc(c.sub)}</div>` : "";
+    const front = dir === 0 ? jpS : `<div class="fpl">${esc(c.back)}</div>`;
     const cx = c.x ? CTX.vocabExHTML(c.x[0], c.x[1], { n: 1, showPl: true }) : "";
-    const backS = (dir === 0 ? `<div class="fpl">${esc(c.back)}</div><div class="muted">${esc(c.sub || "")}</div>` : `<div class="fjp">${ruby(c.front)}</div><div class="muted">${esc(c.sub || "")}</div>`) + cx;
+    const backS = (dir === 0 ? `<div class="fpl">${esc(c.back)}</div>${subS}` : jpS + subS) + cx;
     root.innerHTML = `<div class="quiz"><div class="qhead"><a class="btn sm" href="${back}">✕</a><div class="prog"><i style="width:${100 * i / cards.length}%"></i></div><span class="small muted">${i + 1}/${cards.length}</span></div>
       <div class="card flash">${flipped ? `<div>${front}<hr>${backS}</div>` : `<div>${front}<p class="muted small">Kliknij, żeby odwrócić</p></div>`}</div>
       <div class="row" style="justify-content:center;margin-top:12px"><button class="btn prev">←</button><button class="btn sp">🔊</button><button class="btn dirb">⇄ ${dir ? "PL→JP" : "JP→PL"}</button><button class="btn pri nx">→</button></div></div>`;
