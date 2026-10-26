@@ -2085,7 +2085,7 @@ function personaDialog(d) {
 }
 // kopia zadania quizu z imieniem i formami ucznia; oryginał zostaje nietknięty (po nim liczymy exSig/mistId).
 // Zadanie może nieść niewyliczalne _pc = {cast} (np. pytania ze scenki), żeby persona znała obsadę.
-const PERSONA_KEYS = ["label", "sec", "q", "tr", "trA", "opts", "a", "jp", "say", "sayShow", "speakQ", "ex", "why", "hint", "lines", "words", "pairs", "info", "m", "r"];
+const PERSONA_KEYS = ["label", "sec", "q", "tr", "trA", "opts", "dopts", "a", "jp", "say", "sayShow", "speakQ", "ex", "why", "hint", "lines", "words", "pairs", "info", "m", "r"];
 function personaItem(it) {
   if (!it || typeof it !== "object") return it;
   const ctx = it._pc;
@@ -2094,6 +2094,49 @@ function personaItem(it) {
   const o = Object.assign({}, it);
   PERSONA_KEYS.forEach(k => { if (o[k] !== undefined && o[k] !== null) o[k] = P(o[k]); });
   return o;
+}
+/* ===================== uczciwe złe odpowiedzi w słuchaniu ===================== */
+// Imię albo nazwa słyszana w nagraniu („Danieru”, „Yuki”, „Tokio”) nie może być tylko w dobrej odpowiedzi – wtedy wystarczy
+// usłyszeć imię, a reszty nie trzeba rozumieć. Nazwy: słowa z wielkiej litery w środku zdania polskiego tłumaczenia.
+const plSent = s => (String(s || "").match(/[^.!?…]+[.!?…]+["”]?|[^.!?…]+$/g) || []).map(z => z.trim()).filter(Boolean);
+const jpSent = s => (String(s || "").match(/[^。！？]+[。！？]+|[^。！？]+$/g) || []).map(z => z.trim()).filter(Boolean);
+function plNames(s) {
+  const out = new Set();
+  plSent(s).forEach(z => z.replace(/[„”"«»()]/g, " ").split(/\s+/).filter(Boolean).slice(1).forEach(w => { const m = w.match(/^\p{Lu}[\p{L}-]*/u); if (m) out.add(m[0]); }));
+  return out;
+}
+// złe odpowiedzi do kwestii scenki z imieniem: ta sama kwestia z jednym innym zdaniem (z innych kwestii tej scenki) w tym samym
+// miejscu – imię jest w każdej opcji, a odróżnia je tylko to zdanie; potem inne kwestie z imionami. Bez imienia: null (zwykły dobór).
+// lines – [kto, jp, pl]; zwraca [{pl, jp}] (jp puste, gdy nie da się go złożyć)
+function dialogFair(lines, x, n, rnd) {
+  rnd = rnd || Math.random;
+  const nm = plNames(x[2]);
+  if (!nm.size) return null;
+  const norm = s => String(s || "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const words = s => new Set(norm(s).split(" ").filter(Boolean));
+  const near = (a, b) => { const A = words(a), B = words(b); return [...A].every(w => B.has(w)) || [...B].every(w => A.has(w)); };   // „Dziękuję.” i „Dziękuję bardzo.”
+  const mix = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const taken = new Set(lines.map(y => norm(y[2]))), out = [], seen = new Set([norm(x[2])]);
+  const add = o => { const k = norm(o.pl); if (out.length >= n || seen.has(k)) return; seen.add(k); out.push(o); };
+  const P = plSent(x[2]), J = jpSent(x[1]), hasNm = z => [...plNames(z)].length > 0 || [...nm].some(w => z.includes(w));
+  if (P.length >= 2 && J.length === P.length) {
+    // zdania do podmiany: z innych kwestii o tej samej liczbie zdań po polsku i japońsku, bez imion
+    const pool = [];
+    lines.forEach(y => { if (y === x || !y[2]) return; const p = plSent(y[2]), j = jpSent(y[1]); if (p.length === j.length) p.forEach((z, k) => { if (!hasNm(z)) pool.push({ pl: z, jp: j[k] }); }); });
+    const slots = mix(P.map((z, i) => i).filter(i => !hasNm(P[i])));
+    for (const i of slots) {
+      for (const r of mix(pool)) {
+        if (P.some(z => near(r.pl, z))) continue;   // bez „Miło mi. Miło mi. Jestem Daniel.”
+        const pl = P.map((z, k) => k === i ? r.pl : z).join(" "), jp = J.map((z, k) => k === i ? r.jp : z).join("");
+        if (!taken.has(norm(pl))) add({ pl, jp });
+      }
+      if (out.length >= n) break;
+    }
+  }
+  mix(lines.filter(y => y !== x && y[2] && plNames(y[2]).size)).forEach(y => add({ pl: y[2], jp: y[1] }));
+  mix(lines.filter(y => y !== x && y[2])).forEach(y => add({ pl: y[2], jp: y[1] }));
+  // żadna zła odpowiedź bez imienia (jedno zdanie z imieniem, w scence brak innych imion): o tę kwestię nie pytamy ([])
+  return out.some(o => plNames(o.pl).size || [...nm].some(w => o.pl.includes(w))) ? out : [];
 }
 const sayOf = (o, jp) => (o && o.say) || jp;
 function lessonState(id) { return S.lessons[id] || (S.lessons[id] = { best: 0, done: false, seen: false }); }
@@ -37791,7 +37834,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-10-24 01:30";
+window.APP_VERSION = "2026-10-26 01:49";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -37820,6 +37863,8 @@ function fillExpl(it) {
 }
 /* ===================== zeszyt błędów ===================== */
 // Każde ćwiczenie źle rozwiązane za pierwszym razem trafia do S.mist; znika po 2 poprawnych odpowiedziach.
+// u – czas ostatniej dobrej odpowiedzi (postęp 1 z 2 przechodzi na inne urządzenia); poprawione zostaje w S.mistOk[k] = kiedy,
+// żeby synchronizacja nie przywracała go z urządzenia, które ma jeszcze dawny wpis (src/sync.js mergeState)
 function noteMistake(it, ok, opts) {
   if (opts.noMist) return;
   const k = mistId(it), m = S.mist[k];
@@ -37827,7 +37872,14 @@ function noteMistake(it, ok, opts) {
     S.mist[k] = { it, src: opts.src || (m && m.src) || "", n: (m ? m.n : 0) + 1, ok: 0, t: Date.now() };
     const keys = Object.keys(S.mist);
     if (keys.length > 150) keys.sort((a, b) => S.mist[a].t - S.mist[b].t).slice(0, keys.length - 150).forEach(x => delete S.mist[x]);
-  } else if (m) { if (++m.ok >= 2) delete S.mist[k]; }
+  } else if (m) {
+    m.u = Math.max(Date.now(), (+m.t || 0) + 1, (+m.u || 0) + 1);
+    if (++m.ok >= 2) {
+      delete S.mist[k];
+      (S.mistOk || (S.mistOk = {}))[k] = m.u;
+      if (typeof mistOkMerge === "function") S.mistOk = mistOkMerge(S.mistOk);
+    }
+  }
   else return;
   saveState();
 }
@@ -38080,7 +38132,7 @@ function answerOf(it) {
     if (it.lines) return { ans: it.lines.map(l => ruby(l[1])).join("<br>"), lines: it.lines, tr: optJP ? it.trA : stripTags(opt) };
     // słówko z czytania (おもう): czytanie po polsku z zapisu (思う „omou”) – it.vk = zapis|czytanie
     const vk = it.raw && it.vk ? it.vk.split("|") : null, rd = vk && vk[1] === it.jp ? wordMarkup(vk[0], vk[1]) : it.jp;
-    return { ans: ruby(it.jp), say: it.raw ? null : (it.say || stripTags(it.jp)), sayRaw: it.raw ? it.jp : null, rd, tr: optJP ? it.trA : stripTags(opt), kj: it.kj };
+    return { ans: ruby(it.jp), say: it.raw ? null : (it.say || stripTags(it.jp)), sayRaw: it.raw ? it.jp : null, rd, tr: optJP ? (it.dopts ? stripTags(it.dopts[it.a]) : it.trA) : stripTags(opt), kj: it.kj };
   }
   if (it.t === "order") { const full = it.words.join(it.words.some(w => /^[A-Za-z]/.test(w)) ? " " : ""); return { ans: ruby(full), say: full, tr: isOrdInstr(it) ? "" : it.tr }; }
   if (it.t === "type") {
@@ -38111,11 +38163,12 @@ function reviewHTML(x) {
 // notka przy opcji (po odpowiedzi): czytanie, znaczenie, dlaczego nie
 // opcja z luką ＿＿ (np. „バス＿＿乗ります。”) – bez czytania: „basunorimasu” wyglądałoby na zdanie bez partykuły
 function optNote(it, i) {
-  const parts = [], inf = it.info && it.info[i], opt = it.opts[i], optJP = jpOpt(opt), gap = BLANK.test(opt);
+  const parts = [], inf = it.info && it.info[i], opt = it.dopts ? it.dopts[i] : it.opts[i], optJP = jpOpt(opt), gap = BLANK.test(opt);
   if (inf) {
     if (inf.jp && !optJP) parts.push(`<span class="jp">${ruby(inf.jp)}</span>`);
     const pr = inf.jp && !gap ? plRead(inf.jp) : null;
-    const r = inf.r || (pr ? `„${pr[0]}”` : "");
+    // znaczenia zamiast kany (dopts): czytanie przy każdej opcji, także gdy plRead go nie poda (おはようございます)
+    const r = inf.r || (pr ? `„${pr[0]}”` : it.dopts && inf.jp ? `„${toPolish(reading(stripTags(inf.jp)))}”` : "");
     if (r) parts.push("czyt. " + esc(r));
     if (inf.m && optJP) parts.push(esc(inf.m));
   } else if (optJP && !gap) { const p = plRead(opt); if (p) parts.push(`czyt. „${esc(p[0])}”`); }
@@ -38219,9 +38272,11 @@ function renderItem(card, it, report, onNext, ctx = {}) {
     const top = LL
       ? `<div class="qq">${ruby(it.q || "")}</div><p class="muted small">Posłuchaj całej rozmowy (🔊 jeszcze raz, 🐢 wolniej). Tekst zobaczysz po odpowiedzi.</p><div class="listenbig"><button class="pl1" title="Odtwórz">🔊</button><button class="slow" title="Wolniej">🐢</button></div>`
       : L
-      ? `<p class="muted small">Posłuchaj i wybierz, co usłyszysz (🔊 jeszcze raz, 🐢 wolniej).</p><div class="listenbig"><button class="pl1" title="Odtwórz">🔊</button><button class="slow" title="Wolniej">🐢</button></div>`
+      ? `<p class="muted small">${it.dopts ? "Posłuchaj i wybierz, co to znaczy" : "Posłuchaj i wybierz, co usłyszysz"} (🔊 jeszcze raz, 🐢 wolniej).</p><div class="listenbig"><button class="pl1" title="Odtwórz">🔊</button><button class="slow" title="Wolniej">🐢</button></div>`
       : `<div class="qq ${it.big ? "bigjp" : ""}">${ruby(qMark(it.q))} ${it.speakQ ? sayBtn(it.speakQ, { raw: true }) : ""}${romLine(it, it.q)}</div>${it.tr ? `<div class="qtr">„${esc(it.tr)}”</div>` : ""}`;
-    card.innerHTML = head + top + `<div class="opts">${order.map(i => `<button class="opt" data-i="${i}">${ruby(it.opts[i])}${romLine(it, it.opts[i])}</button>`).join("")}</div>
+    // dopts – opcje do pokazania zamiast opts (znaczenia w słuchaniu przed kaną); romAfter – romaji dopiero po odpowiedzi (src/app.js romAid)
+    const shown = i => it.dopts ? it.dopts[i] : it.opts[i];
+    card.innerHTML = head + top + `<div class="opts">${order.map(i => `<button class="opt" data-i="${i}">${ruby(shown(i))}${it.romAfter ? "" : romLine(it, shown(i))}</button>`).join("")}</div>
       <div class="try"></div>
       ${P ? `<div class="qnav help"><button class="btn sm hintb">💡 Podpowiedź</button><button class="btn sm idk">Nie wiem</button></div>` : ""}`;
     if (LL) { $(".pl1", card).onclick = () => playLines(it.lines, { rate: it.rate }, card); $(".slow", card).onclick = () => playLines(it.lines, { rate: it.rate, slow: true }, card); setTimeout(() => playLines(it.lines, { rate: it.rate }, card), 250); }
@@ -38234,21 +38289,22 @@ function renderItem(card, it, report, onNext, ctx = {}) {
       if (i >= 0 && !ok) $(`.opt[data-i="${i}"]`, card).classList.add("bad");
       const h = $(".help", card); if (h) h.remove();
       $(".try", card).innerHTML = "";
+      if (it.romAfter) $$(".opt", card).forEach(b => { const r = romLine(it, it.opts[+b.dataset.i]); if (r) b.insertAdjacentHTML("beforeend", r); });
       annotateOpts(card, it);
-      fin(ok, { yours: i >= 0 && !ok ? ruby(it.opts[i]) : "" });
+      fin(ok, { yours: i >= 0 && !ok ? ruby(shown(i)) : "" });
     };
     $$(".opt", card).forEach(b => b.onclick = () => {
       if (done) return;
       const i = +b.dataset.i, ok = i === it.a;
       if (!ok && P && tries === 0 && $$(".opt:not(:disabled)", card).length > 2) {
-        tries++; rep(false, ruby(it.opts[i]));
+        tries++; rep(false, ruby(shown(i)));
         b.classList.add("bad"); b.disabled = true;
         const note = optNote(it, i);
         $(".try", card).innerHTML = `<div class="fb bad soft"><b>✗ To nie to.</b>${note ? `<div class="small">${note}</div>` : ""}<div class="small muted">Spróbuj jeszcze raz.</div></div>`;
-        if (window.AIHelp) AIHelp.tried(card, it.opts[i], $(".try", card).innerHTML);   // 💬 Zapytaj widzi nieudaną próbę
+        if (window.AIHelp) AIHelp.tried(card, shown(i), $(".try", card).innerHTML);   // 💬 Zapytaj widzi nieudaną próbę
         return;
       }
-      rep(ok, ok ? "" : ruby(it.opts[i]));
+      rep(ok, ok ? "" : ruby(shown(i)));
       final(i, ok);
     });
     if (P) {
@@ -42874,6 +42930,16 @@ function lvlCut(st, W) {
     if ("newq" in st) st.newq = [];
   }
 }
+// zeszyt błędów: czas ostatniej zmiany wpisu (pomyłka t albo dobra odpowiedź u, src/quiz.js noteMistake)
+function mistLt(m) { return isObj(m) ? Math.max(+m.t || 0, +m.u || 0) : 0; }
+// poprawione pomyłki {klucz: kiedy}: z obu stron nowszy czas; bez starszych niż 180 dni, najwyżej 600 najnowszych
+function mistOkMerge(a, b) {
+  const o = {}, old = Date.now() - 180 * 864e5;
+  for (const x of [a, b]) if (isObj(x)) for (const [k, t] of Object.entries(x)) if (+t > old && +t > (o[k] || 0)) o[k] = +t;
+  const ks = Object.keys(o);
+  if (ks.length > 600) ks.sort((x, y) => o[y] - o[x]).slice(600).forEach(k => delete o[k]);
+  return o;
+}
 function mergeState(a, b) {
   a = JSON.parse(JSON.stringify(a || {})); b = JSON.parse(JSON.stringify(b || {}));
   const RW = lvlWin(a.reset, b.reset), LW = lvlWin(a.lvl, b.lvl), KW = lookWin(a.look, b.look), YW = lookWin(a.styl, b.styl);
@@ -42901,9 +42967,15 @@ function mergeState(a, b) {
   for (const f of ["exams", "talks", "stories", "pairs"]) if (has(f)) { o[f] = Object.assign({}, a[f]); for (const [k, v] of Object.entries(b[f] || {})) o[f][k] = !(k in o[f]) ? v : typeof o[f][k] === "number" || typeof v === "number" ? nmax(o[f][k], v) : mergeLoose(o[f][k], v); }
   // pisanie: przy tym samym zadaniu wpis z nowszym czasem
   if (has("writing")) { o.writing = Object.assign({}, a.writing); for (const [k, v] of Object.entries(b.writing || {})) { const m = o.writing[k]; if (!isObj(m) || (isObj(v) && (+v.t || 0) > (+m.t || 0))) o.writing[k] = v; } }
-  // zeszyt błędów: suma, przy tym samym zadaniu nowszy wpis; najwyżej 150 najnowszych
+  // zeszyt błędów: suma, przy tym samym zadaniu wpis z nowszą zmianą (pomyłka albo dobra odpowiedź); poprawione na którymkolwiek
+  // urządzeniu (mistOk: kiedy) znikają, chyba że pomyłka przyszła później; najwyżej 150 najnowszych
+  if (has("mistOk")) o.mistOk = mistOkMerge(a.mistOk, b.mistOk);
   if (has("mist")) o.mist = Object.assign({}, a.mist);
-  for (const [k, m] of Object.entries(b.mist || {})) if (!o.mist[k] || (m && (m.t || 0) > (o.mist[k].t || 0))) o.mist[k] = m;
+  for (const [k, m] of Object.entries(b.mist || {})) {
+    const c = o.mist[k], lm = mistLt(m), lc = mistLt(c);
+    if (!c || (isObj(m) && (lm > lc || (lm === lc && (+m.ok || 0) > (+c.ok || 0))))) o.mist[k] = m;
+  }
+  if (o.mistOk && o.mist) for (const k of Object.keys(o.mist)) if ((+o.mistOk[k] || 0) >= mistLt(o.mist[k])) delete o.mist[k];
   const mk = Object.keys(o.mist || {});
   if (mk.length > 150) mk.sort((x, y) => (o.mist[y].t || 0) - (o.mist[x].t || 0)).slice(150).forEach(k => delete o.mist[k]);
   // wyniki umiejętności: liczników nie dodajemy (byłyby podwójne) – wygrywa wpis z większą liczbą odpowiedzi
@@ -43011,7 +43083,7 @@ async function memPayload(full) {
     const hist = await L.byKeys(Object.keys(st.srs));
     for (const k in hist) for (const e of hist[k]) if (!seen.has(e.id)) { seen.add(e.id); ev.push(e); }
     st.mist = {};
-    for (const k of Object.keys(S.mist || {})) if ((S.mist[k].t || 0) > exp.t) st.mist[k] = S.mist[k];
+    for (const k of Object.keys(S.mist || {})) if (mistLt(S.mist[k]) > exp.t) st.mist[k] = S.mist[k];
   }
   ev.sort((a, b) => a.t - b.t);
   const p = typeof curProf === "function" ? curProf() : { name: "" };
@@ -49537,7 +49609,12 @@ function genSentences(l, L, n, kind) {
   const mine = (l.grammar || []).flatMap(g => (g.examples || []).filter(e => e[1]).map(e => ({ e, g })));
   const all = L.lessons.flatMap(x => (x.grammar || []).flatMap(g => g.examples || [])).filter(e => e[1]);
   return pick(mine, n).map(({ e, g }) => {
-    const others = distract(all, e, 3, x => x[1]);
+    let others = distract(all, e, 3, x => x[1]);
+    // imię w zdaniu („Pan Tanaka…”): do dwóch złych odpowiedzi też z imieniem – samo imię z nagrania nie wskazuje odpowiedzi
+    if (plNames(e[1]).size && others.filter(o => plNames(o[1]).size).length < 2) {
+      const wn = distract(all.filter(x => plNames(x[1]).size), e, 2, x => x[1]);
+      others = wn.concat(others.filter(o => !wn.some(w => w[1] === o[1]))).slice(0, 3);
+    }
     if (others.length < 3) return null;
     const opts = [e[1], ...others.map(o => o[1])], info = [{}, ...others.map(o => ({ jp: o[0] }))];
     const ex = `Zdanie z punktu gramatyki „${stripTags(g.title)}”${g.pattern ? ` (wzór: ${stripTags(g.pattern)})` : ""}.`;
@@ -49547,15 +49624,17 @@ function genSentences(l, L, n, kind) {
 }
 function genDialogQ(l, n) {
   const d = l.dialog; if (!d || !d.lines || d.lines.length < 4) return [];
-  return pick(d.lines.filter(x => x[2] && HAS_JP.test(x[1])), n).map(x => {
-    const others = distract(d.lines, x, 3, y => y[2]);
+  const cand = d.lines.filter(x => x[2] && HAS_JP.test(x[1]));
+  return pick(cand, cand.length).map(x => {
+    // kwestia z imieniem („Jestem Daniel”): złe odpowiedzi z tym samym imieniem (dialogFair, src/core.js), inaczej zwykły dobór
+    const others = dialogFair(d.lines, x, 3) || distract(d.lines, x, 3, y => y[2]).map(o => ({ pl: o[2], jp: o[1] }));
     if (others.length < 3) return null;
-    const it = { t: "listen", label: `Scenka „${d.title || ""}”: co mówi ${x[0]}?`, jp: x[1], opts: [x[2], ...others.map(o => o[2])], a: 0, info: [{}, ...others.map(o => ({ jp: o[1] }))], skill: "Rozumienie",
+    const it = { t: "listen", label: `Scenka „${d.title || ""}”: co mówi ${x[0]}?`, jp: x[1], opts: [x[2], ...others.map(o => o.pl)], a: 0, info: [{}, ...others.map(o => o.jp ? { jp: o.jp } : {})], skill: "Rozumienie",
       ex: `To kwestia ze scenki tej lekcji. Mówi ${x[0]}.` };
     // imię i formy ucznia podstawia renderItem (personaItem) – tu tylko obsada scenki, niewidoczna w JSON
     if (d.cast) Object.defineProperty(it, "_pc", { value: { cast: d.cast }, enumerable: false });
     return it;
-  }).filter(Boolean);
+  }).filter(Boolean).slice(0, n);
 }
 function buildLessonQuiz(l, L, tab) {
   const pool = vocabPool(L), sp = lessonSplit(l), voc = lessonPracVocab(l);   // słówka: tylko zestaw z ćwiczeń (także w teście)
@@ -49603,15 +49682,29 @@ function buildLessonQuiz(l, L, tab) {
 // także ze słuchu (🔊). Kopie zadań – podpisy wyjaśnień (exSig) i pomyłek (mistId) bez zmian.
 function romAid(l, items) {
   if (!l.rom) return items;
+  const kk = kanaKnown(), M = new Map((l.vocab || []).map(v => [v[0], v[2]]));
   return items.map(it => {
     const o = Object.assign({}, it, { rom: l.id });   // id lekcji: romLine bierze z niej czytania ze spacjami (romWords)
     if (it._pc) Object.defineProperty(o, "_pc", { value: it._pc, enumerable: false });
+    // „wybierz, co usłyszysz” z opcjami kaną: romaji pod opcjami to odpowiedź do przeczytania. Kto zna kanę – kana bez romaji
+    // (romaji po odpowiedzi, romAfter); kto jeszcze nie – wybiera znaczenie (dopts), a kanę i czytanie widzi po odpowiedzi
+    if (it.t === "listen" && !it.lines && Array.isArray(it.opts) && it.opts.every(x => jpOpt(x))) {
+      const ds = it.opts.map(x => M.get(x));
+      if (kk) o.romAfter = 1;
+      else if (ds.every(Boolean) && new Set(ds).size === ds.length) { o.dopts = ds; o.info = it.opts.map(x => ({ jp: x })); }
+    }
     const big = it.t === "type" && it.latin && /<span style="font-size:\d+px">([぀-ヿー]+)<\/span>/.exec(it.q || "");
     if (big && !it.speakQ) { o.speakQ = big[1]; o.hint2 = "🔊 Jeszcze nie czytasz znaków? Posłuchaj i wpisz łacinką, co słyszysz."; }
     return o;
   });
 }
 
+// zna kanę: zaliczone wszystkie lekcje znaków poziomu Start (hiragana i katakana) albo wyłączone romaji
+function kanaKnown() {
+  if (S.settings.romaji === false) return true;
+  const ks = ((LV.find(L => L.id === "kana") || {}).lessons || []).filter(x => x.kind === "kana" && (x.chars || []).length);
+  return ks.length > 0 && ks.every(x => (S.lessons[x.id] || {}).done);
+}
 // kolejność pokazywania punktów gramatyki: PATCH gorder (n4-1: forma słownikowa przed formą ない, P-8), inaczej po kolei.
 // Indeksy punktów się nie zmieniają (karty g|lekcja|indeks, odwołania gram_topics „lekcja:indeks”).
 function gramOrder(l) {
@@ -50142,12 +50235,21 @@ function viewMistakes() {
   const lifeM = id => typeof LIFE_BY !== "undefined" ? LIFE_BY[id] : null;
   const link = id => id.startsWith("kit:") && KIT().sit[id.slice(4)] ? "#/przetrwanie/" + id.slice(4) : id.startsWith("xl:") && XLS.some(X => X.id === id.slice(3)) ? "#/slowka/" + id.slice(3) : lifeM(id) ? "#/japonia/" + id : LESSONS[id] ? "#/lesson/" + id : id === "gramatyka" && window.GRAMT ? "#/gramatyka" : "";
   const name = id => id.startsWith("kit:") ? "Zwroty · " + esc((KIT().sit[id.slice(4)] || {}).title || "") : id.startsWith("xl:") ? "Słówka dodatkowe · " + esc((XLS.find(X => X.id === id.slice(3)) || {}).title || "") : lifeM(id) ? "Życie w Japonii · " + esc(lifeM(id).title) : id.startsWith("kanji:") ? "Wszystkie kanji" : STORY[id] ? "Czytanka · " + esc(STORY[id].title) : id.startsWith("exam:") ? "Egzamin " + esc((LV.find(L => L.id === id.slice(5)) || {}).short || "") : id === "kana" ? "Tabela kana" : id === "odmiana" ? "Odmiana czasowników" : id === "liczby" ? "Liczby, godziny, daty" : id === "slabe" ? "Moje słabe strony" : id === "gramatyka" ? "Trening gramatyki" : LESSONS[id] ? esc(LESSON_LEVEL[id].short + " · " + LESSONS[id].title) : "Inne";
-  app().innerHTML = crumbs + `<div class="card"><p>Masz <b>${all.length}</b> ${plN(all.length, "ćwiczenie", "ćwiczenia", "ćwiczeń")} do poprawy. Każde zniknie po dwóch dobrych odpowiedziach. Pomyłki to normalna część nauki, a powtarzanie ich to najszybsza droga do postępu.</p>
+  app().innerHTML = crumbs + `<div class="card"><p>Masz <b>${all.length}</b> ${plN(all.length, "ćwiczenie", "ćwiczenia", "ćwiczeń")} do poprawy. Każde zniknie po dwóch dobrych odpowiedziach (np. dziś i przy następnym poprawianiu). Pomyłki to normalna część nauki, a powtarzanie ich to najszybsza droga do postępu.</p>
     <div class="row"><button class="btn pri go">▶ Popraw ${Math.min(all.length, 12)} ${plN(Math.min(all.length, 12), "ćwiczenie", "ćwiczenia", "ćwiczeń")}</button></div></div>
     ${window.AIHelp ? AIHelp.mistHTML(all) : ""}
     <h2>Skąd są pomyłki</h2><div class="card">${Object.entries(by).sort((a, b) => b[1] - a[1]).map(([id, n]) => `<div class="row" style="justify-content:space-between;padding:4px 0"><span>${link(id) ? `<a href="${link(id)}">${name(id)}</a>` : name(id)}</span><span class="pill">${n}</span></div>`).join("")}</div>`;
-  const make = () => all.slice().sort((a, b) => (b[1].n - a[1].n) || (a[1].t - b[1].t)).slice(0, 12).map(([k, m]) => mistItem(m.it));   // bez „Krok 2/2:” (src/quiz.js)
-  $(".go").onclick = () => runQuiz(app(), shuffle(make()), { mode: "practice", back: "#/bledy", onFinish: () => { S.mistDone = today(); saveState(); }, nextHref: "#/", nextLabel: "Wróć do planu" });
+  const sel = () => all.slice().sort((a, b) => (b[1].n - a[1].n) || (a[1].t - b[1].t)).slice(0, 12);
+  $(".go").onclick = () => {
+    const ch = sel(), ks = ch.map(([k]) => k);
+    runQuiz(app(), shuffle(ch.map(([k, m]) => mistItem(m.it))), { mode: "practice", back: "#/bledy", nextHref: "#/", nextLabel: "Wróć do planu",   // bez „Krok 2/2:” (src/quiz.js)
+      onFinish: () => {
+        S.mistDone = today(); saveState();
+        // ile zniknęło na dobre, a ile ma 1 z 2 dobrych odpowiedzi (druga – przy następnym poprawianiu)
+        const gone = ks.filter(k => !S.mist[k]).length, half = ks.filter(k => S.mist[k] && S.mist[k].ok === 1).length;
+        if (gone || half) toast([gone ? `✅ Poprawione na dobre: ${gone}.` : "", half ? `${half} ${plN(half, "zadanie", "zadania", "zadań")} z pierwszą dobrą odpowiedzią – jeszcze raz następnym razem (np. jutro) i znikną.` : ""].filter(Boolean).join(" "), 6000);
+      } });
+  };
 }
 /* ===================== egzamin poziomu ===================== */
 function viewExam(id) {
@@ -50273,6 +50375,13 @@ function viewSettings(sub) {
   if (window.LVL) LVL.settingsBind(sub);   // 🎯 Mój poziom i nowy start (src/lvl.js)
   if (window.AIHelp) AIHelp.settingsBind(sub);   // 💬 Pomoc AI (src/aihelp.js)
   $("#rst").onclick = async () => {
+    // z włączoną synchronizacją wyzerowany stan poszedłby na GitHub / konto, a postępy i tak wróciłyby z innych urządzeń
+    // (łączenie to suma) – zacząć od nowa wszędzie da się tylko „nowym startem” (znacznik S.reset, da się cofnąć)
+    const syncOn = (window.GhSync && GhSync.eng && !GhSync.eng.dead) || (window.Konto && Konto.eng) || (window.CloudSync && CloudSync.db);
+    if (syncOn) {
+      if (confirm("Masz włączoną synchronizację postępów, więc wyzerowane postępy wróciłyby z Twoich innych urządzeń. Żeby zacząć od nowa na wszystkich urządzeniach, użyj „🎯 Mój poziom i nowy start” – da się go cofnąć. Przejść tam?")) { const c = document.getElementById("poziom"); if (c) c.scrollIntoView({ block: "start" }); }
+      return;
+    }
     if (!confirm(PROF.list.length > 1 ? `Na pewno usunąć wszystkie postępy osoby „${curProf().name || "Ja"}”? Kopia zostanie w Kopiach awaryjnych.` : "Na pewno usunąć wszystkie postępy? Kopia zostanie w Kopiach awaryjnych.")) return;
     try { if (window.MEM_LOG) await MEM_LOG.snapshot("przed wyzerowaniem"); } catch (e) { }   // da się przywrócić w Ustawieniach → Kopie awaryjne
     // kolor i styl osoby (🎨 Wygląd) to nie postęp – zostają; motyw wraca do ustawień domyślnych jak reszta ustawień
