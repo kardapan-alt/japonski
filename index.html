@@ -21498,6 +21498,1538 @@ PATCHES.push({
  ]
 });
 
+// 📦 Podział dużych lekcji N5 · część 1 (n5a-2…n5a-8) i N4 · część 2 (d3-1…d3-7) na dwie części (raport 2026-10-31, punkt 5B).
+// Część 1 zostaje pod dawnym id, część 2 to id + „b”. Treść lekcji się nie zmienia: aplikacja (src/app.js) przydziela punkty gramatyki,
+// słówka, kanji i ćwiczenia do części; punkty zachowują dawne indeksy (karty g|lekcja|indeks bez zmian). Format: SCHEMA.md
+// „Podział dużych lekcji”. Sprawdza tools/check_podzial.js. Plik generuje tools/podzial_build.js ze specyfikacji JSON.
+window.SPLITS = window.SPLITS || [];
+SPLITS.push({
+ "lesson": "n5a-2",
+ "id": "n5a-2b",
+ "g": [
+  1,
+  4,
+  5
+ ],
+ "v": [
+  "百",
+  "千",
+  "万",
+  "～歳",
+  "二十歳",
+  "何歳",
+  "おいくつ",
+  "～年生",
+  "何年生",
+  "番号",
+  "電話番号",
+  "大丈夫"
+ ],
+ "k": [],
+ "ex": [
+  0,
+  1,
+  2,
+  6,
+  7,
+  9,
+  10,
+  13,
+  18,
+  19
+ ],
+ "title1": "Liczby i godziny",
+ "goal1": "Po tej lekcji potrafisz liczyć od 0 do 99, zapytać, która jest godzina, i podać godzinę z minutami – także „wpół do” oraz „przed południem / po południu”.",
+ "intro1": "<p>Japońskie liczby są bardzo logiczne – budujesz je jak z klocków: 23 to „dwa-dziesięć-trzy”. Gdy znasz liczby do 99, od razu podajesz godzinę: licznik <b>じ</b> (godzina), <b>ふん／ぷん</b> (minuta), <b>はん</b> („wpół”) oraz <b>ごぜん／ごご</b> (przed / po południu). Poznajesz też pierwsze kanji: cyfry od {一|いち} do {十|じゅう} i znak {時|じ}.</p>",
+ "title2": "Duże liczby, wiek i ね/よ",
+ "goal2": "Po tej lekcji potrafisz liczyć setkami i tysiącami aż do 10 000 i dalej, podać swój wiek i rok studiów, uprzejmie zapytać o wiek oraz dodać do zdania ね („prawda?”) i よ („mówię ci”).",
+ "intro2": "<p>Liczby do 99 i godziny już znasz – teraz dokładasz <b>ひゃく</b> (100), <b>せん</b> (1000) i <b>まん</b> (10 000) i uważasz na kilka wyjątków w wymowie, np. 300 czy 8000. Potem liczniki <b>さい</b> (lata życia) i <b>ねんせい</b> (rok studiów – przyda się głównie na studiach) oraz dwa małe słówka na końcu zdania: <b>ね</b> i <b>よ</b>. Scenka w akademiku łączy wszystko z obu lekcji.</p>",
+ "dialog1": {
+  "title": "Która godzina?",
+  "cast": {
+   "マルタ": "f",
+   "ゆき": "f"
+  },
+  "lines": [
+   [
+    "マルタ",
+    "ゆきさん、{今|いま}{何時|なんじ}ですか。",
+    "Yuki, która jest teraz godzina?"
+   ],
+   [
+    "ゆき",
+    "ええと、{八時|はちじ}{四十五分|よんじゅうごふん}です。",
+    "Hmm… ósma czterdzieści pięć."
+   ],
+   [
+    "マルタ",
+    "{日本語|にほんご}の{授業|じゅぎょう}は{九時|くじ}ですか。",
+    "Czy zajęcia z japońskiego są o dziewiątej?"
+   ],
+   [
+    "ゆき",
+    "いいえ、{九時|くじ}じゃないです。{九時半|くじはん}です。",
+    "Nie, nie o dziewiątej. O wpół do dziesiątej."
+   ],
+   [
+    "マルタ",
+    "そうですか。ゆきさんの{授業|じゅぎょう}は？",
+    "Aha. A twoje zajęcia?"
+   ],
+   [
+    "ゆき",
+    "{私|わたし}の{授業|じゅぎょう}は{午後|ごご}です。{一時|いちじ}{十分|じゅっぷん}です。",
+    "Moje są po południu – o 13:10."
+   ],
+   [
+    "マルタ",
+    "{英語|えいご}の{授業|じゅぎょう}ですか。",
+    "Z angielskiego?"
+   ],
+   [
+    "ゆき",
+    "はい、そうです。{先生|せんせい}はアメリカ{人|じん}です。",
+    "Tak. Nauczyciel jest Amerykaninem."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "n5a-3",
+ "id": "n5a-3b",
+ "g": [
+  4,
+  5,
+  6
+ ],
+ "v": [
+  "～円",
+  "ください",
+  "全部",
+  "一つ",
+  "二つ",
+  "三つ",
+  "四つ",
+  "五つ",
+  "いくつ",
+  "一人",
+  "二人",
+  "三人",
+  "何人",
+  "かばん",
+  "靴",
+  "帽子",
+  "鉛筆",
+  "消しゴム",
+  "ペン",
+  "ノート",
+  "店"
+ ],
+ "k": [
+  "百",
+  "千",
+  "万",
+  "円"
+ ],
+ "ex": [
+  5,
+  6,
+  8,
+  11,
+  12,
+  15,
+  16,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31
+ ],
+ "title1": "To, tamto, tutaj – czyje to?",
+ "goal1": "Po tej lekcji potrafisz wskazać przedmiot (これ／それ／あれ, この／その／あの + rzeczownik), powiedzieć, gdzie coś jest (ここ／そこ／あそこ), i zapytać, czyje to jest (だれの).",
+ "intro1": "<p>Japończycy wskazują rzeczy i miejsca za pomocą zgrabnego systemu <b>こ・そ・あ・ど</b>: こ – blisko mnie, そ – blisko ciebie, あ – daleko od nas obu, ど – pytanie „który?”. Jeden system, trzy zestawy słów: <b>これ</b> („to”), <b>この</b> + rzeczownik („ten…”) i <b>ここ</b> („tutaj”). Do tego pytanie <b>{誰|だれ}の</b> – „czyje?” – i krótka odpowiedź <b>{私|わたし}のです</b> („moje”).</p>",
+ "title2": "Ile to kosztuje? Ceny, sztuki i ください",
+ "goal2": "Po tej lekcji potrafisz zapytać o cenę (いくらですか) i podać ją w jenach, poprosić o towar (～をください), policzyć sztuki i osoby (ひとつ, ふたり…) oraz powiedzieć gotowym zwrotem, co chcesz mieć lub zrobić (～がほしいです, ～たいです).",
+ "intro2": "<p>Znasz już これ, この i ここ – teraz idziesz z nimi na zakupy. Pytasz o cenę: <b>いくらですか</b>, słyszysz ją w jenach (<b>{円|えん}</b>) i prosisz o towar: <b>～をください</b>. Liczysz sztuki (<b>ひとつ, ふたつ…</b>) i osoby (<b>ひとり, ふたり…</b>), a na koniec poznajesz gotowe zwroty „chcę…”: <b>～がほしいです</b> i <b>～たいです</b>. Nowe kanji to {百|ひゃく}, {千|せん}, {万|まん} i {円|えん}.</p>",
+ "dialog1": {
+  "title": "Czyj to parasol?",
+  "cast": {
+   "アンナ": "f",
+   "けんた": "m"
+  },
+  "lines": [
+   [
+    "アンナ",
+    "けんたさん、これはけんたさんの{傘|かさ}ですか。",
+    "Kenta, czy to twój parasol?"
+   ],
+   [
+    "けんた",
+    "いいえ、{私|わたし}のじゃないです。{私|わたし}の{傘|かさ}はあれです。",
+    "Nie, nie mój. Mój parasol to tamten."
+   ],
+   [
+    "アンナ",
+    "じゃあ、{誰|だれ}のですか。",
+    "To czyj?"
+   ],
+   [
+    "けんた",
+    "ゆきさんのですよ。",
+    "To parasol Yuki."
+   ],
+   [
+    "アンナ",
+    "そうですか。この{本|ほん}もゆきさんのですか。",
+    "Aha. A ta książka też jest Yuki?"
+   ],
+   [
+    "けんた",
+    "はい、そうです。ゆきさんの{日本語|にほんご}の{本|ほん}です。",
+    "Tak. To jej książka do japońskiego."
+   ],
+   [
+    "アンナ",
+    "ゆきさんは{今|いま}どこですか。",
+    "A gdzie jest teraz Yuki?"
+   ],
+   [
+    "けんた",
+    "{図書館|としょかん}です。{図書館|としょかん}はあそこですよ。",
+    "W bibliotece. Biblioteka jest tam."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "n5a-4",
+ "id": "n5a-4b",
+ "g": [
+  4,
+  5,
+  6,
+  7
+ ],
+ "v": [
+  "聞く",
+  "週末",
+  "毎日",
+  "よく",
+  "ときどき",
+  "あまり",
+  "ぜんぜん",
+  "ご飯",
+  "学校",
+  "晩ご飯",
+  "音楽",
+  "喫茶店",
+  "肉",
+  "買い物",
+  "時間"
+ ],
+ "k": [],
+ "ex": [
+  4,
+  7,
+  8,
+  10,
+  11,
+  12,
+  14,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23
+ ],
+ "title1": "Czasowniki ます: co, dokąd i kiedy?",
+ "goal1": "Po tej lekcji potrafisz odmienić czasownik do formy ます i ません, powiedzieć, co robisz (を) i dokąd idziesz (へ／に), oraz podać godzinę lub dzień tygodnia z に.",
+ "intro1": "<p>Czas na czasowniki! Dobra wiadomość: japoński czasownik <b>nie odmienia się przez osoby</b> – たべます to „jem, jesz, je, jemy…”. Zła wiadomość: trzeba wiedzieć, do której grupy należy. Do tego pierwsze partykuły, które w polskim zastępują przypadki i przyimki: <b>を</b> (co?), <b>へ／に</b> (dokąd?) i <b>に</b> (kiedy?) – oraz dni tygodnia z ich kanji.</p>",
+ "title2": "Gdzie, z kim i jak często? Mój dzień",
+ "goal2": "Po tej lekcji potrafisz powiedzieć, gdzie coś robisz (で) i z kim (と), jak często (いつも, よく, ときどき, あまり～ません…) i w jakiej kolejności (それから, そのあと) – czyli opowiedzieć swój dzień.",
+ "intro2": "<p>Formę ます i partykuły を, へ i に już znasz. Teraz dokładasz <b>で</b> (gdzie coś robisz?) i <b>と</b> (z kim?), a potem słowa, które mówią, jak często coś robisz: od <b>いつも</b> (zawsze) do <b>ぜんぜん</b>～ません (wcale). Kolejne czynności łączysz słowami <b>そして</b>, <b>それから</b> i <b>そのあと</b> – i opowiadasz cały swój dzień.</p>",
+ "dialog1": {
+  "title": "Plany na jutro",
+  "cast": {
+   "けんた": "m",
+   "アンナ": "f"
+  },
+  "lines": [
+   [
+    "けんた",
+    "アンナさん、{明日|あした}は{何|なに}をしますか。",
+    "Anna, co robisz jutro?"
+   ],
+   [
+    "アンナ",
+    "{図書館|としょかん}へ{行|い}きます。{日本語|にほんご}を{勉強|べんきょう}します。",
+    "Idę do biblioteki. Będę się uczyć japońskiego."
+   ],
+   [
+    "けんた",
+    "{何時|なんじ}に{行|い}きますか。",
+    "O której idziesz?"
+   ],
+   [
+    "アンナ",
+    "{九時|くじ}に{行|い}きます。けんたさんは？",
+    "O dziewiątej. A ty?"
+   ],
+   [
+    "けんた",
+    "{私|わたし}は{行|い}きません。{明日|あした}は{十一時|じゅういちじ}に{起|お}きます。",
+    "Ja nie idę. Jutro wstaję o jedenastej."
+   ],
+   [
+    "アンナ",
+    "えっ、{十一時|じゅういちじ}ですか。{今日|きょう}は{何時|なんじ}に{寝|ね}ますか。",
+    "Co, o jedenastej? A o której dziś idziesz spać?"
+   ],
+   [
+    "けんた",
+    "{二時|にじ}に{寝|ね}ます。{日曜日|にちようび}に{図書館|としょかん}へ{行|い}きます。",
+    "O drugiej. Do biblioteki pójdę w niedzielę."
+   ],
+   [
+    "アンナ",
+    "そうですか。じゃあ、{日曜日|にちようび}に{私|わたし}も{行|い}きます。",
+    "Rozumiem. To w niedzielę ja też pójdę."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "n5a-5",
+ "id": "n5a-5b",
+ "g": [
+  2,
+  3,
+  4,
+  5
+ ],
+ "v": [
+  "昨日",
+  "先週",
+  "来週",
+  "会う",
+  "書く",
+  "休む",
+  "働く",
+  "映画",
+  "天気",
+  "元気",
+  "山",
+  "いっしょに",
+  "試験",
+  "昼ご飯"
+ ],
+ "k": [
+  "気",
+  "天",
+  "元",
+  "山"
+ ],
+ "ex": [
+  4,
+  5,
+  6,
+  7,
+  8,
+  10,
+  11,
+  13,
+  14,
+  15,
+  16,
+  17
+ ],
+ "title1": "Gdzie co jest? ある, いる i położenie",
+ "goal1": "Po tej lekcji potrafisz powiedzieć, co i kto gdzieś jest (あります／います), że coś masz, oraz opisać położenie: na, pod, w środku, obok, za, między.",
+ "intro1": "<p>Japoński ma dwa czasowniki „być/mieć”: <b>ある</b> dla rzeczy i <b>いる</b> dla istot żywych. Uczysz się mówić, co jest w pokoju i w sali, i opisywać położenie: na, pod, obok, za, między… Po japońsku to rzeczowniki, które stoją <b>po</b> punkcie odniesienia: <b>{机|つくえ}の{上|うえ}</b> – „na biurku”. Nowe kanji: {上|うえ}, {下|した}, {中|なか}, {外|そと}, {人|ひと} i {本|ほん}.</p>",
+ "title2": "Czas przeszły i zaproszenia",
+ "goal2": "Po tej lekcji potrafisz opowiedzieć, co było (～ました, ～ませんでした, でした), podać ramy „od… do…” (から・まで), zaprosić kogoś i coś zaproponować (～ませんか, ～ましょう) oraz powiedzieć „idę coś zrobić” (～に行きます).",
+ "intro2": "<p>Wiesz już, gdzie co jest – teraz czas na przeszłość i plany. Uczysz się mówić o tym, co było (<b>～ました</b>, <b>でした</b>), określać ramy „od… do…” (<b>から・まで</b>) i zapraszać: <b>～ませんか</b>, <b>～ましょう</b>. Na koniec – jak powiedzieć „idę coś zrobić” (<b>～に{行|い}きます</b>). Nowe kanji: {山|やま} oraz {天|てん}, {元|げん} i {気|き}, z których składają się {天気|てんき} i {元気|げんき}.</p>",
+ "dialog1": {
+  "title": "Kot w pokoju Kenty",
+  "cast": {
+   "アンナ": "f",
+   "けんた": "m"
+  },
+  "lines": [
+   [
+    "アンナ",
+    "あれ？{椅子|いす}の{上|うえ}に{猫|ねこ}がいます。",
+    "O! Na krześle jest kot."
+   ],
+   [
+    "けんた",
+    "はい、{私|わたし}の{猫|ねこ}です。{名前|なまえ}はタマです。",
+    "Tak, to mój kot. Ma na imię Tama."
+   ],
+   [
+    "アンナ",
+    "そうですか。{犬|いぬ}もいますか。",
+    "Aha. Psa też masz?"
+   ],
+   [
+    "けんた",
+    "いいえ、{犬|いぬ}はいません。",
+    "Nie, psa nie mam."
+   ],
+   [
+    "アンナ",
+    "けんたさん、{日本語|にほんご}の{本|ほん}はどこにありますか。",
+    "Kenta, gdzie jest książka do japońskiego?"
+   ],
+   [
+    "けんた",
+    "{机|つくえ}の{上|うえ}にありますよ。",
+    "Na biurku."
+   ],
+   [
+    "アンナ",
+    "{机|つくえ}の{上|うえ}ですか。ありませんよ。",
+    "Na biurku? Nie ma jej tam."
+   ],
+   [
+    "けんた",
+    "あ、{猫|ねこ}の{下|した}にあります！",
+    "O, jest pod kotem!"
+   ]
+  ]
+ },
+ "add1": [
+  {
+   "t": "type",
+   "q": "Uzupełnij: {図書館|としょかん}の＿＿に{食堂|しょくどう}があります。 („Obok biblioteki jest stołówka.”)",
+   "a": [
+    "となり",
+    "隣"
+   ],
+   "ex": "{隣|となり} (tonari) = obok. Wzór: punkt odniesienia + の + położenie + に – {図書館|としょかん}の{隣|となり}に (toshokan no tonari ni), dosłownie „biblioteki sąsiedztwo”."
+  },
+  {
+   "t": "type",
+   "q": "Uzupełnij: {猫|ねこ}は{椅子|いす}の＿＿にいます。 („Kot jest za krzesłem.”)",
+   "a": [
+    "うしろ",
+    "後ろ"
+   ],
+   "ex": "{後|うし}ろ (ushiro) = za, z tyłu. Położenie stoi po {椅子|いす}の, a kot jest żywy, więc います."
+  },
+  {
+   "t": "mc",
+   "q": "Jak powiesz: „Między biurkiem a krzesłem jest torba.”",
+   "opts": [
+    "{机|つくえ}と{椅子|いす}の{間|あいだ}にかばんがあります。",
+    "{机|つくえ}と{椅子|いす}の{間|あいだ}にかばんがいます。",
+    "{机|つくえ}と{椅子|いす}の{間|あいだ}でかばんがあります。",
+    "{間|あいだ}の{机|つくえ}と{椅子|いす}にかばんがあります。"
+   ],
+   "a": 0,
+   "why": [
+    "",
+    "Torba to rzecz, a nie istota żywa – mówimy あります, nie います.",
+    "Przy ある i いる miejsce oznaczamy に, a nie で (で to miejsce czynności).",
+    "Położenie stoi po punkcie odniesienia: A と B の{間|あいだ}, a nie przed nim."
+   ],
+   "ex": "A と B の{間|あいだ}に (A to B no aida ni) = między A i B. Torba to rzecz, więc あります."
+  }
+ ]
+});
+SPLITS.push({
+ "lesson": "n5a-6",
+ "id": "n5a-6b",
+ "g": [
+  3,
+  4,
+  5,
+  6
+ ],
+ "v": [
+  "乗る",
+  "降りる",
+  "切符",
+  "電車",
+  "バス",
+  "地下鉄",
+  "車",
+  "自転車",
+  "飛行機",
+  "歩いて",
+  "一日",
+  "二日",
+  "三日",
+  "何日",
+  "シャワーを浴びる",
+  "箸",
+  "仕事",
+  "夜"
+ ],
+ "k": [
+  "女",
+  "男",
+  "食",
+  "飲",
+  "今"
+ ],
+ "ex": [
+  7,
+  8,
+  9,
+  11,
+  12,
+  15,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24
+ ],
+ "title1": "Te-forma: proszę, czy mogę, nie wolno",
+ "goal1": "Po tej lekcji potrafisz utworzyć te-formę każdego czasownika, poprosić o coś (～てください), zapytać o pozwolenie (～てもいいですか) i powiedzieć, czego nie wolno (～てはいけません).",
+ "intro1": "<p><b>Te-forma</b> to jeden z najważniejszych „klocków” japońskiej gramatyki. Reguły dla grupy U wyglądają groźnie, ale to tylko pięć „rymowanek”: って, んで, いて, いで, して. Z te-formą od razu budujesz prośby (<b>～てください</b>), pytasz o pozwolenie (<b>～てもいいですか</b>) i mówisz, czego nie wolno (<b>～てはいけません</b>).</p>",
+ "title2": "～ています, transport i で „czym?”",
+ "goal2": "Po tej lekcji potrafisz opisać czynność, która właśnie trwa (～ています), połączyć kilka czynności w jednym zdaniu, powiedzieć, czym gdzieś jedziesz i czym coś robisz (で), oraz policzyć dni (いちにち, ふつか, みっか…).",
+ "intro2": "<p>Te-formę, prośby i pozwolenia już znasz – teraz kolejne zastosowania. <b>～ています</b> opisuje czynność, która właśnie trwa, a kilka te-form z rzędu łączy czynności w jedno zdanie. Do tego środki transportu, <b>で</b> w znaczeniu „czym?” (autobusem, pałeczkami, po japońsku) i liczenie dni: <b>ふつか</b>, <b>みっか</b>…</p>",
+ "dialog1": {
+  "title": "Na zajęciach z japońskiego",
+  "cast": {
+   "せんせい": "m",
+   "マルタ": "f"
+  },
+  "lines": [
+   [
+    "せんせい",
+    "じゃあ、{授業|じゅぎょう}を{始|はじ}めます。{教科書|きょうかしょ}の{二十|にじゅう}ページを{見|み}てください。",
+    "No dobrze, zaczynamy zajęcia. Proszę otworzyć podręcznik na stronie 20."
+   ],
+   [
+    "マルタ",
+    "すみません、{先生|せんせい}。{教科書|きょうかしょ}がありません。",
+    "Przepraszam, panie profesorze, nie mam podręcznika."
+   ],
+   [
+    "せんせい",
+    "じゃあ、{隣|となり}の{人|ひと}の{教科書|きょうかしょ}を{見|み}てください。",
+    "To proszę zaglądać do podręcznika osoby obok."
+   ],
+   [
+    "マルタ",
+    "はい。あのう、{辞書|じしょ}を{使|つか}ってもいいですか。",
+    "Dobrze. Eee… czy mogę korzystać ze słownika?"
+   ],
+   [
+    "せんせい",
+    "ええ、いいですよ。でも、{明日|あした}の{試験|しけん}で{辞書|じしょ}を{使|つか}ってはいけません。",
+    "Tak, proszę. Ale na jutrzejszym egzaminie słownika używać nie wolno."
+   ],
+   [
+    "マルタ",
+    "わかりました。それから、{窓|まど}を{開|あ}けてもいいですか。{今日|きょう}は{暑|あつ}いです。",
+    "Rozumiem. I jeszcze: czy mogę otworzyć okno? Dziś jest gorąco."
+   ],
+   [
+    "せんせい",
+    "ええ、どうぞ。じゃあ、マルタさん、{教科書|きょうかしょ}を{読|よ}んでください。",
+    "Proszę bardzo. A teraz, Marto, proszę czytać z podręcznika."
+   ],
+   [
+    "マルタ",
+    "えっ、{私|わたし}ですか。ちょっと{待|ま}ってください！",
+    "Co, ja? Proszę chwilę poczekać!"
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "n5a-7",
+ "id": "n5a-7b",
+ "g": [
+  3,
+  4,
+  5
+ ],
+ "v": [
+  "好き（な）",
+  "嫌い（な）",
+  "上手（な）",
+  "下手（な）",
+  "得意（な）",
+  "苦手（な）",
+  "なる",
+  "夏",
+  "冬",
+  "料理",
+  "果物",
+  "大変（な）",
+  "大好き（な）",
+  "去年",
+  "歌"
+ ],
+ "k": [
+  "東",
+  "西",
+  "南",
+  "北"
+ ],
+ "ex": [
+  4,
+  5,
+  7,
+  8,
+  10,
+  11,
+  13,
+  14,
+  18
+ ],
+ "title1": "Przymiotniki い i な – opis i odmiana",
+ "goal1": "Po tej lekcji potrafisz opisywać rzeczy, miejsca i ludzi przymiotnikami い i な – w czasie teraźniejszym i przeszłym, twierdząco i przecząco – oraz połączyć dwie cechy (～くて／～で) albo je przeciwstawić (が „ale”).",
+ "intro1": "<p>Japońskie przymiotniki zachowują się trochę jak czasowniki – same odmieniają się przez czasy! Są dwie grupy: <b>い-przymiotniki</b> ({大|おお}きい, {高|たか}い) i <b>な-przymiotniki</b> ({静|しず}か, きれい). Poznajesz ich odmianę i łączenie: <b>～くて／～で</b> („tani i smaczny”) oraz <b>が</b> („…, ale…”). Nowe kanji: {川|かわ}, {右|みぎ}, {左|ひだり}, {口|くち} i {出|で}.</p>",
+ "title2": "Lubię, umiem, wolę – upodobania i porównania",
+ "goal2": "Po tej lekcji potrafisz powiedzieć, co lubisz, czego nie lubisz i w czym jesteś dobry (X が 好き／上手…), opisać zmianę (～くなる／～になる) i porównać dwie lub więcej rzeczy (どちら, より, のほうが, いちばん).",
+ "intro2": "<p>Przymiotniki い i な już odmieniasz – teraz mówisz nimi o sobie: co lubisz (<b>{好|す}き</b>), czego nie (<b>{嫌|きら}い</b>) i w czym jesteś dobry (<b>{上手|じょうず}</b>, <b>{得意|とくい}</b>) – zawsze z partykułą <b>が</b>. Do tego zmiany (<b>～くなる／～になる</b>) i porównania: <b>より</b>, <b>のほうが</b>, <b>いちばん</b>. Nowe kanji to strony świata: {東|ひがし}, {西|にし}, {南|みなみ} i {北|きた}.</p>",
+ "dialog1": {
+  "title": "Po wycieczce",
+  "cast": {
+   "ゆき": "f",
+   "アンナ": "f"
+  },
+  "lines": [
+   [
+    "ゆき",
+    "アンナさん、{旅行|りょこう}は{楽|たの}しかったですか。",
+    "Anna, wycieczka była udana?"
+   ],
+   [
+    "アンナ",
+    "はい、{楽|たの}しかったですが、{天気|てんき}はあまりよくなかったです。",
+    "Tak, było fajnie, ale pogoda nie bardzo dopisała."
+   ],
+   [
+    "ゆき",
+    "{寒|さむ}かったですか。",
+    "Było zimno?"
+   ],
+   [
+    "アンナ",
+    "はい、{寒|さむ}かったです。{町|まち}は{小|ちい}さくて{静|しず}かでした。",
+    "Tak, było zimno. Miasteczko było małe i spokojne."
+   ],
+   [
+    "ゆき",
+    "にぎやかじゃなかったですか。",
+    "Nie było tam gwarno?"
+   ],
+   [
+    "アンナ",
+    "ええ、にぎやかじゃなかったですが、きれいな{町|まち}でした。",
+    "Nie, gwarno nie było, ale to ładne miasteczko."
+   ],
+   [
+    "ゆき",
+    "{店|みせ}は{高|たか}かったですか。",
+    "A w knajpkach było drogo?"
+   ],
+   [
+    "アンナ",
+    "いいえ、{安|やす}くておいしかったです！",
+    "Nie, tanio i smacznie!"
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "n5a-8",
+ "id": "n5a-8b",
+ "g": [
+  4,
+  5,
+  6,
+  7
+ ],
+ "v": [
+  "住む",
+  "結婚する",
+  "知る",
+  "勤める",
+  "着る",
+  "はく",
+  "眼鏡",
+  "会社",
+  "銀行",
+  "家族",
+  "父",
+  "母",
+  "兄",
+  "姉",
+  "弟",
+  "妹",
+  "お父さん",
+  "お母さん",
+  "子ども",
+  "髪",
+  "長い",
+  "言葉"
+ ],
+ "k": [
+  "小",
+  "大",
+  "国"
+ ],
+ "ex": [
+  7,
+  8,
+  9,
+  12,
+  16,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26
+ ],
+ "title1": "は czy が? Coś, nic, już i jeszcze nie",
+ "goal1": "Po tej lekcji potrafisz wybrać między は a が, powiedzieć „coś, ktoś, gdzieś” i „nic, nikt, nigdzie” oraz użyć もう („już”) i まだ („jeszcze nie”).",
+ "intro1": "<p>W tej lekcji porządkujesz różnicę między <b>は</b> a <b>が</b> – jedną z najsłynniejszych zagadek japońskiego. Potem pytajniki w nowej roli: z <b>か</b> dają „coś, ktoś, gdzieś”, a z <b>も</b> i przeczeniem – „nic, nikt, nigdzie”. Na koniec <b>もう</b> („już”) i <b>まだ</b> („jeszcze nie”).</p>",
+ "title2": "Rodzina i opis osób: ～ています",
+ "goal2": "Po tej lekcji potrafisz opisać stan za pomocą ～ています (gdzie ktoś mieszka i pracuje, czy ma męża lub żonę, co wie), mówić o swojej i cudzej rodzinie, opisać czyjś wygląd (X は Y が + przymiotnik) i odróżnić いつか od いつも.",
+ "intro2": "<p>は, が i pytajniki z か／も już znasz. Teraz <b>～ています</b> w nowej roli – jako opis stanu: <i>{住|す}んでいます</i>, <i>{結婚|けっこん}しています</i>, <i>{知|し}っています</i>. Uczysz się mówić o swojej i cudzej rodzinie (<b>{母|はは}</b> czy <b>お{母|かあ}さん</b>?), opisywać wygląd wzorem <b>X は Y が</b> + przymiotnik oraz odróżniać <b>いつか</b> („kiedyś”) od <b>いつも</b> („zawsze”).</p>",
+ "dialog1": {
+  "title": "Wieczór w akademiku",
+  "cast": {
+   "マルタ": "f",
+   "けんた": "m"
+  },
+  "lines": [
+   [
+    "マルタ",
+    "けんたさん、{今晩|こんばん}どこかへ{行|い}きますか。",
+    "Kenta, wychodzisz dziś wieczorem gdzieś?"
+   ],
+   [
+    "けんた",
+    "いいえ、どこにも{行|い}きません。{漢字|かんじ}の{宿題|しゅくだい}をします。",
+    "Nie, nigdzie nie wychodzę. Odrabiam pracę domową z kanji."
+   ],
+   [
+    "マルタ",
+    "{私|わたし}はもうしましたよ。",
+    "Ja już mam ją z głowy."
+   ],
+   [
+    "けんた",
+    "えっ、もうですか。{僕|ぼく}はまだしていません。",
+    "Co, już? U mnie jeszcze nic nie zrobione."
+   ],
+   [
+    "マルタ",
+    "ところで、{晩|ばん}ご{飯|はん}はもう{食|た}べましたか。",
+    "A przy okazji – jesteś już po kolacji?"
+   ],
+   [
+    "けんた",
+    "いいえ、まだです。{今朝|けさ}から{何|なに}も{食|た}べていません。",
+    "Nie, jeszcze nie. Od rana nic nie jem."
+   ],
+   [
+    "マルタ",
+    "じゃあ、{何|なに}か{食|た}べましょう。{魚|さかな}がありますよ。",
+    "To zjedzmy coś. Mam rybę."
+   ],
+   [
+    "けんた",
+    "ありがとうございます。{魚|さかな}は{大好|だいす}きです！",
+    "Dzięki! Ryby uwielbiam!"
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "d3-1",
+ "id": "d3-1b",
+ "g": [
+  2,
+  3,
+  4
+ ],
+ "v": [
+  "フライパン",
+  "蓋",
+  "かける",
+  "塗る",
+  "ひっくり返す",
+  "起こす",
+  "間に合う",
+  "困る",
+  "朝寝坊する",
+  "道に迷う",
+  "迎えに行く",
+  "先輩",
+  "後輩",
+  "一日中",
+  "今日中に",
+  "空港",
+  "気をつける",
+  "遅くなる"
+ ],
+ "k": [
+  "代",
+  "英",
+  "去",
+  "留",
+  "族",
+  "体",
+  "歩"
+ ],
+ "ex": [
+  7,
+  8,
+  9,
+  10,
+  11,
+  14,
+  17,
+  19
+ ],
+ "title1": "Grzeczne prośby i tryb ～ば",
+ "goal1": "Po tej lekcji potrafisz grzecznie o coś poprosić – kolegę, nieznajomego i nauczyciela (～てくれない？, ～てもらえませんか, ～ていただけませんか), tworzyć formę ～ば od czasowników, przymiotników i rzeczowników oraz mówić „jeśli…”. Znasz też podstawowe produkty i czynności w kuchni.",
+ "intro1": "<p>Witaj w drugiej części N4! Ta lekcja dzieje się w kuchni: poznajesz produkty spożywcze i podstawowe czynności przy gotowaniu. Z gramatyki najważniejsze są dwie rzeczy: <b>grzeczne prośby</b> (bo ～てください to tak naprawdę polecenie) oraz <b>tryb warunkowy ～ば</b> – japońskie „jeśli”. Przy każdej nowej formie podaję, jak się ją <b>czyta</b> – czytaj na głos, zanim pójdziesz dalej.</p>",
+ "title2": "Trzeba było…, dzięki, że…, kiedy…",
+ "goal2": "Po tej lekcji potrafisz zapytać „co mam zrobić?” (どうすればいいですか), doradzić („wystarczy, że…” – ～ばいい), żałować („trzeba było…” – ～ばよかった), przepraszać i dziękować za konkretną rzecz (～てすみません, ～てくれてありがとう) oraz mówić „kiedy…” z 時 – z właściwym czasem czasownika.",
+ "intro2": "<p>Formę ～ば znasz już z poprzedniej lekcji. Teraz używasz jej w trzech gotowych zwrotach: <b>どうすればいいですか</b> („co mam zrobić?”), <b>～ばいい</b> (rada) i <b>～ばよかった</b> („trzeba było…”). Do tego <b>przeprosiny i podziękowania za konkretną rzecz</b> oraz <b>～{時|とき}</b> – „kiedy”. Nowe słówka to drobne kłopoty dnia codziennego: zaspać, zgubić drogę, nie zdążyć na czas – a w kuchni dochodzi patelnia z pokrywką.</p>",
+ "dialog1": {
+  "title": "Kolacja w akademiku",
+  "cast": {
+   "アンナ": "f",
+   "けんた": "m"
+  },
+  "lines": [
+   [
+    "アンナ",
+    "けんた、ちょっと{醤油|しょうゆ}を{取|と}ってくれない？",
+    "Kenta, podasz mi sos sojowy?"
+   ],
+   [
+    "けんた",
+    "はい、どうぞ。{何|なに}を{作|つく}ってるの？",
+    "Proszę. Co robisz?"
+   ],
+   [
+    "アンナ",
+    "{鶏肉|とりにく}と{卵|たまご}の{料理|りょうり}。でも、{作|つく}り{方|かた}がよくわからないの。",
+    "Danie z kurczaka i jajek. Ale nie bardzo wiem, jak je zrobić."
+   ],
+   [
+    "けんた",
+    "{簡単|かんたん}だよ。まず、{醤油|しょうゆ}と{砂糖|さとう}を{混|ま}ぜて、{鶏肉|とりにく}を{入|い}れて。",
+    "To proste. Najpierw wymieszaj sos sojowy z cukrem i włóż kurczaka."
+   ],
+   [
+    "アンナ",
+    "{塩|しお}と{胡椒|こしょう}は？",
+    "A sól i pieprz?"
+   ],
+   [
+    "けんた",
+    "{醤油|しょうゆ}があれば、{塩|しお}は{使|つか}わないよ。{卵|たまご}を{入|い}れて{少|すこ}し{待|ま}てば、できるよ。",
+    "Jeśli jest sos sojowy, soli się nie używa. Jak dodasz jajka i chwilę poczekasz, będzie gotowe."
+   ],
+   [
+    "アンナ",
+    "ありがとう。{今度|こんど}、{日本|にほん}の{料理|りょうり}をもっと{教|おし}えてくれない？",
+    "Dzięki. Nauczysz mnie następnym razem więcej japońskich dań?"
+   ],
+   [
+    "けんた",
+    "いいよ。{時間|じかん}があれば、{一緒|いっしょ}に{作|つく}ろう。",
+    "Jasne. Jeśli będzie czas, ugotujmy coś razem."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "d3-2",
+ "id": "d3-2b",
+ "g": [
+  3,
+  4
+ ],
+ "v": [
+  "着る",
+  "脱ぐ",
+  "お湯を沸かす",
+  "賛成する",
+  "反対する",
+  "応援する",
+  "混む",
+  "慣れる",
+  "足りる",
+  "選ぶ",
+  "授業",
+  "教室",
+  "鍵",
+  "紙",
+  "強い",
+  "弱い",
+  "うらやましい",
+  "やっぱり",
+  "ずいぶん",
+  "嬉しい",
+  "パスポート",
+  "チケット"
+ ],
+ "k": [
+  "足",
+  "教",
+  "室",
+  "魚",
+  "走",
+  "転",
+  "運",
+  "動"
+ ],
+ "ex": [
+  4,
+  6,
+  9,
+  13,
+  15,
+  17
+ ],
+ "title1": "Podobno…, nawet jeśli…, nie trzeba…",
+ "goal1": "Po tej lekcji potrafisz przekazywać zasłyszane informacje (～そうです, ～って, ～によると), mówić „nawet jeśli” (～ても) i „nie musisz, nie trzeba” (～なくてもいい) – w rozmowach o szkole, pracy i plotkach.",
+ "intro1": "<p>Ta lekcja dotyczy szkoły, pracy i codziennych spraw – a także plotek! Uczysz się przekazywać to, co do ciebie dotarło: „podobno…” (<b>～そうです</b>, potocznie <b>～って</b>). Uwaga: jedno そうです („wygląda na…”) już znasz – dzisiejsze wygląda podobnie, ale znaczy coś innego. Do tego <b>～ても</b> („nawet jeśli”) i <b>～なくてもいい</b> („nie musisz”).</p>",
+ "title2": "Wygląda na to…, przed… i po…",
+ "goal2": "Po tej lekcji potrafisz powiedzieć, co wnioskujesz z tego, co widzisz (～みたい), porównać coś do czegoś („jak we śnie” – ～みたい, ～みたいな) oraz ułożyć czynności w czasie: „zanim…” (～前に) i „dopiero po…” (～てから).",
+ "intro2": "<p>Z poprzedniej lekcji znasz そうです „podobno” – informację z drugiej ręki. Teraz poznajesz <b>～みたい</b>: mówisz, co wnioskujesz z tego, co widzisz („chyba nikogo nie ma”), albo do czego coś jest podobne. Druga rzecz to kolejność czynności: <b>～{前|まえ}に</b> („zanim”) i <b>～てから</b> („dopiero po”). Słówka: codzienne czynności, podróż, kibicowanie i opinie – za czy przeciw.</p>",
+ "dialog1": {
+  "title": "Nowa praca senpaia",
+  "cast": {
+   "だいき": "m",
+   "みほ": "f"
+  },
+  "lines": [
+   [
+    "だいき",
+    "ねえ、{佐藤|さとう}{先輩|せんぱい}、{有名|ゆうめい}な{会社|かいしゃ}に{就職|しゅうしょく}したんだって。",
+    "Słuchaj, podobno Satō-senpai dostał pracę w znanej firmie."
+   ],
+   [
+    "みほ",
+    "うん、{知|し}ってる。{先生|せんせい}によると、{給料|きゅうりょう}もとてもいいそうだよ。",
+    "Tak, wiem. Według nauczyciela pensja też jest bardzo dobra."
+   ],
+   [
+    "だいき",
+    "いいなあ。でも、{残業|ざんぎょう}が{多|おお}いそうだよ。",
+    "Fajnie. Ale podobno jest dużo nadgodzin."
+   ],
+   [
+    "みほ",
+    "{残業|ざんぎょう}が{多|おお}くても、{私|わたし}はそこで{働|はたら}きたいな。",
+    "Nawet jeśli jest dużo nadgodzin, chcę tam pracować."
+   ],
+   [
+    "だいき",
+    "その{会社|かいしゃ}の{試験|しけん}、{難|むずか}しいって。",
+    "Mówią, że egzamin do tej firmy jest trudny."
+   ],
+   [
+    "みほ",
+    "{難|むずか}しくても、{今日|きょう}から{毎日|まいにち}{勉強|べんきょう}する！",
+    "Nawet jeśli jest trudny, od dziś uczę się codziennie!"
+   ],
+   [
+    "だいき",
+    "じゃあ、{今夜|こんや}の{祭|まつ}りは{来|こ}なくてもいいね。",
+    "To na dzisiejszy festiwal nie musisz przychodzić, co?"
+   ],
+   [
+    "みほ",
+    "え、{行|い}くよ！{勉強|べんきょう}は{明日|あした}から！",
+    "Eee, przyjdę! Nauka od jutra!"
+   ]
+  ]
+ },
+ "add2": [
+  {
+   "t": "mc",
+   "q": "Przed restauracją stoi długa kolejka. Co powiesz, wnioskując z tego, co widzisz?",
+   "opts": [
+    "あの{店|みせ}は{有名|ゆうめい}みたいですね。",
+    "あの{店|みせ}は{有名|ゆうめい}なみたいですね。",
+    "あの{店|みせ}は{有名|ゆうめい}でもいいですね。",
+    "あの{店|みせ}は{有名|ゆうめい}だそうですね。"
+   ],
+   "a": 0,
+   "why": [
+    "",
+    "Przymiotnik な przed みたい traci な: {有名|ゆうめい}みたい, a nie ×{有名|ゆうめい}なみたい.",
+    "～でもいい to pozwolenie („może być sławna”), a nie wniosek z tego, co widać.",
+    "{有名|ゆうめい}だそうです to „podobno jest sławna” – informacja od kogoś innego, a tu wnioskujesz z tego, co widzisz."
+   ],
+   "ex": "Wniosek z tego, co widzisz → ～みたいです. Rzeczownik i przymiotnik な stoją przed みたい bez な i bez だ: {有名|ゆうめい}みたい (yūmei mitai) = „chyba jest sławna”."
+  },
+  {
+   "t": "listen",
+   "jp": "{旅行|りょこう}に{行|い}く{前|まえ}に、チケットを{買|か}っておきます。",
+   "opts": [
+    "Przed podróżą zawczasu kupię bilet.",
+    "Bilet kupię dopiero po przyjeździe.",
+    "Podobno bilety na tę podróż są drogie.",
+    "Wygląda na to, że bilety już się skończyły."
+   ],
+   "a": 0,
+   "why": [
+    "",
+    "„Po” to ～てから albo ～た{後|あと}で; w nagraniu było {行|い}く{前|まえ}に – „zanim pojadę”.",
+    "„Podobno” to ～そうです, a w nagraniu nie było そう – tylko {前|まえ}に i ～ておきます.",
+    "„Wygląda na to” to ～みたい; w nagraniu było {買|か}っておきます – plan, a nie przypuszczenie."
+   ],
+   "ex": "{旅行|りょこう}に{行|い}く{前|まえ}に (ryokō ni iku mae ni) = przed wyjazdem; przed {前|まえ}に stoi forma słownikowa. {買|か}っておきます (katte okimasu) = kupię zawczasu."
+  }
+ ]
+});
+SPLITS.push({
+ "lesson": "d3-3",
+ "id": "d3-3b",
+ "g": [
+  3,
+  4,
+  5
+ ],
+ "v": [
+  "押す",
+  "引く",
+  "玄関",
+  "台所",
+  "寝室",
+  "和室",
+  "畳",
+  "階段",
+  "電子レンジ",
+  "鍋",
+  "包丁",
+  "箸",
+  "家賃",
+  "今すぐ",
+  "お先に失礼します",
+  "失礼します",
+  "見える"
+ ],
+ "k": [
+  "質",
+  "問",
+  "考",
+  "週",
+  "以",
+  "発",
+  "表",
+  "集"
+ ],
+ "ex": [
+  3,
+  4,
+  8,
+  11,
+  13,
+  14,
+  15,
+  16,
+  18
+ ],
+ "title1": "Pary czasowników i ～てしまう",
+ "goal1": "Po tej lekcji rozróżniasz pary czasowników typu „otwieram drzwi” / „drzwi się otwierają”, opisujesz stan, który widać (ドアが開いている), i mówisz o tym, co niechcący się stało albo jest już skończone (～てしまう / ～ちゃう).",
+ "intro1": "<p>W japońskim wiele czasowników występuje <b>parami</b>: jeden mówi, że <i>ktoś coś robi</i> (ドアを{開|あ}ける – otwieram drzwi), drugi – że <i>coś się dzieje samo</i> (ドアが{開|あ}く – drzwi się otwierają). To jak polskie „otwierać” i „otwierać się”. Z formą ～ている opisujesz stan, który widać, a na koniec poznajesz jedną z najbardziej „ludzkich” form: <b>～てしまう</b> – „ups, stało się”.</p>",
+ "title2": "W domu: ～と, ～ながら i ～ので",
+ "goal2": "Po tej lekcji potrafisz mówić „gdy…, to zawsze…” (～と), np. objaśniając drogę albo działanie urządzenia, robić dwie rzeczy naraz (～ながら), grzecznie podawać powód (～ので) i wychodzić przed innymi (お先に失礼します). Znasz też nazwy pomieszczeń i sprzętów w japońskim domu.",
+ "intro2": "<p>Pary czasowników i ～てしまう znasz z poprzedniej lekcji. Teraz zwiedzasz japoński dom: <b>{玄関|げんかん}</b>, gdzie zdejmuje się buty, <b>{和室|わしつ}</b> z matami tatami i kuchnię z garnkami i nożami. Z gramatyki: <b>～と</b> („gdy naciśniesz, to…”), <b>～ながら</b> (dwie czynności naraz) i <b>～ので</b> – łagodne „ponieważ”.</p>",
+ "dialog1": {
+  "title": "Ktoś tu był?",
+  "cast": {
+   "ゆき": "f",
+   "ケン": "m"
+  },
+  "lines": [
+   [
+    "ゆき",
+    "あれ？ケン、{窓|まど}が{開|あ}いているよ。",
+    "O? Ken, okno jest otwarte."
+   ],
+   [
+    "ケン",
+    "あ、ごめん。すぐ{閉|し}めるね。",
+    "Ach, sorry. Zaraz zamknę."
+   ],
+   [
+    "ゆき",
+    "それに、テレビもついているし…。{誰|だれ}も{見|み}ていないでしょう？",
+    "Do tego telewizor jest włączony… Przecież nikt go nie ogląda?"
+   ],
+   [
+    "ケン",
+    "ごめん、{今|いま}{消|け}すよ。",
+    "Sorry, już wyłączam."
+   ],
+   [
+    "ゆき",
+    "あっ、{私|わたし}のコップ！{割|わ}れている！",
+    "Ach, mój kubek! Jest stłuczony!"
+   ],
+   [
+    "ケン",
+    "ごめん…。{洗|あら}っている{時|とき}、{落|お}としちゃったんだ。",
+    "Przepraszam… Wypadł mi z rąk przy myciu."
+   ],
+   [
+    "ゆき",
+    "もう…。じゃあ、{新|あたら}しいのを{買|か}ってね。",
+    "No wiesz… To kup mi nowy."
+   ],
+   [
+    "ケン",
+    "うん。{本当|ほんとう}にごめん。",
+    "Dobrze. Naprawdę przepraszam."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "d3-4",
+ "id": "d3-4b",
+ "g": [
+  2,
+  3,
+  4,
+  5
+ ],
+ "v": [
+  "工場",
+  "住宅街",
+  "商店街",
+  "交差点",
+  "踏切",
+  "安全（な）",
+  "危険（な）",
+  "真面目（な）",
+  "間違える",
+  "思い出す",
+  "ぶつかる",
+  "首になる",
+  "留守",
+  "わざと",
+  "着く",
+  "ファイル",
+  "大切（な）",
+  "目覚まし時計",
+  "発表"
+ ],
+ "k": [
+  "習",
+  "授",
+  "業",
+  "試",
+  "験",
+  "洋",
+  "目"
+ ],
+ "ex": [
+  4,
+  5,
+  9,
+  10,
+  11,
+  13,
+  14,
+  16,
+  17,
+  19
+ ],
+ "title1": "Strona bierna – co cię spotkało",
+ "goal1": "Po tej lekcji potrafisz tworzyć stronę bierną od każdego czasownika i opowiadać, co ci się przydarzyło: kto cię pochwalił albo zbeształ, co ci ukradziono, a także używać „przykrej” strony biernej (雨に降られる, 赤ちゃんに泣かれる).",
+ "intro1": "<p>W tej lekcji jesteśmy w mieście: policja, złodzieje i inne przykre przygody. Żeby opowiedzieć, że ktoś <i>ukradł ci portfel</i> albo <i>pochwalił cię nauczyciel</i>, potrzebujesz <b>strony biernej</b>. W japońskim ma ona specjalne zastosowanie: <b>„przykra strona bierna”</b> mówi, że coś cię <b>spotkało</b> i nie było to miłe – nawet deszcz albo płacz dziecka w nocy.</p>",
+ "title2": "Tryb ～たら, „dobrze, że…” i ～はず",
+ "goal2": "Po tej lekcji potrafisz używać najczęstszego „jeśli / kiedy już” – ～たら, mówić, że coś robisz bez czegoś albo zamiast czegoś (～ないで), cieszyć się, że coś dobrze się skończyło (～てよかった), i wnioskować „powinno być, na pewno” (～はず).",
+ "intro2": "<p>Stronę bierną znasz z poprzedniej lekcji. Teraz poznajesz <b>～たら</b> – najwygodniejsze japońskie „jeśli” i „kiedy już”. Do tego <b>～ないで</b> („bez robienia czegoś”), <b>～てよかった</b> („dobrze, że…”) i <b>～はず</b> – „powinno być”, wywnioskowane z faktów. Słówka: miasto – skrzyżowania, przejazdy, ulice handlowe – i drobne pomyłki dnia codziennego.</p>",
+ "dialog1": {
+  "title": "Ciężki dzień",
+  "cast": {
+   "アンナ": "f",
+   "ケン": "m"
+  },
+  "lines": [
+   [
+    "アンナ",
+    "ケンさん、どうしたんですか。{疲|つか}れているみたいですね。",
+    "Ken, co się dzieje? Masz zmęczoną minę."
+   ],
+   [
+    "ケン",
+    "{今日|きょう}は{朝|あさ}から{大変|たいへん}なんです。{電車|でんしゃ}で{足|あし}を{踏|ふ}まれて…。",
+    "Od rana mam ciężki dzień. W pociągu ktoś nadepnął mi na nogę…"
+   ],
+   [
+    "アンナ",
+    "えっ、{痛|いた}かったでしょう。",
+    "Ojej, to musiało boleć."
+   ],
+   [
+    "ケン",
+    "それに、{会社|かいしゃ}で{先輩|せんぱい}に{叱|しか}られました。",
+    "Do tego w pracy dostało mi się od starszego kolegi."
+   ],
+   [
+    "アンナ",
+    "どうしてですか。",
+    "Za co?"
+   ],
+   [
+    "ケン",
+    "{電車|でんしゃ}が{遅|おく}れて、{会議|かいぎ}に{間|ま}に{合|あ}わなかったんです。みんなに{笑|わら}われました。",
+    "Pociąg się spóźnił i zebranie zaczęło się beze mnie. Wszyscy się ze mnie śmiali."
+   ],
+   [
+    "アンナ",
+    "それはひどいですね。{今日|きょう}は{早|はや}く{帰|かえ}って{休|やす}んでください。",
+    "To okropne. Wróć dziś wcześniej do domu i odpocznij."
+   ],
+   [
+    "ケン",
+    "ありがとう。でも、{家|いえ}でも{夜|よる}は{赤|あか}ちゃんに{泣|な}かれて、{寝|ね}られないんです…。",
+    "Dzięki. Ale w domu w nocy płacze dziecko i nie mogę spać…"
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "d3-5",
+ "id": "d3-5b",
+ "g": [
+  2,
+  3,
+  4
+ ],
+ "v": [
+  "勝つ",
+  "負ける",
+  "失敗する",
+  "徹夜する",
+  "計画を立てる",
+  "調べる",
+  "話し合う",
+  "感動する",
+  "悩む",
+  "焦る",
+  "期末試験",
+  "文化祭",
+  "相手",
+  "楽（な）",
+  "変（な）",
+  "ぺらぺら",
+  "何度も",
+  "ずっと",
+  "覚える"
+ ],
+ "k": [
+  "始",
+  "終",
+  "宿",
+  "題",
+  "図",
+  "館",
+  "研",
+  "究"
+ ],
+ "ex": [
+  4,
+  5,
+  9,
+  10,
+  11,
+  13,
+  14,
+  16,
+  18,
+  19
+ ],
+ "title1": "Strona sprawcza: kazać i pozwalać",
+ "goal1": "Po tej lekcji potrafisz powiedzieć, że ktoś komuś coś każe albo pozwala zrobić (strona sprawcza), wybrać właściwą partykułę (に czy を), powiedzieć, że ktoś kogoś ucieszył albo zmartwił (喜ばせる, 心配させる), i grzecznie poprosić „pozwól mi…” (～させてください).",
+ "intro1": "<p>Ta lekcja to dom, szkoła i… emocje. Najważniejsza nowość to <b>strona sprawcza</b> – forma, dzięki której powiesz „mama każe mi sprzątać” albo „szef pozwala mi wyjść wcześniej”. Spokojnie: budowa jest bardzo podobna do strony biernej, tylko zamiast <b>れる</b> mamy <b>せる</b>. Na koniec poznajesz bardzo przydatną prośbę <b>～させてください</b> – „pozwól mi…”.</p>",
+ "title2": "Rady, pytania zależne i ～やすい／～にくい",
+ "goal2": "Po tej lekcji potrafisz delikatnie doradzić (～たらどうですか), wbudować pytanie w zdanie („nie wiem, czy…”, „powiedz, gdzie…” – ～か, ～かどうか) i ocenić, czy coś jest łatwe lub trudne do zrobienia (～やすい / ～にくい).",
+ "intro2": "<p>Stronę sprawczą znasz z poprzedniej lekcji. Teraz trzy krótsze, ale bardzo częste konstrukcje: <b>～たらどうですか</b> – delikatna rada („może byś…?”), <b>～か / ～かどうか</b> – pytanie ukryte w zdaniu („nie wiem, czy zdam”) oraz <b>～やすい / ～にくい</b> – „łatwo / trudno coś zrobić”. Słówka kręcą się wokół egzaminów, planów i stresu.</p>",
+ "dialog1": {
+  "title": "Mieszkanie na swoim",
+  "cast": {
+   "さき": "f",
+   "おかあさん": "f"
+  },
+  "lines": [
+   [
+    "さき",
+    "お{母|かあ}さん、{来年|らいねん}から{一人暮|ひとりぐ}らしをさせてください。",
+    "Mamo, pozwól mi od przyszłego roku mieszkać samodzielnie."
+   ],
+   [
+    "おかあさん",
+    "え？どうして？{家|いえ}から{大学|だいがく}まで{近|ちか}いでしょう？",
+    "Co? Dlaczego? Przecież z domu na uczelnię jest blisko."
+   ],
+   [
+    "さき",
+    "もっと{自由|じゆう}がほしいの。{家事|かじ}も{一人|ひとり}でやってみたい。",
+    "Chcę mieć więcej swobody. Chcę też spróbować samodzielnie prowadzić dom."
+   ],
+   [
+    "おかあさん",
+    "でも、{学費|がくひ}も{高|たか}いし、{家賃|やちん}もお{父|とう}さんに{払|はら}わせるの？",
+    "Ale czesne i tak jest drogie. Chcesz, żeby tata płacił jeszcze za mieszkanie?"
+   ],
+   [
+    "さき",
+    "ううん、{家賃|やちん}は{働|はたら}いて{払|はら}うよ。",
+    "Nie, zacznę pracować i z tego zapłacę czynsz."
+   ],
+   [
+    "おかあさん",
+    "そう…。でも、{私|わたし}を{心配|しんぱい}させないでね。",
+    "No cóż… Tylko nie przysparzaj mi zmartwień, dobrze?"
+   ],
+   [
+    "さき",
+    "うん。{毎週|まいしゅう}{電話|でんわ}して、{安心|あんしん}させるから。",
+    "Dobrze. Będę dzwonić co tydzień, żeby cię uspokoić."
+   ],
+   [
+    "おかあさん",
+    "わかった。じゃあ、お{父|とう}さんにも{話|はな}してみるね。",
+    "Dobrze. To porozmawiam też z tatą."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "d3-6",
+ "id": "d3-6b",
+ "g": [
+  3,
+  4,
+  5
+ ],
+ "v": [
+  "洗濯物",
+  "洗濯機",
+  "掃除機",
+  "扇風機",
+  "充電器",
+  "自動販売機",
+  "エレベーター",
+  "決まる",
+  "残る",
+  "渡す",
+  "寄る",
+  "干す",
+  "片付ける",
+  "引っ越す",
+  "カレンダー"
+ ],
+ "k": [
+  "花",
+  "笑",
+  "工",
+  "死",
+  "両",
+  "枚"
+ ],
+ "ex": [
+  4,
+  8,
+  9,
+  10,
+  13,
+  15,
+  16,
+  18
+ ],
+ "title1": "Keigo: formy wywyższające (尊敬語)",
+ "goal1": "Po tej lekcji potrafisz z szacunkiem mówić o czynnościach nauczyciela, szefa czy klienta – specjalnymi czasownikami (いらっしゃる, おっしゃる, 召し上がる, ご覧になる…) i formą お～になる – oraz grzecznie prosić formą お～ください.",
+ "intro1": "<p>Czas na <b>keigo</b> ({敬語|けいご} – <i>keigo</i>), czyli japoński język grzecznościowy. Nie bój się – zaczynamy od jednej części: <b>sonkeigo</b> ({尊敬語|そんけいご}), czyli form, którymi <b>wywyższasz drugą osobę</b>. Używasz ich, mówiąc o tym, co robi nauczyciel, szef, klient albo obca starsza osoba. Najważniejsze jest kilka specjalnych czasowników – naucz się ich na pamięć jak słówek. Zasada na start: <b>sonkeigo nigdy o sobie</b>!</p>",
+ "title2": "Wszystko gotowe: ～てある, ～間, ～にする",
+ "goal2": "Po tej lekcji potrafisz opisać, co zostało celowo przygotowane (～てある), mówić „przez cały czas, gdy…” i „w czasie gdy…” (～ている間 / ～間に) oraz „sprawić, że coś będzie jakieś” (きれいにする, 短くする). Znasz też nazwy sprzętów domowych.",
+ "intro2": "<p>Sonkeigo znasz z poprzedniej lekcji – przyda się, gdy przychodzą goście. A przed wizytą trzeba się przygotować: <b>～てある</b> mówi, że coś <b>zostało już zrobione</b> i tak zostaje (napoje kupione, kwiaty postawione). Do tego <b>～ている{間|あいだ}(に)</b> – „w czasie gdy…” i <b>～く／～にする</b> – „sprawić, że coś będzie jakieś”. Słówka: pralka, odkurzacz, pranie i inne domowe sprawy.</p>",
+ "dialog1": {
+  "title": "Przed spotkaniem z prezesem",
+  "cast": {
+   "トマシュ": "m",
+   "ぶちょう": "m"
+  },
+  "lines": [
+   [
+    "トマシュ",
+    "{部長|ぶちょう}、{明日|あした}の{打|う}ち{合|あ}わせには{社長|しゃちょう}もいらっしゃいますか。",
+    "Panie kierowniku, czy na jutrzejsze spotkanie przyjdzie też prezes?"
+   ],
+   [
+    "ぶちょう",
+    "うん、{社長|しゃちょう}は{十時|じゅうじ}ごろいらっしゃるよ。",
+    "Tak, prezes będzie około dziesiątej."
+   ],
+   [
+    "トマシュ",
+    "{社長|しゃちょう}はコーヒーを{召|め}し{上|あ}がりますか。",
+    "Czy pan prezes pije kawę?"
+   ],
+   [
+    "ぶちょう",
+    "いや、{社長|しゃちょう}はいつもお{茶|ちゃ}をお{飲|の}みになるよ。",
+    "Nie, prezes zawsze pije herbatę."
+   ],
+   [
+    "トマシュ",
+    "わかりました。{社長|しゃちょう}の{奥様|おくさま}もいらっしゃるそうですね。",
+    "Rozumiem. Podobno przyjdzie też żona pana prezesa?"
+   ],
+   [
+    "ぶちょう",
+    "うん。{奥様|おくさま}はポーランドをよくご{存|ぞん}じで、トマシュくんと{話|はな}したいとおっしゃっていたよ。",
+    "Tak. Ona dobrze zna Polskę i mówiła, że chce z tobą porozmawiać."
+   ],
+   [
+    "トマシュ",
+    "え、{本当|ほんとう}ですか。じゃあ、{今夜|こんや}{敬語|けいご}を{練習|れんしゅう}します。",
+    "Naprawdę? To dziś wieczorem poćwiczę keigo."
+   ],
+   [
+    "ぶちょう",
+    "{遠慮|えんりょ}しないで、{楽|らく}に{話|はな}せばいいよ。",
+    "Nie krępuj się, mów swobodnie."
+   ]
+  ]
+ }
+});
+SPLITS.push({
+ "lesson": "d3-7",
+ "id": "d3-7b",
+ "g": [
+  3,
+  4,
+  5
+ ],
+ "v": [
+  "田舎",
+  "田んぼ",
+  "畑",
+  "森",
+  "湖",
+  "滝",
+  "火山",
+  "雲",
+  "星",
+  "恋人",
+  "兄弟",
+  "動画",
+  "アプリ",
+  "小説",
+  "節約",
+  "勇気",
+  "思いつく",
+  "がっかりする",
+  "練習する",
+  "体",
+  "試合",
+  "景色"
+ ],
+ "k": [
+  "痛",
+  "頭",
+  "続",
+  "茶"
+ ],
+ "ex": [
+  8,
+  9,
+  10,
+  11,
+  13,
+  14,
+  16,
+  17,
+  19
+ ],
+ "title1": "Keigo: formy uniżające (謙譲語)",
+ "goal1": "Po tej lekcji potrafisz grzecznie mówić o sobie i swojej firmie (申します, 参ります, おります, いただきます, お～します…), przedstawić się na rozmowie o pracę i rozumieć uprzejmą obsługę w sklepie (こちら, ございます, いかがですか) – z zachowaniem zasady „swoi – obcy”.",
+ "intro1": "<p>Druga strona keigo to <b>kenjōgo</b> ({謙譲語|けんじょうご} – <i>kenjōgo</i>), czyli formy <b>uniżające</b>. W sonkeigo wywyższasz drugą osobę, a tu robisz coś odwrotnego: <b>pomniejszasz siebie</b> (i swoją „drużynę”), żeby okazać szacunek rozmówcy. Przyda się na rozmowie o pracę, w pracy i w każdej oficjalnej sytuacji – a w sklepie usłyszysz te formy od obsługi.</p>",
+ "title2": "Coś o nazwie…, mimo że… i jak często",
+ "goal2": "Po tej lekcji potrafisz nazwać coś, czego rozmówca może nie znać (N という N), wyrazić zdziwienie lub żal „mimo że…” (～のに) i powiedzieć, jak często coś robisz (一日に三回, 週に一回). Znasz też słówka o przyrodzie, wsi i hobby.",
+ "intro2": "<p>Kenjōgo i grzeczne zwroty znasz z poprzedniej lekcji. Teraz trzy konstrukcje do zwykłych rozmów: <b>N という N</b> – „coś o nazwie…”, <b>～のに</b> – „mimo że…” z nutą zdziwienia albo żalu, oraz <b>okres + に + ile razy</b> ({一日|いちにち}に{三回|さんかい}). Słówka zabierają cię na wieś: pola ryżowe, lasy, jeziora i wodospady.</p>",
+ "dialog1": {
+  "title": "Zwrot w sklepie",
+  "cast": {
+   "マルタ": "f",
+   "てんいん": "f"
+  },
+  "lines": [
+   [
+    "マルタ",
+    "すみません、このシャツ、{小|ちい}さすぎるんです。{交換|こうかん}できますか。",
+    "Przepraszam, ta koszula jest za mała. Czy można ją wymienić?"
+   ],
+   [
+    "てんいん",
+    "{申|もう}し{訳|わけ}ありません。では、{拝見|はいけん}します。",
+    "Najmocniej przepraszam. Pozwoli pani, że obejrzę."
+   ],
+   [
+    "マルタ",
+    "はい、どうぞ。できれば、{同|おな}じシャツの{大|おお}きいのがいいんですが。",
+    "Proszę. Jeśli to możliwe, chcę taką samą, tylko większą."
+   ],
+   [
+    "てんいん",
+    "かしこまりました。{係|かかり}の{者|もの}に{聞|き}いてまいりますので、{少々|しょうしょう}お{待|ま}ちください。",
+    "Oczywiście. Zapytam osobę odpowiedzialną, proszę chwileczkę poczekać."
+   ],
+   [
+    "マルタ",
+    "はい、お{願|ねが}いします。",
+    "Dobrze, dziękuję."
+   ],
+   [
+    "てんいん",
+    "お{待|ま}たせいたしました。{申|もう}し{訳|わけ}ありませんが、{大|おお}きいのはございません。{返品|へんぴん}はいかがですか。",
+    "Dziękuję za cierpliwość. Niestety większej nie ma. Może zwrot?"
+   ],
+   [
+    "マルタ",
+    "そうですか…。じゃあ、{返品|へんぴん}でお{願|ねが}いします。",
+    "Ach tak… To poproszę o zwrot."
+   ],
+   [
+    "てんいん",
+    "かしこまりました。お{金|かね}はすぐにお{返|かえ}しします。",
+    "Oczywiście. Pieniądze zaraz pani oddam."
+   ]
+  ]
+ }
+});
+
 // Lekcje w dziennych porcjach (raport, pkt 4: M-4): Teoria gęstych lekcji w 2–3 częściach, po każdej „✍️ Sprawdź się”.
 // parts: [{n – ile kolejnych punktów (w kolejności pokazywania, gramOrder), ex – numery ćwiczeń lekcji z tych punktów}];
 // ćwiczenie należy do części ostatniego punktu, którego potrzebuje. Tylko wyświetlanie: id lekcji, indeksy punktów
@@ -45520,7 +47052,7 @@ var HanziWriter=function(){"use strict";var t,e,r;const i="undefined"==typeof wi
 </script>
 
 <script>
-window.APP_VERSION = "2026-11-01 10:11";
+window.APP_VERSION = "2026-11-01 13:01";
 // próg zaliczenia testów, egzaminów i innych sprawdzianów (%): ustawienie każdej osoby S.settings.pass (60/70/80/90, domyślnie 80).
 // PASS jest „żywą” wartością globalną (getter), więc każde miejsce, które go czyta, widzi aktualne ustawienie bieżącej osoby.
 const PASS_CHOICES = [60, 70, 80, 90], PASS_DEFAULT = 80;
@@ -47706,7 +49238,7 @@ document.addEventListener("click", e => {
       src = String(src || "");
       if (src && typeof LESSONS !== "undefined" && LESSONS[src] && loose) {
         // ćwiczenie tylko stoi po tej lekcji (np. pisanie z prowadzeniem) – jej gramatyka może dotyczyć czego innego
-        const l = LESSONS[src], L = LESSON_LEVEL[src], g = l.grammar || [];
+        const l = LESSONS[src], L = LESSON_LEVEL[src], g = (l.grammar || []).filter(Boolean);   // część podzielonej lekcji: bez dziur
         out.push(`Ćwiczenie jest w kursie po lekcji „${txt(l.title)}”${L ? ` (poziom ${lvName(L)})` : ""}. Gramatyka tamtej lekcji (może dotyczyć czego innego niż to zadanie): ${g.map(x => txt(x.title)).join("; ") || "–"}.`);
       } else if (src && typeof LESSONS !== "undefined" && LESSONS[src]) {
         const l = LESSONS[src], L = LESSON_LEVEL[src];
@@ -49501,8 +51033,10 @@ function viewNums() {
     return spread(out, x => x.it.t);
   }
   // główna lekcja tematu (pierwsze src) i miejsce w kolejności kursu (lekcja, punkt gramatyki); temat bez lekcji – na początku
-  const mainL = t => (srcOf(t)[0] || "").split(":")[0];
-  const courseKey = t => { const [l, g] = (srcOf(t)[0] || "").split(":"); return l ? lOrd(l) * 1000 + (+g || 0) : -1; };
+  // (po podziale dużej lekcji punkt może leżeć w jej drugiej części – wtedy liczy się ta część)
+  const homeL = s => { const [l, g] = String(s || "").split(":"), h = l ? gramAt(l, g) : null; return h ? h.l.id : l; };
+  const mainL = t => homeL(srcOf(t)[0]);
+  const courseKey = t => { const [l, g] = (srcOf(t)[0] || "").split(":"); return l ? lOrd(homeL(srcOf(t)[0])) * 1000 + (+g || 0) : -1; };
   // 🔀 Mieszanka: tematy w trakcie i do odświeżenia (na zmianę); gdy ich mniej niż 2 – dochodzą tematy z przerobionych lekcji,
   // a gdy i tych brakuje – najwcześniejsze w kolejności kursu (do 3 tematów), tylko z części kursu tego poziomu JLPT
   // (na liście N5 nie ～たい z lekcji N4 ani tematy z lekcji, do których jeszcze daleko)
@@ -49652,7 +51186,7 @@ function viewNums() {
   function viewTopic(t) {
     LIVE = null;
     const now = Date.now(), s = status(rec(t.id), now), T = content(t), cat = CATS().find(c => c.id === t.cat);
-    const links = srcOf(t).map(x => { const [l, gi] = x.split(":"), ls = LESSONS[l], g = ls && (ls.grammar || [])[+gi]; return ls && g && LESSON_LEVEL[l] ? { l, gi: +gi, ls, g } : null; })
+    const links = srcOf(t).map(x => { const [l0, gi] = x.split(":"), h = typeof gramAt === "function" ? gramAt(l0, gi) : null, ls = h && h.l, g = h && h.g, l = ls && ls.id; return ls && g && LESSON_LEVEL[l] ? { l, gi: +gi, ls, g } : null; })   // po podziale lekcji punkt bywa w części 2
       .filter(Boolean).sort((a, b) => lOrd(a.l) - lOrd(b.l) || a.gi - b.gi);
     const recent = s.s !== "learn" && s.s !== "almost" || !s.last ? "" : s.last === 1 ? `Ostatnia odpowiedź: ${s.good ? "dobra" : "błędna"}` : `Dobre odpowiedzi: ${s.good} z ${s.last} ostatnich`;
     app().innerHTML = `<div class="crumbs"><a href="#/">Start</a> › <a href="#/gramatyka">Trening gramatyki</a> › ${esc(t.title)}</div>
@@ -49725,12 +51259,12 @@ function viewNums() {
   }
   // pod punktem gramatyki w lekcji
   function lessonHTML(l, gi) {
-    const ts = (refIdx()[l + ":" + gi] || []).slice(0, 2); if (!ts.length) return "";
+    const ts = (refIdx()[((LESSONS[l] || {}).split || l) + ":" + gi] || []).slice(0, 2); if (!ts.length) return "";
     return `<div class="gprac">${ts.map(t => `<a class="btn sm" href="${href(t)}">🎯 ${ts.length > 1 ? "Ćwicz: " + esc(t.title) : "Ćwicz ten temat"}</a>`).join(" ")}</div>`;
   }
   // w ściądze (tabela punktów gramatyki)
   function cheatHTML(l, gi) {
-    const ts = (refIdx()[l + ":" + gi] || []).slice(0, 2); if (!ts.length) return "";
+    const ts = (refIdx()[((LESSONS[l] || {}).split || l) + ":" + gi] || []).slice(0, 2); if (!ts.length) return "";
     return `<div class="gcheat">${ts.map(t => `<a class="small" href="${href(t)}" title="${esc(t.title)}">🎯 Ćwicz${ts.length > 1 ? ": " + esc(t.jp || t.title) : ""}</a>`).join(" · ")}</div>`;
   }
   // „Moje słabe strony”: nazwa działu (id tematu → tytuł) i link do treningu
@@ -54562,7 +56096,7 @@ window.REV = (function () {
   // karta, której treść zniknęła z kursu (punkt gramatyki, zwrot) – nie liczy się do zaległych
   function orphan(k) {
     try {
-      if (k[0] === "g") { const [, l, i] = k.split("|"), L = LESSONS[l], g = L && (L.grammar || [])[+i]; return !g || !(g.examples || []).some(e => e && e[1]); }
+      if (k[0] === "g") { const [, l, i] = k.split("|"), h = gramAt(l, i), g = h && h.g; return !g || !(g.examples || []).some(e => e && e[1]); }
       if (k[0] === "c") return !KIT().ph[k.slice(2)];
     } catch (e) { }
     return false;
@@ -54621,7 +56155,7 @@ window.REV = (function () {
     return { kind, it };
   }
   function grammar(k, c, n, s, young, prefer) {
-    const [, lid, gi] = k.split("|"), l = LESSONS[lid], g = l && (l.grammar || [])[+gi]; if (!g) return null;
+    const [, lid, gi0] = k.split("|"), h = gramAt(lid, gi0), l = h && h.l, g = h && h.g, gi = gi0; if (!g) return null;
     const all0 = (g.examples || []).filter(e => e && e[1]); if (!all0.length) return null;
     const title = stripTags(P(g.title || "")), pat = g.pattern ? stripTags(P(g.pattern)) : "";
     const sents = all0.filter(isSent);
@@ -55371,7 +56905,7 @@ function addXP(n) {
     try {
       // zwrot: sam japoński zwrot; gramatyka: tytuł punktu (nie ogólne „zwrot” / „gramatyka”)
       if (p[0] === "c") { const ph = typeof KIT === "function" && KIT().ph[p.slice(1).join("|")]; if (ph && ph.jp) return `<span class="jp">${esc(txt(ph.jp))}</span>`; }
-      if (p[0] === "g") { const l = typeof LESSONS !== "undefined" && LESSONS[p[1]], g = l && (l.grammar || [])[+p[2]]; if (g && g.title) return esc(txt(g.title)); }
+      if (p[0] === "g") { const h = typeof gramAt === "function" ? gramAt(p[1], p[2]) : null, g = h && h.g; if (g && g.title) return esc(txt(g.title)); }
     } catch (e) { }
     return esc(c.m || p[1] || k);
   }
@@ -55962,7 +57496,7 @@ function flowWeekHTML() {
     return ch;
   }
   const autoN = () => Object.values(S.lessons || {}).filter(r => r && r.done && r.auto).length;
-  /* podział lekcji (katakana: k-a → k-a + k-a-2, k-na → k-na + k-na-2): część z polem split = id dawnej lekcji, która zostaje pierwszą częścią.
+  /* podział lekcji (katakana: k-a → k-a + k-a-2, k-na → k-na + k-na-2; duże lekcje N5·1 i N4·2: n5a-2 → n5a-2 + n5a-2b, src/app.js SPLITS): część z polem split = id dawnej lekcji, która zostaje pierwszą częścią.
      splitMig(st) – raz na osobę (znacznik st.split[dawne id] = 1): prawdziwe zaliczenie dawnej lekcji zalicza też pozostałe części,
      zrobione kroki (seen, prac, zakładki v) i wybór S.sel przechodzą na części (wybór – gdy część nie ma własnego). Nic nie znika;
      stara wersja kursu nowych id nie zna i je pomija. Łączenie: obie strony przed łączeniem, znaczniki – suma (src/sync.js). */
@@ -55979,6 +57513,7 @@ function flowWeekHTML() {
         if (r.seen) n.seen = true;
         if (r.prac) n.prac = true;
         if (isO(r.v)) n.v = Object.assign({}, r.v, isO(q.v) ? q.v : {});
+        if (isO(r.gd)) n.gd = Object.assign({}, r.gd, isO(q.gd) ? q.gd : {});   // przeczytane punkty gramatyki (te same indeksy w częściach)
         if (r.done && !r.auto) { n.done = true; delete n.auto; n.best = Math.max(+q.best || 0, +r.best || 0); if (r.dt) n.dt = Math.max(+q.dt || 0, +r.dt || 0); }
         if (r.t) n.t = Math.max(+q.t || 0, +r.t || 0);
         if (Object.keys(n).length) L[p] = n;
@@ -57047,6 +58582,40 @@ LV.forEach(L => L.lessons.forEach((l, i) => { LESSONS[l.id] = l; LESSON_LEVEL[l.
   if (P.gorder) l.gorder = P.gorder;   // kolejność pokazywania punktów gramatyki (gramOrder); indeksy punktów bez zmian
   if (P.parts) l.parts = P.parts;      // części Teorii i ćwiczenia do „Sprawdź się” (lessonParts, src/porcje.js); tylko wyświetlanie
 });
+// 📦 podział dużych lekcji na dwie części (content/patch_podzial.js, SPLITS): część 1 zostaje pod dawnym id, część 2 (id + „b”,
+// split: dawne id) dostaje wybrane punkty gramatyki, słówka, kanji i ćwiczenia (+ nowe add1/add2); dawny dialog idzie do części 2,
+// część 1 dostaje krótki dialog1. Punkty gramatyki zachowują dawne indeksy (tablica z dziurami), więc karty powtórek g|dawne id|indeks,
+// odwołania gram_topics „lekcja:indeks” i S.lessons[].gd się nie zmieniają; gramAt znajduje punkt w częściach. Zaliczenie dawnej
+// lekcji zalicza obie części (src/lvl.js splitMig). Porcje (parts) dzielonych lekcji znikają – części są krótkie.
+const SPLIT_KIDS = {};
+(window.SPLITS || []).forEach(P => {
+  const l = P && LESSONS[P.lesson], L = l && LESSON_LEVEL[P.lesson];
+  if (!l || !L || typeof P.id !== "string" || !P.id || LESSONS[P.id]) return;
+  const g2 = new Set(P.g || []), v2 = new Set(P.v || []), k2 = new Set(P.k || []), e2 = new Set(P.ex || []);
+  const G = l.grammar || [], X = l.exercises || [];
+  const sparse = keep => { const a = new Array(G.length); G.forEach((g, i) => { if (keep(i)) a[i] = g; }); return a; };
+  const b = Object.assign({}, l, {
+    id: P.id, split: l.id, title: P.title2 || l.title, goal: P.goal2 || l.goal, intro: P.intro2 || "",
+    vocab: (l.vocab || []).filter(v => v2.has(v[0])), kanji: (l.kanji || []).filter(k => k2.has(k[0])),
+    grammar: sparse(i => g2.has(i)), exercises: X.filter((e, i) => e2.has(i)).concat(P.add2 || [])
+  });
+  delete b.parts;
+  l.vocab = (l.vocab || []).filter(v => !v2.has(v[0])); l.kanji = (l.kanji || []).filter(k => !k2.has(k[0]));
+  l.grammar = sparse(i => !g2.has(i)); l.exercises = X.filter((e, i) => !e2.has(i)).concat(P.add1 || []);
+  if (P.title1) l.title = P.title1; if (P.goal1) l.goal = P.goal1; if (P.intro1) l.intro = P.intro1;
+  if (P.dialog1) l.dialog = P.dialog1; else delete l.dialog;
+  delete l.parts;
+  L.lessons.splice(L.lessons.indexOf(l) + 1, 0, b);
+  LESSONS[b.id] = b; LESSON_LEVEL[b.id] = L; (SPLIT_KIDS[l.id] = SPLIT_KIDS[l.id] || []).push(b);
+});
+LV.forEach(L => L.lessons.forEach((l, i) => { l._n = i + 1; }));
+// punkt gramatyki po kluczu „lekcja|indeks” (karty powtórek, gram_topics): w lekcji albo – po podziale – w jej części 2
+function gramAt(lid, gi) {
+  const l = LESSONS[lid], g = l && (l.grammar || [])[+gi];
+  if (g) return { l, g };
+  for (const c of SPLIT_KIDS[lid] || []) { const x = (c.grammar || [])[+gi]; if (x) return { l: c, g: x }; }
+  return null;
+}
 // 📚 słówka dodatkowe: nieobowiązkowe listy tematyczne (content/slowka_*.js, src/slowka.js) – poza lekcjami, ale w słowniczku (x – lista)
 const XLS = (window.XLISTS || []).filter(X => X && X.id && Array.isArray(X.vocab) && X.vocab.length && LV.some(L => L.id === X.level));
 const ALL_VOCAB = LV.flatMap(L => L.lessons.flatMap(l => (l.vocab || []).map(v => ({ v, l, L }))))
@@ -57310,7 +58879,7 @@ function lessonKnownNote(root, l, withGrammar) {
 // powtórki gramatyki: jedna karta na punkt gramatyczny, przy każdej powtórce inne zdanie przykładowe
 // w kolejności pokazywania (gramOrder: n4-1 – forma słownikowa przed ない); klucz g|lekcja|indeks bez zmian
 function grammarCards(lesson) {
-  return gramOrder(lesson).map(gi => { const g = lesson.grammar[gi]; return (g.examples || []).length ? { k: "g|" + lesson.id + "|" + gi, card: { m: g.title, l: lesson.id } } : null; }).filter(Boolean);
+  return gramOrder(lesson).map(gi => { const g = lesson.grammar[gi]; return (g.examples || []).length ? { k: "g|" + (lesson.split || lesson.id) + "|" + gi, card: { m: g.title, l: lesson.id } } : null; }).filter(Boolean);   // część 2 podzielonej lekcji: klucz dawnej lekcji
 }
 function backfillGrammarSRS() {
   if (S.gsrs) return;
@@ -57714,8 +59283,9 @@ function kanaKnown() {
 // kolejność pokazywania punktów gramatyki: PATCH gorder (n4-1: forma słownikowa przed formą ない, P-8), inaczej po kolei.
 // Indeksy punktów się nie zmieniają (karty g|lekcja|indeks, odwołania gram_topics „lekcja:indeks”).
 function gramOrder(l) {
-  const n = (l.grammar || []).length, o = l.gorder;
-  return Array.isArray(o) && o.length === n && o.slice().sort((a, b) => a - b).every((x, i) => x === i) ? o.slice() : [...Array(n).keys()];
+  const G = l.grammar || [], n = G.length, o = l.gorder;
+  const ord = Array.isArray(o) && o.length === n && o.slice().sort((a, b) => a - b).every((x, i) => x === i) ? o.slice() : [...Array(n).keys()];
+  return ord.filter(i => i in G);   // część podzielonej lekcji: tylko jej punkty (reszta to dziury w tablicy)
 }
 // fresh – indeksy punktów dopisanych po przerobieniu lekcji (lessonNewGram): znaczek 🆕 przy tytule
 // P – część Teorii (src/porcje.js): {p: część, pn, n: ile części, nav, sec: czas, back: pasek „📍 Ostatnio”}; wstęp tylko w części 1,
